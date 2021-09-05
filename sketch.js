@@ -3,55 +3,50 @@ let n_features = 16;
 let n_targets = 2;
 
 // Data related
-let dataFrame = {};
-initData = () => {
-	dataFrame.X = tf.randomNormal([n_samples, n_features]);
-	dataFrame.y = tf.randomNormal([n_samples, n_targets]);
-};
+// let dataFrame = {};
+// initData = () => {
+// 	dataFrame.X = tf.randomNormal([n_samples, n_features]);
+// 	dataFrame.y = tf.randomNormal([n_samples, n_targets]);
+// };
 
 // Neural network related
 let nn;
 let nnHiddenLayers = [
-	{"units": 8, "activation": "sigmoid"},
-	{"units": 4, "activation": "sigmoid"},
+	{"units": 8, "activation": "sigmoid", "useBias": false},
+	{"units": 4, "activation": "sigmoid", "useBias": false},
 ];
 initNN = () => {
-	// Visualized NN class
-	nn = new NeuralNetwork(
-		// Layers
-		[
-			n_features,
-			...nnHiddenLayers.map(hiddenLayer => (hiddenLayer.units)),
-			n_targets
-		],
+	// Build NN sequentially with our custom class
+	nn = new SequentialNeuralNetwork(
+		// Arguments which will be passed to tf.Sequential
+		sequentialArgs={},
 
-		// Position & size
-		windowWidth/2, windowHeight/2, (windowWidth*0.50), (windowHeight*0.66)
-		// windowWidth/2, windowHeight/2, (windowWidth), (windowHeight)	// Fullscreen
+		// Our args for visualizing
+		customArgs={
+			// Center & size of NN
+			centerX: windowWidth*0.50,
+			centerY: windowHeight*0.50,
+			width: (windowWidth*0.50),
+			height: (windowHeight*0.66)
+		}
 	);
 
-	// Build nn sequentially
-	// nn = tf.sequential();
-
 	// Input layer
-	// nn.add(tf.layers.inputLayer({inputShape: [n_features]}));
+	nn.add(tf.layers.inputLayer({inputShape: [n_features]}));
 
-	// Hidden layers
-	// nnHiddenLayers.forEach(hiddenLayer => {
-	// 	nn.add(tf.layers.dense({...hiddenLayer}));
-	// });
+	// Add hidden layers
+	nnHiddenLayers.forEach(hiddenLayer => {
+		nn.add(tf.layers.dense({...hiddenLayer}));
+	});
 
-	// Add output layer, compile model
+	// Add output layer & compile the model
 	// Regression
 	// nn.add(tf.layers.dense({units: n_targets, activation: null}));
 	// nn.compile({loss: "meanSquaredError", optimizer: "sgd"});
 
 	// Classification
-	// nn.add(tf.layers.dense({units: n_targets, activation: "sigmoid"}));
-	// nn.compile({loss: "categoricalCrossentropy", optimizer: "sgd"});
-
-	// Print summary
-	// nn.summary();
+	nn.add(tf.layers.dense({units: n_targets, activation: "sigmoid"}));
+	nn.compile({loss: "categoricalCrossentropy", optimizer: "sgd"});
 };
 
 // Setup
@@ -61,9 +56,6 @@ setup = () => {
 
 	// Initialize neural network
 	initNN();
-
-	// Initialize dataset
-	// initData();
 };
 
 // Main loop

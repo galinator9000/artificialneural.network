@@ -1,16 +1,51 @@
-// This file contains NeuralNetwork, Neuron and Weight classes for visualizing each one of them
+// This file contains SequentialNeuralNetwork, Neuron and Weight classes for visualizing each one of them
 
-class NeuralNetwork{
-	constructor(layers, centerX, centerY, width, height){
+// SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
+class SequentialNeuralNetwork extends tf.Sequential{
+	constructor(
+		sequentialArgs,
+		customArgs
+	){
+		super(sequentialArgs);
+		this.customArgs = customArgs;
+	};
+
+	// Override compile method for creating visual objects on our side
+	compile = (compileArgs) => {
+		// Compile the tf.Sequential side
+		super.compile(compileArgs);
+		// this.layers.forEach(layer => {console.log(layer)});
+
+		// Check if first layer is input layer and the others are dense layers
+		if(
+			this.layers.length !== (
+				this.layers.map((layer, layerIndex) => (
+					(layerIndex==0 && layer.name.startsWith("input")) || (layerIndex>0 && layer.name.startsWith("dense"))
+				)).reduce((a, b) => (a+b), 0)
+			)
+		){
+			console.error("First layer should be tf.layers.inputLayer and the rest should be tf.layers.dense (checking from the layer name)");
+			return;
+		}
+
+		// Get layers' properties
+		let layerUseBias = this.layers.map(layer => (layer.useBias === true));
+		let inputLayerUnitCount = this.layers.map(layer => (layer.batchInputShape && layer.batchInputShape[1]))[0];
+		let hiddenLayerUnitCounts = this.layers.map(layer => layer.units).filter(i => i !== undefined);
+		this.layerUnitCounts = [inputLayerUnitCount, ...hiddenLayerUnitCounts];
+
+		// Then let's create our visual objects
+		let {centerX, centerY, width, height} = this.customArgs;
+
 		// First, create Neuron objects of each layer
-		let maxNeuron = Math.max(...layers);
-		Neuron.r = (height / maxNeuron / 1.25);
-		let perLayerX = (width / (layers.length-1));
-		let perNeuronY = (height / maxNeuron);
+		let maxLayerUnitCount = Math.max(...this.layerUnitCounts);
+		Neuron.r = (height / maxLayerUnitCount / 1.25);
+		let perLayerX = (width / (this.layerUnitCounts.length-1));
+		let perNeuronY = (height / maxLayerUnitCount);
 		let startLayerX = (centerX - width/2);
 
 		// Each layer
-		this.layers = layers.map((neuronCount, layerIndex) => {
+		this.allNeurons = this.layerUnitCounts.map((neuronCount, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
 			let startNeuronY = (centerY - ((perNeuronY*neuronCount) / 2)) + (perNeuronY/2);
@@ -26,28 +61,31 @@ class NeuralNetwork{
 		});
 
 		// Create Weights between Neurons
-		this.weights = [];
-		[...Array(this.layers.length-1).keys()].forEach((layerIndex) => {
-			let fromLayer = this.layers[layerIndex];
-			let toLayer = this.layers[layerIndex+1];
+		this.allWeights = [];
+		[...Array(this.allNeurons.length-1).keys()].forEach((layerIndex) => {
+			let fromLayerNeurons = this.allNeurons[layerIndex];
+			let toLayerNeurons = this.allNeurons[layerIndex+1];
 
-			let useBias = true;
-			if (useBias && ((layerIndex+1) !== (this.layers.length-1))) toLayer = toLayer.slice(1);
+			// Check if using bias value
+			let toLayerNeurons_useBias = layerUseBias[layerIndex+1];
+			if (toLayerNeurons_useBias && ((layerIndex+1) !== (this.layers.length-1))){
+				toLayerNeurons = toLayerNeurons.slice(1);
+			}
 
 			// Nested-for loop for connecting neurons with weights
-			fromLayer.forEach((fromNeuron, idxFromNeuron) => {
-				toLayer.forEach((toNeuron, idxToNeuron) => {
-					this.weights.push(
+			fromLayerNeurons.forEach((fromNeuron, idxFromNeuron) => {
+				toLayerNeurons.forEach((toNeuron, idxToNeuron) => {
+					this.allWeights.push(
 						new Weight(fromNeuron, toNeuron)
 					);
 				});
 			});
 		});
-	};
+	}
 
 	draw = () => {
 		// Each layer
-		this.layers.forEach(layer => {
+		this.allNeurons.forEach(layer => {
 			// Each neuron
 			layer.forEach(neuron => {
 				neuron.draw();
@@ -55,7 +93,7 @@ class NeuralNetwork{
 		});
 
 		// Each weight
-		this.weights.forEach(weight => {
+		this.allWeights.forEach(weight => {
 			weight.draw();
 		});
 	};
