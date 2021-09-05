@@ -13,7 +13,11 @@ let n_targets = 2;
 let nn;
 let nnHiddenLayersStructure = [
 	// Hidden layers
+	{class: tf.layers.dense, args: {"units": 12, "activation": "sigmoid"}},
 	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
+	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
+	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
+	{class: tf.layers.dense, args: {"units": 4, "activation": "sigmoid"}},
 	{class: tf.layers.dense, args: {"units": 4, "activation": "sigmoid"}},
 ];
 let nnStructure = {
@@ -33,7 +37,7 @@ let nnStructure = {
 				// Regression
 				"activation": null,
 				// Classification
-				"activation": "sigmoid"
+				// "activation": "sigmoid"
 			}
 		},
 	],
@@ -46,9 +50,9 @@ let nnStructure = {
 		// loss: "categoricalCrossentropy"
 	},
 };
-initNN = () => {
+buildNeuralNetwork = () => {
 	// Build NN sequentially with our custom class
-	nn = new SequentialNeuralNetwork(
+	__nn__ = new SequentialNeuralNetwork(
 		// Arguments which will be passed to tf.Sequential
 		sequentialArgs={},
 
@@ -64,13 +68,15 @@ initNN = () => {
 
 	// Add layers
 	nnStructure.layers.forEach(layer => {
-		nn.add(
+		__nn__.add(
 			layer.class(layer.args)
 		);
 	});
 
 	// Compile the model
-	nn.compile(nnStructure.compileArgs);
+	__nn__.compile(nnStructure.compileArgs);
+
+	return __nn__;
 };
 
 // Setup
@@ -78,8 +84,8 @@ setup = () => {
 	// Create p5 canvas
 	createCanvas(windowWidth, windowHeight);
 
-	// Initialize neural network
-	initNN();
+	// Build neural network
+	nn = buildNeuralNetwork();
 };
 
 // Main loop
@@ -87,7 +93,7 @@ draw = () => {
 	// Background
 	background(1, 0, 2, 255);
 
-	// Draw neural network
+	// Draw the network
 	nn.draw();
 };
 

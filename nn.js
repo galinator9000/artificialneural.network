@@ -8,29 +8,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	){
 		super(sequentialArgs);
 		this.customArgs = customArgs;
-		this.vLayers = [];
 	};
 
 	// Override add method
 	add = (layer) => {
-		// Adding first layer
-		if(this.layers.length === 0){
-			// Check if it's inputLayer
-			if(!layer.name.startsWith("input")){
-				console.error("First layer should be tf.layers.inputLayer (checking from the layer name)");
-				return;
-			}
-
-			// Push the input layer to the visual
-			this.vLayers.push({
-				useBias: false
-			});
-		}else if(layer.name.startsWith("dense")){
-			// Push the hidden dense layer to the visual
-			this.vLayers.push({
-				useBias: layer.useBias
-			});
-		}else{
+		// While adding first layer, check if it's "inputLayer"
+		if((this.layers.length === 0) && !layer.name.startsWith("input")){
+			console.error("First layer should be tf.layers.inputLayer (checking from the layer name)");
+			return;
+		}
+		// While adding hidden/output layers, check if it's "dense"
+		if((this.layers.length > 0) && !layer.name.startsWith("dense")){
 			console.error("Hidden and output layers should be tf.layers.dense (checking from the layer name)");
 			return;
 		}
@@ -39,79 +27,115 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		super.add(layer);
 	}
 
-	// Override compile method for creating visual objects on our side
+	// Override compile method
 	compile = (compileArgs) => {
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
-		// this.layers.forEach(layer => {console.log(layer)});
 
-		// Get layers' properties
-		let layerUseBias = this.layers.map(layer => (layer.useBias === true));
-		let inputLayerUnitCount = this.layers.map(layer => (layer.batchInputShape && layer.batchInputShape[1]))[0];
-		let hiddenLayerUnitCounts = this.layers.map(layer => layer.units).filter(i => i !== undefined);
-		this.layerUnitCounts = [inputLayerUnitCount, ...hiddenLayerUnitCounts];
+		// Get maximum neuron count
+		this.maxUnitCount = Math.max(...(this.layers.map(layer => 
+			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
+		)));
 
-		// Then let's create our visual objects
-		let {centerX, centerY, width, height} = this.customArgs;
+		// Calculate step per neuron in +Y direction
+		this.perNeuronY = (this.customArgs.height / this.maxUnitCount);
+		// Calculate step per layer in +X direction
+		this.perLayerX = (this.customArgs.width / (this.layers.length-1));
+		// Calculate X coordinate of starting point of the network
+		this.startLayerX = (this.customArgs.centerX - this.customArgs.width/2);
+		// Calculate each neuron size with using step per neuron value
+		Neuron.r = (this.perNeuronY / 1.25);
 
-		// First, create Neuron objects of each layer
-		let maxLayerUnitCount = Math.max(...this.layerUnitCounts);
-		Neuron.r = (height / maxLayerUnitCount / 1.25);
-		let perLayerX = (width / (this.layerUnitCounts.length-1));
-		let perNeuronY = (height / maxLayerUnitCount);
-		let startLayerX = (centerX - width/2);
+		// Create a nested-list for keeping 'Neuron' objects of each layer
+		this.layersNeuron = this.layers.map(layer => []);
+		// Create Neuron objects for each layer
+		this.layers.forEach((layer, layerIndex) => {
+			// Get neuron counts
+			let neuronCount = (layer.units) || (layer.batchInputShape && layer.batchInputShape[1]);
 
-		// Each layer
-		this.allNeurons = this.layerUnitCounts.map((neuronCount, layerIndex) => {
+			// Check if next layer uses bias
+			let useBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
+			if(useBias) neuronCount += 1;
+
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
-			let startNeuronY = (centerY - ((perNeuronY*neuronCount) / 2)) + (perNeuronY/2);
+			let startNeuronY = (this.customArgs.centerY - ((this.perNeuronY*neuronCount) / 2)) + (this.perNeuronY/2);
 
-			// List of neurons
-			return [...Array(neuronCount).keys()].map(neuronIndex => (
-				// Each neuron of layer
-				new Neuron(
-					(startLayerX+(perLayerX*layerIndex)),
-					(startNeuronY+(perNeuronY*neuronIndex))
-				)
-			));
+			// Each neuron
+			[...Array(neuronCount).keys()].forEach(neuronIndex => {
+				// Create Neuron object & push it to the list
+				let posX = (this.startLayerX + (this.perLayerX * layerIndex));
+				let posY = (startNeuronY + (this.perNeuronY * neuronIndex));
+				this.layersNeuron[layerIndex].push(new Neuron(posX, posY));
+			});
 		});
 
-		// Create Weights between Neurons
-		this.allWeights = [];
-		[...Array(this.allNeurons.length-1).keys()].forEach((layerIndex) => {
-			let fromLayerNeurons = this.allNeurons[layerIndex];
-			let toLayerNeurons = this.allNeurons[layerIndex+1];
+		// Create a nested-list for keeping 'Weight' objects of each layer
+		this.layersWeight = this.layers.slice(1).map(layer => []);
+		// Create Weight objects for each layer (with pairing layers)
+		[...Array(this.layersNeuron.length-1).keys()].forEach((layerIndex) => {
+			let fromLayerNeurons = this.layersNeuron[layerIndex];
+			let toLayerNeurons = this.layersNeuron[layerIndex+1];
 
-			// Check if using bias value
-			let toLayerNeurons_useBias = layerUseBias[layerIndex+1];
-			if (toLayerNeurons_useBias && ((layerIndex+1) !== (this.layers.length-1))){
+			// Check if next layer uses bias
+			let useBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+
+			// There's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(useBias){
 				toLayerNeurons = toLayerNeurons.slice(1);
-			}
+			};
 
-			// Nested-for loop for connecting neurons with weights
-			fromLayerNeurons.forEach((fromNeuron, idxFromNeuron) => {
-				toLayerNeurons.forEach((toNeuron, idxToNeuron) => {
-					this.allWeights.push(
-						new Weight(fromNeuron, toNeuron)
+			// Concat kernel&bias matrices for getting the layer weight matrix
+			let kernel = this.layers[layerIndex+1].getWeights()[0];
+			// Expanding bias vector for concatenation. 1D to 2D
+			let bias = tf.expandDims(
+				this.layers[layerIndex+1].getWeights()[1],
+				0
+			);
+			let layerWeightTensor = tf.concat([bias, kernel], 0);
+			
+			// Get the 2D tensor in a nested-list
+			let layerWeightMatrix = layerWeightTensor.arraySync();
+
+			// Create each Weight object between the layers
+			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
+				this.layersWeight[layerIndex].push([]);
+
+				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
+					// Create Weight object & push it to the nested-list
+					this.layersWeight[layerIndex][fromNeuronIndex].push(
+						new Weight(
+							fromNeuron,
+							toNeuron,
+							layerWeightMatrix[fromNeuronIndex][toNeuronIndex]
+						)
 					);
 				});
 			});
 		});
-	}
+	};
 
+	// Draws the whole network
 	draw = () => {
+		// Draw neurons
 		// Each layer
-		this.allNeurons.forEach(layer => {
+		this.layersNeuron.forEach(layer => {
 			// Each neuron
 			layer.forEach(neuron => {
 				neuron.draw();
-			})
+			});
 		});
 
-		// Each weight
-		this.allWeights.forEach(weight => {
-			weight.draw();
+		// Draw weights
+		// Each layer
+		this.layersWeight.forEach(layer => {
+			// Each neuron
+			layer.forEach(neuron => {
+				// Each weight
+				neuron.forEach(weight => {
+					weight.draw();
+				});
+			});
 		});
 	};
 };
@@ -131,21 +155,29 @@ class Neuron{
 	};
 };
 
+let RANGE_MAX = 4.0;
+let RANGE_MIN = -4.0;
 class Weight{
-	constructor(from, to){
+	value = 0;
+	visualValue = 0;
+
+	constructor(from, to, value){
 		this.from = from;
 		this.to = to;
-		this.val = random(0, 1);
+
+		this.value = value;
+		this.visualValue = value;
+	};
+
+	update = () => {
+		this.visualValue += (this.value - this.visualValue) * 0.1;
 	};
 
 	draw = () => {
 		// Color indicates the carried value
-		strokeWeight(1);
-		stroke(
-			this.val * 255,
-			this.val * 255,
-			this.val * 255
-		);
+		let indicatorValue = max(min(RANGE_MAX, this.visualValue), RANGE_MIN);
+		strokeWeight(abs(indicatorValue));
+		stroke(255);
 
 		// Line between neurons
 		line(
