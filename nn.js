@@ -8,25 +8,42 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	){
 		super(sequentialArgs);
 		this.customArgs = customArgs;
+		this.vLayers = [];
 	};
+
+	// Override add method
+	add = (layer) => {
+		// Adding first layer
+		if(this.layers.length === 0){
+			// Check if it's inputLayer
+			if(!layer.name.startsWith("input")){
+				console.error("First layer should be tf.layers.inputLayer (checking from the layer name)");
+				return;
+			}
+
+			// Push the input layer to the visual
+			this.vLayers.push({
+				useBias: false
+			});
+		}else if(layer.name.startsWith("dense")){
+			// Push the hidden dense layer to the visual
+			this.vLayers.push({
+				useBias: layer.useBias
+			});
+		}else{
+			console.error("Hidden and output layers should be tf.layers.dense (checking from the layer name)");
+			return;
+		}
+
+		// Add layer to the Sequential model
+		super.add(layer);
+	}
 
 	// Override compile method for creating visual objects on our side
 	compile = (compileArgs) => {
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
 		// this.layers.forEach(layer => {console.log(layer)});
-
-		// Check if first layer is input layer and the others are dense layers
-		if(
-			this.layers.length !== (
-				this.layers.map((layer, layerIndex) => (
-					(layerIndex==0 && layer.name.startsWith("input")) || (layerIndex>0 && layer.name.startsWith("dense"))
-				)).reduce((a, b) => (a+b), 0)
-			)
-		){
-			console.error("First layer should be tf.layers.inputLayer and the rest should be tf.layers.dense (checking from the layer name)");
-			return;
-		}
 
 		// Get layers' properties
 		let layerUseBias = this.layers.map(layer => (layer.useBias === true));

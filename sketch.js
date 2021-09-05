@@ -11,10 +11,41 @@ let n_targets = 2;
 
 // Neural network related
 let nn;
-let nnHiddenLayers = [
-	{"units": 8, "activation": "sigmoid", "useBias": false},
-	{"units": 4, "activation": "sigmoid", "useBias": false},
+let nnHiddenLayersStructure = [
+	// Hidden layers
+	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
+	{class: tf.layers.dense, args: {"units": 4, "activation": "sigmoid"}},
 ];
+let nnStructure = {
+	layers: [
+		// Input layer
+		{class: tf.layers.inputLayer, args: {inputShape: [n_features]}},
+
+		// Hidden layer(s)
+		...nnHiddenLayersStructure,
+
+		// Output layer
+		{
+			class: tf.layers.dense,
+			args: {
+				"units": n_targets,
+
+				// Regression
+				"activation": null,
+				// Classification
+				"activation": "sigmoid"
+			}
+		},
+	],
+	compileArgs: {
+		optimizer: "sgd",
+
+		// Regression
+		loss: "meanSquaredError",
+		// Classification
+		// loss: "categoricalCrossentropy"
+	},
+};
 initNN = () => {
 	// Build NN sequentially with our custom class
 	nn = new SequentialNeuralNetwork(
@@ -31,22 +62,15 @@ initNN = () => {
 		}
 	);
 
-	// Input layer
-	nn.add(tf.layers.inputLayer({inputShape: [n_features]}));
-
-	// Add hidden layers
-	nnHiddenLayers.forEach(hiddenLayer => {
-		nn.add(tf.layers.dense({...hiddenLayer}));
+	// Add layers
+	nnStructure.layers.forEach(layer => {
+		nn.add(
+			layer.class(layer.args)
+		);
 	});
 
-	// Add output layer & compile the model
-	// Regression
-	// nn.add(tf.layers.dense({units: n_targets, activation: null}));
-	// nn.compile({loss: "meanSquaredError", optimizer: "sgd"});
-
-	// Classification
-	nn.add(tf.layers.dense({units: n_targets, activation: "sigmoid"}));
-	nn.compile({loss: "categoricalCrossentropy", optimizer: "sgd"});
+	// Compile the model
+	nn.compile(nnStructure.compileArgs);
 };
 
 // Setup
