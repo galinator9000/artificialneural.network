@@ -114,6 +114,19 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 	};
+	
+	// Override predict method
+	predict = (X) => {
+		// Feed layer by layer
+		let layerOutput = X;
+		this.layers.forEach(layer => {
+			layerOutput = layer.call(layerOutput);
+			layerOutput.print();
+		});
+
+		// Forward-propagation with given tensor
+		return super.predict(X);
+	};
 
 	// Draws the whole network
 	draw = () => {

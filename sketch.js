@@ -1,3 +1,6 @@
+// Canvas objects
+let nnCanvas;
+
 let n_samples = 16;
 let n_features = 16;
 let n_targets = 2;
@@ -13,11 +16,9 @@ let n_targets = 2;
 let nn;
 let nnHiddenLayersStructure = [
 	// Hidden layers
+	{class: tf.layers.dense, args: {"units": 16, "activation": "sigmoid"}},
 	{class: tf.layers.dense, args: {"units": 12, "activation": "sigmoid"}},
 	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
-	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
-	{class: tf.layers.dense, args: {"units": 8, "activation": "sigmoid"}},
-	{class: tf.layers.dense, args: {"units": 4, "activation": "sigmoid"}},
 	{class: tf.layers.dense, args: {"units": 4, "activation": "sigmoid"}},
 ];
 let nnStructure = {
@@ -59,10 +60,10 @@ buildNeuralNetwork = () => {
 		// Our args for visualizing
 		customArgs={
 			// Center & size of NN
-			centerX: windowWidth*0.50,
-			centerY: windowHeight*0.50,
-			width: (windowWidth*0.50),
-			height: (windowHeight*0.66)
+			centerX: nnCanvas.width/2,
+			centerY: nnCanvas.height/2,
+			width: nnCanvas.width*0.80,
+			height: nnCanvas.height*0.80
 		}
 	);
 
@@ -81,8 +82,17 @@ buildNeuralNetwork = () => {
 
 // Setup
 setup = () => {
-	// Create p5 canvas
-	createCanvas(windowWidth, windowHeight);
+	// Create canvas of neural network
+	nnCanvas = createCanvas(windowWidth*0.80, windowHeight*0.80);
+
+	let button;
+	button = createButton("predict");
+	button.position(0, 0);
+	button.mousePressed(args => {
+		nn.predict(
+			tf.randomNormal([1, n_features])
+		);
+	});
 
 	// Build neural network
 	nn = buildNeuralNetwork();

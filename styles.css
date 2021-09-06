@@ -1,2 +1,7 @@
-canvas { position:fixed; top:0; left:0; z-index:1; }
-#contenu { position:relative; z-index:2; }
+canvas {
+	position: fixed;
+	display: block;
+	top: 0;
+	left: 0;
+	z-index: -1;
+}
