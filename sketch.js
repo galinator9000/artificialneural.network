@@ -86,14 +86,14 @@ setup = () => {
 	// Create the canvas which will neural network be drawn
 	nnCanvas = nnCreateCanvas();
 
-	// let button;
-	// button = createButton("predict");
-	// button.position(0, 0);
-	// button.mousePressed(args => {
-	// 	nn.predict(
-	// 		tf.randomNormal([1, n_features])
-	// 	);
-	// });
+	let button;
+	button = createButton("predict");
+	button.position(0, 0);
+	button.mousePressed(args => {
+		nn.predict(
+			tf.randomNormal([1, n_features])
+		);
+	});
 
 	// Build neural network
 	nn = buildNeuralNetwork();
