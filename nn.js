@@ -3,11 +3,9 @@
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{
 	constructor(
-		sequentialArgs,
-		customArgs
+		sequentialArgs
 	){
 		super(sequentialArgs);
-		this.customArgs = customArgs;
 	};
 
 	// Override add method
@@ -32,20 +30,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
 
-		// Get maximum neuron count
-		this.maxUnitCount = Math.max(...(this.layers.map(layer => 
-			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
-		)));
-
-		// Calculate step per neuron in +Y direction
-		this.perNeuronY = (this.customArgs.height / this.maxUnitCount);
-		// Calculate step per layer in +X direction
-		this.perLayerX = (this.customArgs.width / (this.layers.length-1));
-		// Calculate X coordinate of starting point of the network
-		this.startLayerX = (this.customArgs.centerX - this.customArgs.width/2);
-		// Calculate each neuron size with using step per neuron value
-		Neuron.r = (this.perNeuronY / 1.25);
-
 		// Create a nested-list for keeping 'Neuron' objects of each layer
 		this.layersNeuron = this.layers.map(layer => []);
 		// Create Neuron objects for each layer
@@ -57,16 +41,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let useBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
 			if(useBias) neuronCount += 1;
 
-			// Calculate starting point (Y-coordinate of first neuron) of the layer
-			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
-			let startNeuronY = (this.customArgs.centerY - ((this.perNeuronY*neuronCount) / 2)) + (this.perNeuronY/2);
-
 			// Each neuron
 			[...Array(neuronCount).keys()].forEach(neuronIndex => {
 				// Create Neuron object & push it to the list
-				let posX = (this.startLayerX + (this.perLayerX * layerIndex));
-				let posY = (startNeuronY + (this.perNeuronY * neuronIndex));
-				this.layersNeuron[layerIndex].push(new Neuron(posX, posY));
+				this.layersNeuron[layerIndex].push(new Neuron());
 			});
 		});
 
@@ -79,23 +57,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			// Check if next layer uses bias
 			let useBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
-
-			// There's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			// If using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
 			if(useBias){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
-
-			// Concat kernel&bias matrices for getting the layer weight matrix
-			let kernel = this.layers[layerIndex+1].getWeights()[0];
-			// Expanding bias vector for concatenation. 1D to 2D
-			let bias = tf.expandDims(
-				this.layers[layerIndex+1].getWeights()[1],
-				0
-			);
-			let layerWeightTensor = tf.concat([bias, kernel], 0);
 			
-			// Get the 2D tensor in a nested-list
-			let layerWeightMatrix = layerWeightTensor.arraySync();
+			// Get the 2D weight tensor of the layer, turn it into a nested-list
+			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
 
 			// Create each Weight object between the layers
 			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
@@ -114,6 +82,25 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 	};
+
+	// Gets weight matrix of a dense layer
+	getLayerWeightMatrix = (layerIdx) => {
+		// Get all weights of the layer (list)
+		let layerWeights = this.layers[layerIdx].getWeights();
+
+		// Get kernel
+		let kernel = layerWeights[0];
+		// Directly return the kernel if there's no bias
+		if(layerWeights.length === 1){
+			return kernel;
+		}
+
+		// Expanding bias vector for concatenation. 1D to 2D
+		let bias = tf.expandDims(layerWeights[1], 0);
+
+		// Concat bias&kernel values for getting the final layer weight matrix
+		return tf.concat([bias, kernel], 0);
+	};
 	
 	// Override predict method
 	predict = (X) => {
@@ -129,24 +116,45 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Draws the whole network
-	draw = () => {
+	draw = (canvas, {gapRateX, gapRateY}) => {
+		// Get maximum neuron count
+		let maxUnitCount = Math.max(...(this.layers.map(layer => 
+			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
+		)));
+		
+		// Calculate step per neuron in +Y direction
+		let perNeuronY = ((canvas.height*gapRateY) / maxUnitCount);
+		// Calculate step per layer in +X direction
+		let perLayerX = ((canvas.width*gapRateX) / (this.layers.length-1));
+		// Calculate X coordinate of starting point of the network
+		let startLayerX = ((canvas.width/2) - (canvas.width*gapRateX/2));
+		// Calculate each neuron size with using step per neuron value
+		Neuron.r = (perNeuronY / 1.25);
+
 		// Draw neurons
 		// Each layer
-		this.layersNeuron.forEach(layer => {
+		this.layersNeuron.forEach((layer, layerIndex) => {
+			// Calculate starting point (Y-coordinate of first neuron) of the layer
+			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
+			let startNeuronY = ((canvas.height/2) - ((perNeuronY * layer.length) / 2)) + (perNeuronY/2);
+
 			// Each neuron
-			layer.forEach(neuron => {
-				neuron.draw();
+			layer.forEach((neuron, neuronIndex) => {
+				// Set position of neuron & draw it
+				neuron.x = (startLayerX + (perLayerX * layerIndex));
+				neuron.y = (startNeuronY + (perNeuronY * neuronIndex));
+				neuron.draw(canvas);
 			});
 		});
 
 		// Draw weights
 		// Each layer
-		this.layersWeight.forEach(layer => {
+		this.layersWeight.forEach((layer) => {
 			// Each neuron
-			layer.forEach(neuron => {
+			layer.forEach((neuron) => {
 				// Each weight
 				neuron.forEach(weight => {
-					weight.draw();
+					weight.draw(canvas);
 				});
 			});
 		});
@@ -154,17 +162,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 };
 
 class Neuron{
+	x = 0;
+	y = 0;
 	static r = 30.0;
-	constructor(x, y){
-		this.x = x;
-		this.y = y;
-	};
 
-	draw = () => {
-		noFill();
-		strokeWeight(1);
-		stroke(255);
-		circle(this.x, this.y, Neuron.r);
+	constructor(){};
+
+	draw = (canvas) => {
+		canvas.noFill();
+		canvas.strokeWeight(1);
+		canvas.stroke(255);
+		canvas.circle(this.x, this.y, Neuron.r);
 	};
 };
 
@@ -186,14 +194,14 @@ class Weight{
 		this.visualValue += (this.value - this.visualValue) * 0.1;
 	};
 
-	draw = () => {
+	draw = (canvas) => {
 		// Color indicates the carried value
 		let indicatorValue = max(min(RANGE_MAX, this.visualValue), RANGE_MIN);
-		strokeWeight(abs(indicatorValue));
-		stroke(255);
+		canvas.strokeWeight(abs(indicatorValue));
+		canvas.stroke(255);
 
 		// Line between neurons
-		line(
+		canvas.line(
 			// from (neuron)
 			(this.from.x+(Neuron.r/2)), this.from.y,
 			// to (neuron)
