@@ -1,7 +1,16 @@
+// Linear interpolation
 const lerp = (value, target, amount) => {
 	return (value + ((target - value) * amount));
 };
 
+// Random int
+getRandomInt = (min, max) => {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min) + min);
+}
+
+// Animation related functions
 class AnimationUtils{
 	// Exponential
 	static easeOutExpo = (x) => {
