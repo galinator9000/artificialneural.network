@@ -112,7 +112,7 @@ buildNeuralNetwork = () => {
 	// Compile the model with args
 	nn.compile(nnStructure.compileArgs);
 
-	console.log(nnStructure);
+	console.log("NN built", nnStructure);
 };
 
 //// Data
@@ -121,30 +121,33 @@ csvURLs = [
 	"https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 ];
 
-// Main dataset
+// Holds data related objects
 let data = {
+	dataset: null,
 	structure: {
 		n_samples: 0,
 		n_features: 0,
 		n_targets: 0
 	},
-	dataset: null
+	X: null,
+	y: null,
+	stageSample: {
+		input: null,
+		target: null
+	}
 };
 
-getSampleFromDataset = (idx=null) => {
-	// Get sample
-	let sampleData = Object.values(data.dataset[
-		(idx !== null ? idx : getRandomInt(0, data.dataset.length))
-	]);
+getStageSampleFromDataset = (idx=null) => {
+	// Sample randomly if index is not given
+	idx = (idx !== null ? idx : getRandomInt(0, data.structure.n_samples));
 
-	// Get input and target output as tensor
-	let X = tf.tensor([sampleData.slice(0, sampleData.length-1)]);
-	let y = tf.tensor([sampleData.slice(sampleData.length-1)]);
+	// Get input and target output of sample as tensor, set to stage
+	data.stageSample.input = data.X.slice([idx, 0], [1, data.structure.n_features]);
+	data.stageSample.target = data.y.slice([idx, 0], [1, data.structure.n_targets]);
 
-	X.print();
-	y.print();
-
-	return [X, y];
+	console.log("Sampled:");
+	console.log(data.stageSample.input.toString());
+	console.log(data.stageSample.target.toString());
 };
 
 // Gets called whenever dataset changes
@@ -168,8 +171,33 @@ buildDataset = (csvURL) => {
 		data.structure.n_features = (Object.keys(data.dataset[0]).length-1);
 		data.structure.n_targets = 1;
 
-		console.log(data.structure);
-		
+		// Get input and target tensors
+		data.X = tf.tensor(
+			// Get all feature values in a nested-list
+			data.dataset.map((d) => {
+				d = Object.values(d);
+				return d.slice(1);
+			}),
+			// Shape
+			[
+				data.structure.n_samples,
+				data.structure.n_features
+			]
+		);
+		data.y = tf.tensor(
+			// Get all target values in a nested-list
+			data.dataset.map((d) => {
+				d = Object.values(d);
+				return d.slice(0, 1);
+			}),
+			// Shape
+			[
+				data.structure.n_samples,
+				data.structure.n_targets
+			]
+		);
+
+		console.log("Dataset built", data.structure);
 		onChangeDataset();
 	});
 };
@@ -177,45 +205,47 @@ buildDataset = (csvURL) => {
 //// Sketch
 // Initialize GUI components
 initializeGUI = () => {
-	// Predict button
-	let predictButton;
-	predictButton = createButton("predict");
-	predictButton.position(0, 0);
-	predictButton.mousePressed(args => {
-		// Generate sample
-		// let sampleData = tf.randomNormal([1, data.structure.n_features]);
+	// Create buttons
+	let buttons = {
+		sampleStageButton: createButton("Get sample"),
+		predictButton: createButton("Predict"),
+		sampleStagePredictButton: createButton("Get sample&predict"),
+		fitButton: createButton("Fit dataset"),
+		addHiddenLayerButton: createButton("Add hidden layer"),
+		removeHiddenLayersButton: createButton("Remove hidden layers"),
+		resetButton: createButton("Reset network"),
+	}
 
-		// Get random sample from dataset
-		let [X, y] = getSampleFromDataset();
-
-		// Predict!
-		nn.predict(X);
+	// Set positions of buttons
+	Object.values(buttons).forEach((button, buttonIndex) => {
+		button.position(50 + (buttonIndex * 150), 50);
 	});
 
+	// Sample button
+	buttons.sampleStageButton.mousePressed(args => {
+		// Get random sample from dataset for stage
+		getStageSampleFromDataset();
+	});
+
+	// Predict button
+	buttons.predictButton.mousePressed(args => {
+		// Predict!
+		nn.predict(data.stageSample.input);
+	});
+
+	// Sample&predict button
+	buttons.sampleStagePredictButton.mousePressed(args => {
+		// Get random sample from dataset for stage
+		getStageSampleFromDataset();
+		// Predict!
+		nn.predict(data.stageSample.input);
+	});
+	
 	// Train button
-	let trainButton;
-	trainButton = createButton("train");
-	trainButton.position(150, 0);
-	trainButton.mousePressed(args => {
-		// Get random sample from dataset
-		// let [X, y] = getSampleFromDataset(0);
-
-		// Get all samples
-		let Xy = tf.tensor(
-			// Get all samples in a nested-list
-			data.dataset.map((d) => (Object.values(d))),
-			// Shape
-			[
-				data.structure.n_samples,
-				data.structure.n_features+data.structure.n_targets
-			]
-		);
-		let X = Xy.slice([0, 0], [data.structure.n_samples, data.structure.n_features]);
-		let y = Xy.slice([0, Xy.shape[1]-(data.structure.n_targets)], [data.structure.n_samples, data.structure.n_targets]);
-
+	buttons.fitButton.mousePressed(args => {
 		// Train!
 		nn.fit(
-			X, y,
+			data.X, data.y,
 			{
 				epochs: 100,
 				batchSize: 32
@@ -224,30 +254,21 @@ initializeGUI = () => {
 	});
 
 	// Add hidden layer button
-	let addHiddenLayerButton;
-	addHiddenLayerButton = createButton("add hidden layer");
-	addHiddenLayerButton.position(300, 0);
-	addHiddenLayerButton.mousePressed(args => {
+	buttons.addHiddenLayerButton.mousePressed(args => {
 		// Add one layer to config & rebuild neural network
 		nnStructure.hiddenLayers.push(createDenseLayerConfig());
 		onChangeNeuralNetwork();
 	});
 
 	// Remove hidden layers button
-	let removeHiddenLayersButton;
-	removeHiddenLayersButton = createButton("remove hidden layers");
-	removeHiddenLayersButton.position(450, 0);
-	removeHiddenLayersButton.mousePressed(args => {
+	buttons.removeHiddenLayersButton.mousePressed(args => {
 		// Remove hidden layers & rebuild neural network
 		nnStructure.hiddenLayers = [];
 		onChangeNeuralNetwork();
 	});
 
 	// Reset neural network button
-	let resetnnButton;
-	resetnnButton = createButton("reset nn");
-	resetnnButton.position(600, 0);
-	resetnnButton.mousePressed(args => {
+	buttons.resetButton.mousePressed(args => {
 		// Reset configs & rebuild neural network
 		nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
 		onChangeNeuralNetwork();

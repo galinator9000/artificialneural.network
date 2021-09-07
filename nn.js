@@ -137,13 +137,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagationHighlight.xTarget = 1.0;
 
 		// Log final output
-		layerOutput.print();
+		console.log("Prediction", layerOutput.toString());
 	};
 	
 	// Override fit method
 	fit = (X, y, args) => {
 		super.fit(X, y, args).then(({history}) => {
-			console.log(history.loss[history.loss.length-1]);
+			console.log("Loss", history.loss[history.loss.length-1]);
 
 			// Fire the neurons backward ;)
 			this.vArgs.propagationHighlight.x = 1.0;
