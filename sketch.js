@@ -5,19 +5,17 @@ preload = () => {
 
 //// Neural network
 // Creates a dense layer config object with given values
-let createDenseLayerConfig = (units=null, useBias=null, activation=null) => (
-	{
-		class: tf.layers.dense,
-		args: {
-			// Min 4, max 15 neurons, if not specified
-			units: ((units===null) ? getRandomInt(4, 16) : units),
-			// Randomly choose if use bias or not, if not specified
-			useBias: ((useBias===null) ? (getRandomInt(0, 2)===1) : useBias),
-			// No activation, if not specified
-			activation: activation
-		}
+let createDenseLayerConfig = (denseArgs={}) => ({
+	class: tf.layers.dense,
+	args: {
+		// Min 4, max 15 neurons, if not specified
+		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 16)),
+		// Randomly choose if use bias or not, if not specified
+		useBias: ((denseArgs.useBias) ? denseArgs.useBias : (getRandomInt(0, 2)===1)),
+		// No activation, if not specified
+		activation: denseArgs.activation
 	}
-);
+});
 
 // Specifies our neural network structure (layers, losses etc.)
 let nnStructure = {
@@ -34,19 +32,14 @@ let nnStructure = {
 	)),
 
 	// Output layer
-	outputLayer: createDenseLayerConfig(
-		// units (set to random initially)
-		getRandomInt(1, 5),
-
-		// useBias
-		true,
-
-		// activation
+	outputLayer: createDenseLayerConfig({
+		units: getRandomInt(1, 5),
+		useBias: true,
 		// Regression
-		// null,
+		// activation: null,
 		// Classification (binary)
-		"sigmoid",
-	),
+		activation: "sigmoid",
+	}),
 
 	// Compile arguments (optimizer, loss)
 	compileArgs: {
@@ -118,6 +111,7 @@ buildNeuralNetwork = () => {
 //// Data
 csvURLs = [
 	"datasets/binary_classification_data.csv",
+	"datasets/regression_data.csv",
 	"https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 ];
 
@@ -218,7 +212,7 @@ initializeGUI = () => {
 
 	// Set positions of buttons
 	Object.values(buttons).forEach((button, buttonIndex) => {
-		button.position(50 + (buttonIndex * 150), 50);
+		button.position(50 + (buttonIndex * 150), 10);
 	});
 
 	// Sample button
@@ -240,7 +234,7 @@ initializeGUI = () => {
 		// Predict!
 		nn.predict(data.stageSample.input);
 	});
-	
+
 	// Train button
 	buttons.fitButton.mousePressed(args => {
 		// Train!
