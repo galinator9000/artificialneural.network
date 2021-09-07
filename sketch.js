@@ -20,11 +20,11 @@ let nnStructure = {
 	inputLayer: {
 		class: tf.layers.inputLayer,
 		// (set input shape to random initially)
-		args: {inputShape: [getRandomInt(8, 17)]}
+		args: {inputShape: [getRandomInt(4, 17)]}
 	},
 
-	// Hidden layers (create them randomly at start: min 1, max 5 layers)
-	hiddenLayers: [...Array(getRandomInt(1, 6)).keys()].map(layer => (
+	// Hidden layers (create them randomly at start: min 1, max 3 layers)
+	hiddenLayers: [...Array(getRandomInt(1, 4)).keys()].map(layer => (
 		createDenseLayerConfig()
 	)),
 
@@ -38,19 +38,19 @@ let nnStructure = {
 
 		// activation
 		// Regression
-		null,
-		// Classification
-		// activation: "sigmoid",
+		// null,
+		// Classification (binary)
+		"sigmoid",
 	),
 
 	// Compile arguments (optimizer, loss)
 	compileArgs: {
-		optimizer: tf.train.sgd(0.0001),
+		optimizer: tf.train.sgd(0.001),
 
 		// Regression
-		loss: "meanSquaredError",
-		// Classification
-		// loss: "categoricalCrossentropy"
+		// loss: "meanSquaredError",
+		// Classification (binary)
+		loss: "binaryCrossentropy"
 	},
 };
 
@@ -103,6 +103,7 @@ buildNeuralNetwork = () => {
 
 //// Data
 csvURLs = [
+	"datasets/binary_classification_data.csv",
 	"https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 ];
 
@@ -149,6 +150,8 @@ buildDataset = (csvURL) => {
 		// Taking last column as target, others are X's
 		data.structure.n_features = (Object.keys(data.dataset[0]).length-1);
 		data.structure.n_targets = 1;
+
+		console.log(data.structure);
 		
 		onChangeDataset();
 	});
@@ -166,7 +169,7 @@ initializeGUI = () => {
 		// let sampleData = tf.randomNormal([1, data.structure.n_features]);
 
 		// Get random sample from dataset
-		let [X, y] = getSampleFromDataset(0);
+		let [X, y] = getSampleFromDataset();
 
 		// Predict!
 		nn.predict(X);
@@ -229,7 +232,7 @@ initializeGUI = () => {
 	resetnnButton.position(600, 0);
 	resetnnButton.mousePressed(args => {
 		// Reset configs & rebuild neural network
-		nnStructure.hiddenLayers = [...Array(getRandomInt(1, 6)).keys()].map(layer => (createDenseLayerConfig()));
+		nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
 		onChangeNeuralNetwork();
 	});
 };
