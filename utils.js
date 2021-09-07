@@ -3,8 +3,12 @@ const lerp = (value, target, amount) => {
 	return (value + ((target - value) * amount));
 };
 
+const arrSum = (arr) => {
+	return arr.reduce((a, b) => (a + b), 0);
+};
+
 // Random int
-getRandomInt = (min, max) => {
+const getRandomInt = (min, max) => {
 	min = Math.ceil(min);
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min) + min);

@@ -3,9 +3,14 @@
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{
 	constructor(
-		sequentialArgs
+		sequentialArgs,
+		vArgs
 	){
 		super(sequentialArgs);
+		// vArgs holds our custom values (for visual purposes usually) for our class
+		this.vArgs = {
+			...vArgs
+		};
 	};
 
 	// Override add method
@@ -84,14 +89,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+		this.updateWeightsRange();
 	};
 	
 	// Override predict method
 	predict = (X) => {
-		// Fire the neuron visually ;)
-		this.propagationHighlight.cur = 0.0;
-		this.propagationHighlight.curAnim = 0.0;
-		this.propagationHighlight.tar = 1.0;
+		// Fire the neurons forward ;)
+		this.vArgs.propagationHighlight.x = 0.0;
+		this.vArgs.propagationHighlight.xAnim = 0.0;
+		this.vArgs.propagationHighlight.xTarget = 1.0;
 
 		// Feed layer by layer
 		let layerOutput = X;
@@ -101,15 +107,36 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		});
 
 		// Forward-propagation with given tensor
-		return super.predict(X);
+		// super.predict(X);
+	};
+	
+	// Override fit method
+	fit = (X, y, args) => {
+		super.fit(X, y, args).then(({history}) => {
+			console.log(history.loss[history.loss.length-1]);
+
+			// Fire the neurons backward ;)
+			this.vArgs.propagationHighlight.x = 1.0;
+			this.vArgs.propagationHighlight.xAnim = 1.0;
+			this.vArgs.propagationHighlight.xTarget = 0.0;
+
+			// Update all Weight objects' values
+			this.updateAllWeights();
+		});
 	};
 
 	//// Custom methods
 	reset = () => {
-		this.propagationHighlight = {
-			cur: 0.0, tar: 0.0,
-			width: 0.03, speed: 0.03,
-			anim: AnimationUtils.easeInQuad
+		// Propagation highlight values
+		this.vArgs.propagationHighlight = {
+			// x: propagation position
+			// xAnim: smoothed x, xAnim = animFn(x)
+			// x's target to smoothly go towards
+			x: 0.0, xAnim: 0.0, xTarget: 0.0,
+			// Width of the highlight and speed of propagation (ratio value for width of the canvas)
+			width: 0.02, speed: 0.05,
+			// Animation smoothing function
+			animFn: AnimationUtils.easeInExpo
 		};
 		this.layerNeurons = [];
 		this.layerWeights = [];
@@ -135,7 +162,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Updates all values of weight objects
-	updateWeights = () => {
+	updateAllWeights = () => {
 		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
 			let fromLayerNeurons = this.layerNeurons[layerIndex];
 			let toLayerNeurons = this.layerNeurons[layerIndex+1];
@@ -158,24 +185,68 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+		this.updateWeightsRange();
+	};
+
+	// Updates weight min/max avg range
+	updateWeightsRange = () => {
+		// Get all weights in a 1D tensor
+		let allWeights = this.getAllWeights().arraySync();
+
+		this.vArgs.weightsRange = {
+			min: Math.min(...allWeights),
+			max: Math.max(...allWeights),
+			mean: (arrSum(allWeights) / allWeights.length)
+		};
+	};
+
+	// Gets total parameter count of the network
+	getTotalParameterCount = () => {
+		return this.getAllWeights().size;
+	};
+
+	// Gets all weights in a 1D tensor
+	getAllWeights = () => {
+		// Concat all 1D tensors, return it
+		return tf.concat(
+			// Convert each layer's weights to 1D tensor, put them in a list
+			// Slice 1 for excluding the input layer (has no kernel&bias)
+			[...Array(this.layers.length).keys()].slice(1).map((layerIndex) => {
+				// Get the 2D weight tensor of the layer
+				let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex);
+				// Flatten the tensor (2D to 1D) and return it
+				return layerWeightMatrix.reshape([layerWeightMatrix.size]);
+			}),
+			0
+		);
 	};
 
 	// Draws the whole network, gets called at each frame
-	draw = (canvas, {gapRateX, gapRateY}) => {
-		// Update propagation highlight position
-		this.propagationHighlight.cur += (this.propagationHighlight.tar - this.propagationHighlight.cur) * this.propagationHighlight.speed;
-		this.propagationHighlight.curAnim = this.propagationHighlight.anim(this.propagationHighlight.cur);
+	draw = (canvas) => {
+		// Get current highlight position, it's target and speed
+		let {x, xTarget, speed} = this.vArgs.propagationHighlight;
+
+		// Update propagation highlight position (towards target, smoothly)
+		this.vArgs.propagationHighlight.x += (xTarget - x) * speed;
+
+		// Calculate current point with using the animation function
+		// Reversing the animation function if going towards negative
+		if((xTarget - x) > 0){
+			this.vArgs.propagationHighlight.xAnim = this.vArgs.propagationHighlight.animFn(this.vArgs.propagationHighlight.x);
+		}else{
+			this.vArgs.propagationHighlight.xAnim = 1 - (this.vArgs.propagationHighlight.animFn(1 - this.vArgs.propagationHighlight.x));
+		}
 
 		// Get maximum neuron count
 		let maxUnitCount = Math.max(...(this.layers.map(layer => 
 			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
 		)));
 		// Calculate step per neuron in +Y direction
-		let perNeuronY = ((canvas.height*gapRateY) / maxUnitCount);
+		let perNeuronY = ((canvas.height * this.vArgs.gapRateY) / maxUnitCount);
 		// Calculate step per layer in +X direction
-		let perLayerX = ((canvas.width*gapRateX) / (this.layers.length-1));
+		let perLayerX = ((canvas.width * this.vArgs.gapRateX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network
-		let startLayerX = ((canvas.width/2) - (canvas.width*gapRateX/2));
+		let startLayerX = ((canvas.width / 2) - (canvas.width * this.vArgs.gapRateX / 2));
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (perNeuronY / 1.25);
 
@@ -191,7 +262,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				// Set position of neuron & draw it
 				neuron.x = (startLayerX + (perLayerX * layerIndex));
 				neuron.y = (startNeuronY + (perNeuronY * neuronIndex));
-				neuron.draw(canvas, this.propagationHighlight);
+				neuron.draw(canvas, this.vArgs);
 			});
 		});
 
@@ -202,7 +273,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			layer.forEach((neuron) => {
 				// Each weight
 				neuron.forEach(weight => {
-					weight.draw(canvas, this.propagationHighlight);
+					weight.draw(canvas, this.vArgs);
 				});
 			});
 		});
@@ -216,7 +287,7 @@ class Neuron{
 
 	constructor(){};
 
-	draw = (canvas, highlight) => {
+	draw = (canvas, vArgs) => {
 		canvas.noFill();
 		canvas.strokeWeight(1);
 		canvas.stroke(255);
@@ -224,8 +295,6 @@ class Neuron{
 	};
 };
 
-let RANGE_MAX = 4.0;
-let RANGE_MIN = -4.0;
 class Weight{
 	value = 0;
 	visualValue = 0;
@@ -238,12 +307,12 @@ class Weight{
 	};
 
 	// Draws the weight
-	draw = (canvas, highlight) => {
+	draw = (canvas, vArgs) => {
 		// Smoothly go towards the actual value visually
-		this.visualValue += ((this.value - this.visualValue) * 0.1);
+		this.visualValue += ((this.value - this.visualValue) * vArgs.weightChangeSpeed);
 
-		// Color indicates the carried value
-		let weightStroke = abs(max(min(this.visualValue, RANGE_MAX), RANGE_MIN));
+		// Stroke indicates the carried value
+		let stroke = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsRange.min) / (vArgs.weightsRange.max - vArgs.weightsRange.min));
 
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + (Neuron.r/2));
@@ -253,7 +322,7 @@ class Weight{
 
 		// Draw weight between neurons
 		canvas.stroke(255);
-		canvas.strokeWeight(weightStroke);
+		canvas.strokeWeight(stroke);
 		canvas.line(
 			// from (neuron)
 			fromX, fromY,
@@ -261,27 +330,31 @@ class Weight{
 			toX, toY
 		);
 
-		// Highlight the connection if firing
+		//// Highlight the connection during propagation
+		// If highlighting point reached to the destination, no need to draw anything anymore
+		if(abs(vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.x) < 0.001) return;
+
 		// Calculate highlight area
-		let highlightStartX = (canvas.width * highlight.curAnim);
-		let highlightEndX = (canvas.width * Math.min(1.0, (highlight.curAnim + highlight.width)));
+		let highlightStartX = (canvas.width * vArgs.propagationHighlight.xAnim);
+		let highlightEndX = (canvas.width * Math.min(1.0, (vArgs.propagationHighlight.xAnim + vArgs.propagationHighlight.width)));
 		let hFromX = max(highlightStartX, fromX);
 		let hToX = min(highlightEndX, toX);
 
-		// Check bounds of the highlight area if it intersects with weight line. If not, return.
+		// Check bounds of the highlight area if it intersects with weight line. If not, simply return.
 		if(hFromX > toX || hToX > toX || hFromX < fromX || hToX < fromX) return;
 
 		// Calculate highlighting line's Y coordinates with linear interpolation
+		// AAAAAAAAH MY MIND
 		let hFromY = lerp(fromY, toY, ((hFromX-fromX) / (toX-fromX)));
 		let hToY = lerp(fromY, toY, ((hToX-fromX) / (toX-fromX)));
 
-		// Highlight the line!
+		// Draw the highlighting line!
 		canvas.stroke(128);
-		canvas.strokeWeight(weightStroke*3);
+		canvas.strokeWeight(stroke*2);
 		canvas.line(
-			// from (neuron)
+			// from (highlighter line start point)
 			hFromX, hFromY,
-			// to (neuron)
+			// to (highlighter line end point)
 			hToX, hToY
 		);
 	};
