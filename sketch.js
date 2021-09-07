@@ -1,3 +1,8 @@
+let NEURON_VALUE_FONT;
+preload = () => {
+	NEURON_VALUE_FONT = loadFont("assets/Inconsolata-SemiBold.ttf");
+};
+
 //// Neural network
 // Creates a dense layer config object with given values
 let createDenseLayerConfig = (units=null, useBias=null, activation=null) => (
@@ -81,8 +86,15 @@ buildNeuralNetwork = () => {
 		// Various visual arguments
 		vArgs={
 			gapRateX: 0.8, gapRateY: 0.8,
-			weightVisualChangeSpeed: 1.0,
-			neuronVisualChangeSpeed: 1.0
+			weightVisualChangeSpeed: 1,
+			neuronVisualChangeSpeed: 0.25,
+			propagationHighlight: {
+				// Width of the highlight and speed of propagation (ratio value for width of the canvas)
+				width: 0.005, speed: 0.05,
+				// Animation smoothing function
+				animFn: AnimationUtils.easeInExpo
+			},
+			neuronValueFont: NEURON_VALUE_FONT
 		}
 	);
 
@@ -99,6 +111,8 @@ buildNeuralNetwork = () => {
 
 	// Compile the model with args
 	nn.compile(nnStructure.compileArgs);
+
+	console.log(nnStructure);
 };
 
 //// Data
@@ -126,6 +140,9 @@ getSampleFromDataset = (idx=null) => {
 	// Get input and target output as tensor
 	let X = tf.tensor([sampleData.slice(0, sampleData.length-1)]);
 	let y = tf.tensor([sampleData.slice(sampleData.length-1)]);
+
+	X.print();
+	y.print();
 
 	return [X, y];
 };
@@ -200,7 +217,7 @@ initializeGUI = () => {
 		nn.fit(
 			X, y,
 			{
-				epochs: 10,
+				epochs: 100,
 				batchSize: 32
 			}
 		);

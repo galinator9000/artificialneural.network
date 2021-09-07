@@ -46,8 +46,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let neuronCount = (layer.units) || (layer.batchInputShape && layer.batchInputShape[1]);
 
 			// Check if next layer uses bias
-			let useBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
-			if(useBias) neuronCount += 1;
+			let nextLayerUsesBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
+			if(nextLayerUsesBias){
+				neuronCount++;
+			}
 
 			// Each neuron
 			[...Array(neuronCount).keys()].forEach(neuronIndex => {
@@ -64,9 +66,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let toLayerNeurons = this.layerNeurons[layerIndex+1];
 
 			// Check if next layer uses bias
-			let useBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
-			// If using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
-			if(useBias){
+			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(nextLayerUsesBias){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
 			
@@ -97,14 +99,30 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	
 	// Override predict method
 	predict = (X) => {
+		// If provided more than one sample, predict it and simply return, no need to visualize
+		if(X.shape[0] > 1){
+			// Forward-propagation with given tensor
+			return super.predict(X);
+		}
+
 		// Feed layer by layer
 		let layerOutput = X;
 		this.layers.forEach((layer, layerIndex) => {
-			// Feed to layer & get output
+			// Feed to current layer & get output as tensor
 			layerOutput = layer.call(layerOutput);
 
+			// Get the output in a nested-list
+			let neuronOutputs = layerOutput.arraySync()[0];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
+			// If next layer is using bias, also add 1 value to the top of the current output
+			if(nextLayerUsesBias){
+				neuronOutputs = [1, ...neuronOutputs];
+			};
+
 			// Set each neuron's output
-			layerOutput.arraySync()[0].forEach((neuronOutput, neuronIndex) => {
+			neuronOutputs.forEach((neuronOutput, neuronIndex) => {
 				// Set neuron's output
 				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
 			});
@@ -120,9 +138,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Log final output
 		layerOutput.print();
-
-		// Forward-propagation with given tensor
-		// super.predict(X);
 	};
 	
 	// Override fit method
@@ -144,14 +159,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	reset = () => {
 		// Propagation highlight values
 		this.vArgs.propagationHighlight = {
+			...this.vArgs.propagationHighlight,
 			// x: propagation position
+			x: 0.0,
 			// xAnim: smoothed x, xAnim = animFn(x)
+			xAnim: 0.0,
 			// x's target to smoothly go towards
-			x: 0.0, xAnim: 0.0, xTarget: 0.0,
-			// Width of the highlight and speed of propagation (ratio value for width of the canvas)
-			width: 0.02, speed: 0.05,
-			// Animation smoothing function
-			animFn: AnimationUtils.easeInExpo
+			xTarget: 0.0
 		};
 		this.layerNeurons = [];
 		this.layerWeights = [];
@@ -183,9 +197,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let toLayerNeurons = this.layerNeurons[layerIndex+1];
 
 			// Check if next layer uses bias
-			let useBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
-			// If using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
-			if(useBias){
+			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(nextLayerUsesBias){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
 			
@@ -261,6 +275,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Update propagation highlight position (towards target, smoothly)
 		this.vArgs.propagationHighlight.x += (xTarget - x) * speed;
+		// Set directly if it's close enough to the target
+		if(abs(this.vArgs.propagationHighlight.xTarget - this.vArgs.propagationHighlight.x) < 0.001){
+			this.vArgs.propagationHighlight.x = this.vArgs.propagationHighlight.xTarget;
+		}
 
 		// Calculate current point with using the animation function
 		// Reversing the animation function if going towards negative
@@ -316,6 +334,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 class Neuron{
 	value = null;
 	visualValue = 0;
+	strokeWeight = 1;
+	stroke = 64;
 	
 	x = 0;
 	y = 0;
@@ -327,21 +347,45 @@ class Neuron{
 		canvas.noFill();
 
 		if(this.value !== null){
-			// Smoothly go towards the actual value visually
-			this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
-			// Stroke weight indicates the output value
-			let strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
-			
-			canvas.stroke(255);
-			canvas.strokeWeight(strokeWeight);
+			// Adjust the visible value after propagation highlight passes over it
+			if(
+				((canvas.width * vArgs.propagationHighlight.xAnim) >= this.x)
+				&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) >= 0)
+			){
+				// Smoothly go towards the actual value visually
+				this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
+				// Set directly if it's close enough to the target
+				if(abs(this.value - this.visualValue) < 0.001){
+					this.visualValue = this.value;
+				}
+
+				// Stroke weight indicates the output value
+				this.strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
+				this.stroke = 255;
+			}
+			canvas.stroke(this.stroke);
+			canvas.strokeWeight(this.strokeWeight);
 		}
 		// No output yet
 		else{
-			canvas.stroke(64);
-			canvas.strokeWeight(1);
+			canvas.stroke(this.stroke);
+			canvas.strokeWeight(this.strokeWeight);
 		}
 
+		// Neuron as circle
 		canvas.circle(this.x, this.y, Neuron.r);
+		// canvas.rectMode(CENTER);
+		// canvas.rect(this.x, this.y, Neuron.r, Neuron.r);
+
+		// Draw the value as text
+		canvas.textAlign(CENTER, CENTER);
+		canvas.fill(255);
+		canvas.textFont(vArgs.neuronValueFont);
+		// canvas.textSize();
+		canvas.text(
+			this.visualValue.toFixed(2),
+			this.x, this.y
+		);
 	};
 };
 
@@ -360,6 +404,10 @@ class Weight{
 	draw = (canvas, vArgs) => {
 		// Smoothly go towards the actual value visually
 		this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
+		// Set directly if it's close enough to the target
+		if(abs(this.value - this.visualValue) < 0.001){
+			this.visualValue = this.value;
+		}
 
 		// Stroke weight indicates the carried value
 		let strokeWeight = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsStats.min) / (vArgs.weightsStats.max - vArgs.weightsStats.min));
@@ -400,7 +448,7 @@ class Weight{
 
 		// Draw the highlighting line!
 		canvas.stroke(128);
-		canvas.strokeWeight(strokeWeight*2);
+		canvas.strokeWeight(strokeWeight*5);
 		canvas.line(
 			// from (highlighter line start point)
 			hFromX, hFromY,
