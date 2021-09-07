@@ -45,7 +45,7 @@ let nnStructure = {
 
 	// Compile arguments (optimizer, loss)
 	compileArgs: {
-		optimizer: tf.train.sgd(0.000001),
+		optimizer: tf.train.sgd(0.0001),
 
 		// Regression
 		loss: "meanSquaredError",
@@ -81,7 +81,8 @@ buildNeuralNetwork = () => {
 		// Various visual arguments
 		vArgs={
 			gapRateX: 0.8, gapRateY: 0.8,
-			weightChangeSpeed: 1.0
+			weightVisualChangeSpeed: 1.0,
+			neuronVisualChangeSpeed: 1.0
 		}
 	);
 
@@ -115,9 +116,11 @@ let data = {
 	dataset: null
 };
 
-getSampleFromDataset = () => {
+getSampleFromDataset = (idx=null) => {
 	// Get sample
-	let sampleData = Object.values(data.dataset[getRandomInt(0, data.dataset.length)]);
+	let sampleData = Object.values(data.dataset[
+		(idx !== null ? idx : getRandomInt(0, data.dataset.length))
+	]);
 
 	// Get input and target output as tensor
 	let X = tf.tensor([sampleData.slice(0, sampleData.length-1)]);
@@ -163,7 +166,7 @@ initializeGUI = () => {
 		// let sampleData = tf.randomNormal([1, data.structure.n_features]);
 
 		// Get random sample from dataset
-		let [X, y] = getSampleFromDataset();
+		let [X, y] = getSampleFromDataset(0);
 
 		// Predict!
 		nn.predict(X);
@@ -175,7 +178,7 @@ initializeGUI = () => {
 	trainButton.position(150, 0);
 	trainButton.mousePressed(args => {
 		// Get random sample from dataset
-		// let [X, y] = getSampleFromDataset();
+		// let [X, y] = getSampleFromDataset(0);
 
 		// Get all samples
 		let Xy = tf.tensor(
@@ -187,31 +190,16 @@ initializeGUI = () => {
 				data.structure.n_features+data.structure.n_targets
 			]
 		);
-		let X = Xy.slice(
-			// Begin
-			[0, 0],
-			// Size
-			[
-				data.structure.n_samples,
-				data.structure.n_features
-			]
-		);
-		let y = Xy.slice(
-			// Begin
-			[
-				0,
-				Xy.shape[1]-(data.structure.n_targets)
-			],
-			// Size
-			[
-				data.structure.n_samples,
-				data.structure.n_targets
-			]
-		);
+		let X = Xy.slice([0, 0], [data.structure.n_samples, data.structure.n_features]);
+		let y = Xy.slice([0, Xy.shape[1]-(data.structure.n_targets)], [data.structure.n_samples, data.structure.n_targets]);
 
 		// Train!
 		nn.fit(
-			X, y, {batchSize: data.structure.n_samples, epochs: 1}
+			X, y,
+			{
+				epochs: 10,
+				batchSize: 32
+			}
 		);
 	});
 

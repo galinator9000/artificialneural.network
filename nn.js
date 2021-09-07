@@ -89,22 +89,37 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
-		this.updateWeightsRange();
+
+		// Initially call them.
+		this.onChangeWeights();
+		this.onChangeNeurons();
 	};
 	
 	// Override predict method
 	predict = (X) => {
+		// Feed layer by layer
+		let layerOutput = X;
+		this.layers.forEach((layer, layerIndex) => {
+			// Feed to layer & get output
+			layerOutput = layer.call(layerOutput);
+
+			// Set each neuron's output
+			layerOutput.arraySync()[0].forEach((neuronOutput, neuronIndex) => {
+				// Set neuron's output
+				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
+			});
+		});
+
+		// Neuron values changed, call it!
+		this.onChangeNeurons();
+		
 		// Fire the neurons forward ;)
 		this.vArgs.propagationHighlight.x = 0.0;
 		this.vArgs.propagationHighlight.xAnim = 0.0;
 		this.vArgs.propagationHighlight.xTarget = 1.0;
 
-		// Feed layer by layer
-		let layerOutput = X;
-		this.layers.forEach(layer => {
-			layerOutput = layer.call(layerOutput);
-			// layerOutput.print();
-		});
+		// Log final output
+		layerOutput.print();
 
 		// Forward-propagation with given tensor
 		// super.predict(X);
@@ -185,24 +200,37 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
-		this.updateWeightsRange();
+
+		// Weight values changed, call it!
+		this.onChangeWeights();
 	};
 
-	// Updates weight min/max avg range
-	updateWeightsRange = () => {
+	// Should be called when Weight values change
+	onChangeWeights = () => {
 		// Get all weights in a 1D tensor
 		let allWeights = this.getAllWeights().arraySync();
 
-		this.vArgs.weightsRange = {
+		// Update weight stats
+		this.vArgs.weightsStats = {
 			min: Math.min(...allWeights),
 			max: Math.max(...allWeights),
 			mean: (arrSum(allWeights) / allWeights.length)
 		};
 	};
 
-	// Gets total parameter count of the network
-	getTotalParameterCount = () => {
-		return this.getAllWeights().size;
+	// Should be called when Neuron values change
+	onChangeNeurons = () => {
+		// Get all outputs in an array
+		let allOutputs = this.layerNeurons.map(
+			neurons => neurons.map(neuron => neuron.value)
+		).reduce((a, b) => [...a, ...b], []);
+
+		// Update neuron output stats
+		this.vArgs.neuronStats = {
+			min: Math.min(...allOutputs),
+			max: Math.max(...allOutputs),
+			mean: (arrSum(allOutputs) / allOutputs.length)
+		};
 	};
 
 	// Gets all weights in a 1D tensor
@@ -219,6 +247,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			}),
 			0
 		);
+	};
+
+	// Gets total parameter count of the network
+	getTotalParameterCount = () => {
+		return this.getAllWeights().size;
 	};
 
 	// Draws the whole network, gets called at each frame
@@ -281,6 +314,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 };
 
 class Neuron{
+	value = null;
+	visualValue = 0;
+	
 	x = 0;
 	y = 0;
 	static r = 30.0;
@@ -289,8 +325,22 @@ class Neuron{
 
 	draw = (canvas, vArgs) => {
 		canvas.noFill();
-		canvas.strokeWeight(1);
-		canvas.stroke(255);
+
+		if(this.value !== null){
+			// Smoothly go towards the actual value visually
+			this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
+			// Stroke weight indicates the output value
+			let strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
+			
+			canvas.stroke(255);
+			canvas.strokeWeight(strokeWeight);
+		}
+		// No output yet
+		else{
+			canvas.stroke(64);
+			canvas.strokeWeight(1);
+		}
+
 		canvas.circle(this.x, this.y, Neuron.r);
 	};
 };
@@ -309,10 +359,10 @@ class Weight{
 	// Draws the weight
 	draw = (canvas, vArgs) => {
 		// Smoothly go towards the actual value visually
-		this.visualValue += ((this.value - this.visualValue) * vArgs.weightChangeSpeed);
+		this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
 
-		// Stroke indicates the carried value
-		let stroke = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsRange.min) / (vArgs.weightsRange.max - vArgs.weightsRange.min));
+		// Stroke weight indicates the carried value
+		let strokeWeight = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsStats.min) / (vArgs.weightsStats.max - vArgs.weightsStats.min));
 
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + (Neuron.r/2));
@@ -322,7 +372,7 @@ class Weight{
 
 		// Draw weight between neurons
 		canvas.stroke(255);
-		canvas.strokeWeight(stroke);
+		canvas.strokeWeight(strokeWeight);
 		canvas.line(
 			// from (neuron)
 			fromX, fromY,
@@ -350,7 +400,7 @@ class Weight{
 
 		// Draw the highlighting line!
 		canvas.stroke(128);
-		canvas.strokeWeight(stroke*2);
+		canvas.strokeWeight(strokeWeight*2);
 		canvas.line(
 			// from (highlighter line start point)
 			hFromX, hFromY,
