@@ -5,7 +5,7 @@ preload = () => {
 
 //// Neural network
 // Creates a dense layer config object with given values
-let createDenseLayerConfig = (denseArgs={}) => ({
+let createDenseLayerConfig = (denseArgs={activation: "sigmoid"}) => ({
 	class: tf.layers.dense,
 	args: {
 		// Min 4, max 15 neurons, if not specified
@@ -79,7 +79,7 @@ buildNeuralNetwork = () => {
 		// Various visual arguments
 		vArgs={
 			gapRateX: 0.8, gapRateY: 0.8,
-			weightVisualChangeSpeed: 1,
+			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
 			propagationHighlight: {
 				// Width of the highlight and speed of propagation (ratio value for width of the canvas)
@@ -241,7 +241,7 @@ initializeGUI = () => {
 		nn.fit(
 			data.X, data.y,
 			{
-				epochs: 100,
+				epochs: 1000,
 				batchSize: 32
 			}
 		);

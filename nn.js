@@ -85,6 +85,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 						new Weight(
 							fromNeuron,
 							toNeuron,
+							// Carried value, get it from the matrix
 							layerWeightMatrix[fromNeuronIndex][toNeuronIndex]
 						)
 					);
@@ -95,6 +96,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Initially call them.
 		this.onChangeWeights();
 		this.onChangeNeurons();
+
+		// Update all weights' outer look initially by calling their updateOuterLook method
+		this.layerWeights.forEach(layer => {
+			layer.forEach(neuron => {
+				neuron.forEach(weight => {
+					weight.updateOuterLook(this.vArgs);
+				});
+			});
+		});
 	};
 	
 	// Override predict method
@@ -143,15 +153,19 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Override fit method
 	fit = (X, y, args) => {
 		super.fit(X, y, args).then(({history}) => {
-			console.log("Loss", history.loss[history.loss.length-1]);
+			// Update all Weight objects' values
+			this.updateAllWeights();
+
+			// Weight values changed, call it!
+			this.onChangeWeights();
 
 			// Fire the neurons backward ;)
 			this.vArgs.propagationHighlight.x = 1.0;
 			this.vArgs.propagationHighlight.xAnim = 1.0;
 			this.vArgs.propagationHighlight.xTarget = 0.0;
-
-			// Update all Weight objects' values
-			this.updateAllWeights();
+			
+			// Log loss output
+			console.log("Loss", history.loss[history.loss.length-1]);
 		});
 	};
 
@@ -190,7 +204,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		return tf.concat([bias, kernel], 0);
 	};
 
-	// Updates all values of weight objects
+	// Updates all carried values of weight objects
 	updateAllWeights = () => {
 		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
 			let fromLayerNeurons = this.layerNeurons[layerIndex];
@@ -214,9 +228,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
-
-		// Weight values changed, call it!
-		this.onChangeWeights();
 	};
 
 	// Should be called when Weight values change
@@ -270,6 +281,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Draws the whole network, gets called at each frame
 	draw = (canvas) => {
+		//// Update highlighting area
 		// Get current highlight position, it's target and speed
 		let {x, xTarget, speed} = this.vArgs.propagationHighlight;
 
@@ -288,6 +300,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			this.vArgs.propagationHighlight.xAnim = 1 - (this.vArgs.propagationHighlight.animFn(1 - this.vArgs.propagationHighlight.x));
 		}
 
+		//// Calculate values for drawing
 		// Get maximum neuron count
 		let maxUnitCount = Math.max(...(this.layers.map(layer => 
 			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
@@ -301,7 +314,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (perNeuronY / 1.25);
 
-		// Draw neurons
+		//// Draw neurons
 		// Each layer
 		this.layerNeurons.forEach((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
@@ -317,7 +330,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
-		// Draw weights
+		//// Draw weights
 		// Each layer
 		this.layerWeights.forEach((layer) => {
 			// Each neuron
@@ -332,25 +345,34 @@ class SequentialNeuralNetwork extends tf.Sequential{
 };
 
 class Neuron{
+	// Visual values (indicates output)
+	strokeWeight = 0.5;
+	stroke = 255;
+	fill = 0;
+
 	value = null;
 	visualValue = 0;
-	strokeWeight = 1;
-	stroke = 64;
-	
 	x = 0;
 	y = 0;
 	static r = 30.0;
-
 	constructor(){};
 
-	draw = (canvas, vArgs) => {
-		canvas.noFill();
+	// Updates visual values
+	updateOuterLook = (vArgs) => {
+		// These values indicates the output value
+		this.strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
+		this.stroke = (1-this.strokeWeight)*255;
+		this.fill = this.strokeWeight*255;
+	};
 
+	// Gets called every frame
+	draw = (canvas, vArgs) => {
+		// If no output yet, simply don't update any value
 		if(this.value !== null){
-			// Adjust the visible value after propagation highlight passes over it
+			// Adjust the visible value after propagation (forward) highlight passes over it
 			if(
 				((canvas.width * vArgs.propagationHighlight.xAnim) >= this.x)
-				&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) >= 0)
+				&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) > 0)
 			){
 				// Smoothly go towards the actual value visually
 				this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
@@ -359,29 +381,21 @@ class Neuron{
 					this.visualValue = this.value;
 				}
 
-				// Stroke weight indicates the output value
-				this.strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
-				this.stroke = 255;
+				this.updateOuterLook(vArgs);
 			}
-			canvas.stroke(this.stroke);
-			canvas.strokeWeight(this.strokeWeight);
-		}
-		// No output yet
-		else{
-			canvas.stroke(this.stroke);
-			canvas.strokeWeight(this.strokeWeight);
 		}
 
 		// Neuron as circle
+		canvas.strokeWeight(this.strokeWeight);
+		canvas.stroke(this.stroke);
+		canvas.fill(this.fill);
 		canvas.circle(this.x, this.y, Neuron.r);
-		// canvas.rectMode(CENTER);
-		// canvas.rect(this.x, this.y, Neuron.r, Neuron.r);
 
 		// Draw the value as text
+		canvas.fill(this.stroke);
 		canvas.textAlign(CENTER, CENTER);
-		canvas.fill(255);
 		canvas.textFont(vArgs.neuronValueFont);
-		// canvas.textSize();
+		canvas.textSize(12);
 		canvas.text(
 			this.visualValue.toFixed(2),
 			this.x, this.y
@@ -390,9 +404,12 @@ class Neuron{
 };
 
 class Weight{
+	// Visual values (indicates carried value)
+	strokeWeight = 0.5;
+	stroke = 255;
+
 	value = 0;
 	visualValue = 0;
-
 	constructor(from, to, value){
 		this.from = from;
 		this.to = to;
@@ -400,17 +417,29 @@ class Weight{
 		this.visualValue = value;
 	};
 
-	// Draws the weight
-	draw = (canvas, vArgs) => {
-		// Smoothly go towards the actual value visually
-		this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
-		// Set directly if it's close enough to the target
-		if(abs(this.value - this.visualValue) < 0.001){
-			this.visualValue = this.value;
-		}
+	// Updates visual values
+	updateOuterLook = (vArgs) => {
+		// These values indicates the carried value
+		this.strokeWeight = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsStats.min) / (vArgs.weightsStats.max - vArgs.weightsStats.min));
+		this.stroke = (1-this.strokeWeight)*255;
+	};
 
-		// Stroke weight indicates the carried value
-		let strokeWeight = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsStats.min) / (vArgs.weightsStats.max - vArgs.weightsStats.min));
+	// Gets called every frame
+	draw = (canvas, vArgs) => {
+		// Adjust the visual value after propagation (backward) highlight passes over it
+		if(
+			((canvas.width * vArgs.propagationHighlight.xAnim) <= this.from.x)
+			&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) < 0)
+		){
+			// Smoothly go towards the actual value visually
+			this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
+			// Set directly if it's close enough to the target
+			if(abs(this.value - this.visualValue) < 0.001){
+				this.visualValue = this.value;
+			}
+
+			this.updateOuterLook(vArgs);
+		}
 
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + (Neuron.r/2));
@@ -419,8 +448,8 @@ class Weight{
 		let toY = this.to.y;
 
 		// Draw weight between neurons
-		canvas.stroke(255);
-		canvas.strokeWeight(strokeWeight);
+		canvas.stroke(this.stroke);
+		canvas.strokeWeight(this.strokeWeight);
 		canvas.line(
 			// from (neuron)
 			fromX, fromY,
@@ -447,8 +476,8 @@ class Weight{
 		let hToY = lerp(fromY, toY, ((hToX-fromX) / (toX-fromX)));
 
 		// Draw the highlighting line!
-		canvas.stroke(128);
-		canvas.strokeWeight(strokeWeight*5);
+		canvas.stroke(this.stroke/2);
+		canvas.strokeWeight(this.strokeWeight*5);
 		canvas.line(
 			// from (highlighter line start point)
 			hFromX, hFromY,

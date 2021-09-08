@@ -3,7 +3,7 @@ import numpy as np
 
 X, y = make_regression(
 	n_samples=128,
-	n_features=10,
+	n_features=3,
 	noise=16,
 	random_state=32
 )

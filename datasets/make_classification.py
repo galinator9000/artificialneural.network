@@ -3,7 +3,7 @@ import numpy as np
 
 X, y = make_classification(
 	n_samples=128,
-	n_features=10,
+	n_features=5,
 	n_classes=2,
 	random_state=32
 )
