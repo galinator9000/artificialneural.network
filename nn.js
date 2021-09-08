@@ -281,31 +281,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Draws the whole network, gets called at each frame
 	draw = (canvas) => {
-		//// Update propagation related values
-		// Get current wave position, target and speed
-		let {x, xTarget, speed} = this.vArgs.propagation;
-
-		// Update propagation wave position (towards target, smoothly)
-		if(xTarget > x) this.vArgs.propagation.x += speed;
-		if(xTarget < x) this.vArgs.propagation.x -= speed;
-		
-		// Limit between 0 and 1
-		this.vArgs.propagation.x = Math.min(
-			1,
-			Math.max(
-				0,
-				this.vArgs.propagation.x
-			)
-		);
-
-		// Calculate current point with using the animation function
-		// Reversing the animation function if going towards negative
-		if((xTarget - x) > 0){
-			this.vArgs.propagation.xAnim = this.vArgs.propagation.animFn(this.vArgs.propagation.x);
-		}else{
-			this.vArgs.propagation.xAnim = 1 - (this.vArgs.propagation.animFn(1 - this.vArgs.propagation.x));
-		}
-
 		//// Calculate values for drawing
 		// Get maximum neuron count
 		let maxUnitCount = Math.max(...(this.layers.map(layer => 
@@ -320,10 +295,45 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (perNeuronY / 1.25);
 
+		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
 			(startLayerX - (Neuron.r/2)) + (curX * ((canvas.width * this.vArgs.gapRateX) + Neuron.r))
 		));
+
+		// Update propagation wave position (towards target, smoothly)
+		if(this.vArgs.propagation.xTarget > this.vArgs.propagation.x){
+			this.vArgs.propagation.x += this.vArgs.propagation.step;
+		}
+		else if(this.vArgs.propagation.xTarget < this.vArgs.propagation.x){
+			this.vArgs.propagation.x -= this.vArgs.propagation.step;
+		}
+		// Limit between 0 and 1
+		this.vArgs.propagation.x = Math.min(1, Math.max(0, this.vArgs.propagation.x));
+
+		//// Calculate current propagation wave point with using the animation function
+		// Apply animation layer by layer (looks nicer ;D)
+		if(this.vArgs.propagation.animationApplyType == "layer"){
+			let eachLayerX = 1 / (this.layers.length-1);
+			let currentLayerIdx = Math.floor(this.vArgs.propagation.x / eachLayerX);
+			let currentLayerX = (this.vArgs.propagation.x % eachLayerX) / eachLayerX;
+
+			// Reversing the animation function if going towards negative
+			if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
+				this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + (this.vArgs.propagation.animFn(currentLayerX) / (this.layers.length - 1));
+			}else{
+				this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + ((1 - this.vArgs.propagation.animFn(1 - currentLayerX)) / (this.layers.length - 1));
+			}
+		}
+		// Apply animation to whole network
+		else if(this.vArgs.propagation.animationApplyType == "network"){
+			// Reversing the animation function if going towards negative
+			if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
+				this.vArgs.propagation.xAnim = this.vArgs.propagation.animFn(this.vArgs.propagation.x);
+			}else{
+				this.vArgs.propagation.xAnim = (1 - this.vArgs.propagation.animFn(1 - this.vArgs.propagation.x));
+			}
+		}
 
 		//// Draw neurons
 		// Each layer

@@ -83,10 +83,12 @@ buildNeuralNetwork = () => {
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
 			propagation: {
-				// Width and speed values (ratio value for width of the canvas) of the propagation wave
-				width: 0.005, speed: 0.01,
+				// Width and step values (ratio value for width of the canvas) of the propagation wave
+				width: 0.005, step: 0.01,
 				// Animation smoothing function
-				animFn: AnimationUtils.easeOutQuad
+				animFn: AnimationUtils.easeOutExpo,
+				// Apply animation layer by layer or to whole network?
+				animationApplyType: (1 ? "layer" : "network")
 			},
 			neuronValueFont: NEURON_VALUE_FONT
 		}
@@ -242,7 +244,7 @@ initializeGUI = () => {
 		nn.fit(
 			data.X, data.y,
 			{
-				epochs: 1000,
+				epochs: 100,
 				batchSize: 32
 			}
 		);
