@@ -79,7 +79,7 @@ buildNeuralNetwork = () => {
 
 		// Various visual arguments
 		vArgs={
-			gapRateX: 0.8, gapRateY: 0.8,
+			gapRateX: 0.7, gapRateY: 0.8,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
 			propagation: {
@@ -149,6 +149,9 @@ getStageSampleFromDataset = (idx=null) => {
 
 // Gets called whenever dataset changes
 onChangeDataset = () => {
+	// Get first sample on stage
+	getStageSampleFromDataset(0);
+
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayer.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayer.args.units = data.structure.n_targets;
@@ -297,7 +300,10 @@ draw = () => {
 	nnCanvas.background(1, 0, 2, 255);
 
 	// Draw the whole network on the given canvas
-	nn.draw(nnCanvas);
+	nn.draw(
+		nnCanvas,
+		data.stageSample
+	);
 
 	// Draw the network canvas to the main canvas 
 	image(

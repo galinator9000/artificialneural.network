@@ -128,7 +128,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
 			// If next layer is using bias, also add 1 value to the top of the current output
 			if(nextLayerUsesBias){
-				neuronOutputs = [1, ...neuronOutputs];
+				neuronOutputs = [1.0, ...neuronOutputs];
 			};
 
 			// Set each neuron's output
@@ -280,10 +280,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Draws the whole network, gets called at each frame
-	draw = (canvas) => {
+	draw = (canvas, sample) => {
 		// Setting some of the canvas parameters
 		canvas.colorMode(RGB);
 		canvas.textAlign(CENTER, CENTER);
+		canvas.rectMode(CENTER, CENTER);
 		canvas.textFont(this.vArgs.neuronValueFont);
 
 		//// Calculate values for drawing
@@ -373,6 +374,55 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		//// Draw neurons over weights
 		neuronDrawCalls.forEach(drawCalls => {drawCalls.forEach(drawCall => {drawCall()})});
+
+		//// Draw sample input/targets to the side of the network
+		if(sample && sample.input && sample.target){
+			// Get the sample (currently tensor) in a nested-list
+			let inputVec = sample.input.arraySync()[0];
+			let targetVec = sample.target.arraySync()[0];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[1] && (this.layers[1].useBias === true));
+			// If next layer is using bias, add value 1 to the top of the input
+			if(nextLayerUsesBias){
+				inputVec = [1.0, ...inputVec];
+			};
+
+			// Set canvas parameters
+			canvas.strokeWeight(1);
+			canvas.stroke(255);
+			canvas.textSize(24);
+
+			// Draw input values to the left side
+			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
+				let posX = (inputNeuron.x - (Neuron.r * 1.5));
+				let posY = inputNeuron.y;
+
+				canvas.noFill();
+				canvas.rect(posX, posY, Neuron.r * 1.5, Neuron.r);
+
+				canvas.fill(255);
+				canvas.text(
+					inputVec[neuronIndex].toFixed(2),
+					posX, posY
+				);
+			});
+
+			// Draw target values to the right side
+			this.layerNeurons[this.layerNeurons.length-1].forEach((outputNeuron, neuronIndex) => {
+				let posX = (outputNeuron.x + (Neuron.r * 1.5));
+				let posY = outputNeuron.y;
+
+				canvas.noFill();
+				canvas.rect(posX, posY, Neuron.r * 1.5, Neuron.r);
+
+				canvas.fill(255);
+				canvas.text(
+					targetVec[neuronIndex].toFixed(2),
+					posX, posY
+				);
+			});
+		}
 	};
 };
 
