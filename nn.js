@@ -287,7 +287,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
 		)));
 		// Calculate step per neuron in +Y direction
-		let perNeuronY = ((canvas.height * this.vArgs.gapRateY) / maxUnitCount);
+		let perNeuronY = ((canvas.height * this.vArgs.gapRateY) / (
+			// Limit maximum neuron size when there's few neurons
+			Math.max(10, maxUnitCount)
+		));
 		// Calculate step per layer in +X direction
 		let perLayerX = ((canvas.width * this.vArgs.gapRateX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network

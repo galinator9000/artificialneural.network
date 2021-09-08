@@ -245,7 +245,7 @@ initializeGUI = () => {
 			data.X, data.y,
 			{
 				epochs: 100,
-				batchSize: 32
+				batchSize: data.structure.n_samples
 			}
 		);
 	});
