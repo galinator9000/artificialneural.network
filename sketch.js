@@ -86,7 +86,7 @@ buildNeuralNetwork = () => {
 				// Width and step values (ratio value for width of the canvas) of the propagation wave
 				width: 0.005, step: 0.01,
 				// Animation smoothing function
-				animFn: AnimationUtils.easeOutExpo,
+				animFn: AnimationUtils.easeOutQuad,
 				// Apply animation layer by layer or to whole network?
 				animationApplyType: (1 ? "layer" : "network")
 			},

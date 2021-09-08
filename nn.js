@@ -281,6 +281,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Draws the whole network, gets called at each frame
 	draw = (canvas) => {
+		// Setting some of the canvas parameters
+		canvas.colorMode(RGB);
+		canvas.textAlign(CENTER, CENTER);
+		canvas.textFont(this.vArgs.neuronValueFont);
+
 		//// Calculate values for drawing
 		// Get maximum neuron count
 		let maxUnitCount = Math.max(...(this.layers.map(layer => 
@@ -338,19 +343,19 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			}
 		}
 
-		//// Draw neurons
+		//// Process neurons for drawing
 		// Each layer
-		this.layerNeurons.forEach((layer, layerIndex) => {
+		let neuronDrawCalls = this.layerNeurons.map((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
 			let startNeuronY = ((canvas.height/2) - ((perNeuronY * layer.length) / 2)) + (perNeuronY/2);
 
 			// Each neuron
-			layer.forEach((neuron, neuronIndex) => {
+			return layer.map((neuron, neuronIndex) => {
 				// Set position of neuron & draw it
 				neuron.x = (startLayerX + (perLayerX * layerIndex));
 				neuron.y = (startNeuronY + (perNeuronY * neuronIndex));
-				neuron.draw(canvas, this.vArgs);
+				return () => {neuron.draw(canvas, this.vArgs)};
 			});
 		});
 
@@ -365,6 +370,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+
+		//// Draw neurons over weights
+		neuronDrawCalls.forEach(drawCalls => {drawCalls.forEach(drawCall => {drawCall()})});
 	};
 };
 
@@ -416,10 +424,10 @@ class Neuron{
 		canvas.circle(this.x, this.y, Neuron.r);
 
 		// Draw the value as text
-		canvas.fill(this.stroke);
-		canvas.textAlign(CENTER, CENTER);
-		canvas.textFont(vArgs.neuronValueFont);
-		canvas.textSize(12);
+		canvas.fill(255);
+		canvas.stroke(255);
+		canvas.strokeWeight(1);
+		canvas.textSize(14);
 		canvas.text(
 			this.visualValue.toFixed(2),
 			this.x, this.y
