@@ -286,11 +286,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		let {x, xTarget, speed} = this.vArgs.propagation;
 
 		// Update propagation wave position (towards target, smoothly)
-		this.vArgs.propagation.x += (xTarget - x) * speed;
-		// Set directly if it's close enough to the target
-		if(abs(this.vArgs.propagation.xTarget - this.vArgs.propagation.x) < 0.001){
-			this.vArgs.propagation.x = this.vArgs.propagation.xTarget;
-		}
+		if(xTarget > x) this.vArgs.propagation.x += speed;
+		if(xTarget < x) this.vArgs.propagation.x -= speed;
+		
+		// Limit between 0 and 1
+		this.vArgs.propagation.x = Math.min(
+			1,
+			Math.max(
+				0,
+				this.vArgs.propagation.x
+			)
+		);
 
 		// Calculate current point with using the animation function
 		// Reversing the animation function if going towards negative

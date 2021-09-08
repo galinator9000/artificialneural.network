@@ -84,9 +84,9 @@ buildNeuralNetwork = () => {
 			neuronVisualChangeSpeed: 0.25,
 			propagation: {
 				// Width and speed values (ratio value for width of the canvas) of the propagation wave
-				width: 0.005, speed: 0.05,
+				width: 0.005, speed: 0.01,
 				// Animation smoothing function
-				animFn: AnimationUtils.easeOutExpo
+				animFn: AnimationUtils.easeOutQuad
 			},
 			neuronValueFont: NEURON_VALUE_FONT
 		}
