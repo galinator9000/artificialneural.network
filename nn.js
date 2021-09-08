@@ -142,9 +142,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.onChangeNeurons();
 		
 		// Fire the neurons forward ;)
-		this.vArgs.propagationHighlight.x = 0.0;
-		this.vArgs.propagationHighlight.xAnim = 0.0;
-		this.vArgs.propagationHighlight.xTarget = 1.0;
+		this.vArgs.propagation.x = 0.0;
+		this.vArgs.propagation.xAnim = 0.0;
+		this.vArgs.propagation.xTarget = 1.0;
 
 		// Log final output
 		console.log("Prediction", layerOutput.toString());
@@ -160,9 +160,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			this.onChangeWeights();
 
 			// Fire the neurons backward ;)
-			this.vArgs.propagationHighlight.x = 1.0;
-			this.vArgs.propagationHighlight.xAnim = 1.0;
-			this.vArgs.propagationHighlight.xTarget = 0.0;
+			this.vArgs.propagation.x = 1.0;
+			this.vArgs.propagation.xAnim = 1.0;
+			this.vArgs.propagation.xTarget = 0.0;
 			
 			// Log loss output
 			console.log("Loss", history.loss[history.loss.length-1]);
@@ -171,9 +171,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	//// Custom methods
 	reset = () => {
-		// Propagation highlight values
-		this.vArgs.propagationHighlight = {
-			...this.vArgs.propagationHighlight,
+		// Propagation wave values
+		this.vArgs.propagation = {
+			...this.vArgs.propagation,
 			// x: propagation position
 			x: 0.0,
 			// xAnim: smoothed x, xAnim = animFn(x)
@@ -281,23 +281,23 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Draws the whole network, gets called at each frame
 	draw = (canvas) => {
-		//// Update highlighting area
-		// Get current highlight position, it's target and speed
-		let {x, xTarget, speed} = this.vArgs.propagationHighlight;
+		//// Update propagation related values
+		// Get current wave position, target and speed
+		let {x, xTarget, speed} = this.vArgs.propagation;
 
-		// Update propagation highlight position (towards target, smoothly)
-		this.vArgs.propagationHighlight.x += (xTarget - x) * speed;
+		// Update propagation wave position (towards target, smoothly)
+		this.vArgs.propagation.x += (xTarget - x) * speed;
 		// Set directly if it's close enough to the target
-		if(abs(this.vArgs.propagationHighlight.xTarget - this.vArgs.propagationHighlight.x) < 0.001){
-			this.vArgs.propagationHighlight.x = this.vArgs.propagationHighlight.xTarget;
+		if(abs(this.vArgs.propagation.xTarget - this.vArgs.propagation.x) < 0.001){
+			this.vArgs.propagation.x = this.vArgs.propagation.xTarget;
 		}
 
 		// Calculate current point with using the animation function
 		// Reversing the animation function if going towards negative
 		if((xTarget - x) > 0){
-			this.vArgs.propagationHighlight.xAnim = this.vArgs.propagationHighlight.animFn(this.vArgs.propagationHighlight.x);
+			this.vArgs.propagation.xAnim = this.vArgs.propagation.animFn(this.vArgs.propagation.x);
 		}else{
-			this.vArgs.propagationHighlight.xAnim = 1 - (this.vArgs.propagationHighlight.animFn(1 - this.vArgs.propagationHighlight.x));
+			this.vArgs.propagation.xAnim = 1 - (this.vArgs.propagation.animFn(1 - this.vArgs.propagation.x));
 		}
 
 		//// Calculate values for drawing
@@ -310,9 +310,14 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate step per layer in +X direction
 		let perLayerX = ((canvas.width * this.vArgs.gapRateX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network
-		let startLayerX = ((canvas.width / 2) - (canvas.width * this.vArgs.gapRateX / 2));
+		let startLayerX = (canvas.width * ((1-this.vArgs.gapRateX) / 2));
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (perNeuronY / 1.25);
+
+		// Update the function for calculating the real X position of the wave with canvas width/gap value
+		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
+			(startLayerX - (Neuron.r/2)) + (curX * ((canvas.width * this.vArgs.gapRateX) + Neuron.r))
+		));
 
 		//// Draw neurons
 		// Each layer
@@ -369,10 +374,10 @@ class Neuron{
 	draw = (canvas, vArgs) => {
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
-			// Adjust the visible value after propagation (forward) highlight passes over it
+			// Adjust the visible value after propagation (forward) wave passes over it
 			if(
-				((canvas.width * vArgs.propagationHighlight.xAnim) >= this.x)
-				&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) > 0)
+				(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) >= this.x)
+				&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) > 0)
 			){
 				// Smoothly go towards the actual value visually
 				this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
@@ -426,10 +431,10 @@ class Weight{
 
 	// Gets called every frame
 	draw = (canvas, vArgs) => {
-		// Adjust the visual value after propagation (backward) highlight passes over it
+		// Adjust the visual value after propagation (backward) wave passes over it
 		if(
-			((canvas.width * vArgs.propagationHighlight.xAnim) <= this.from.x)
-			&& ((vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.xAnim) < 0)
+			(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) <= this.from.x)
+			&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) < 0)
 		){
 			// Smoothly go towards the actual value visually
 			this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
@@ -459,11 +464,11 @@ class Weight{
 
 		//// Highlight the connection during propagation
 		// If highlighting point reached to the destination, no need to draw anything anymore
-		if(abs(vArgs.propagationHighlight.xTarget - vArgs.propagationHighlight.x) < 0.001) return;
+		if(abs(vArgs.propagation.xTarget - vArgs.propagation.x) < 0.001) return;
 
 		// Calculate highlight area
-		let highlightStartX = (canvas.width * vArgs.propagationHighlight.xAnim);
-		let highlightEndX = (canvas.width * Math.min(1.0, (vArgs.propagationHighlight.xAnim + vArgs.propagationHighlight.width)));
+		let highlightStartX = vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim);
+		let highlightEndX = vArgs.propagation.xToCanvasPosX(Math.min(1.0, (vArgs.propagation.xAnim + vArgs.propagation.width)));
 		let hFromX = max(highlightStartX, fromX);
 		let hToX = min(highlightEndX, toX);
 

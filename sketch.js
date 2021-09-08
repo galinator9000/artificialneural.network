@@ -76,16 +76,17 @@ buildNeuralNetwork = () => {
 	nn = new SequentialNeuralNetwork(
 		// Arguments which will be passed to tf.Sequential
 		sequentialArgs={},
+
 		// Various visual arguments
 		vArgs={
 			gapRateX: 0.8, gapRateY: 0.8,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
-			propagationHighlight: {
-				// Width of the highlight and speed of propagation (ratio value for width of the canvas)
+			propagation: {
+				// Width and speed values (ratio value for width of the canvas) of the propagation wave
 				width: 0.005, speed: 0.05,
 				// Animation smoothing function
-				animFn: AnimationUtils.easeInExpo
+				animFn: AnimationUtils.easeOutExpo
 			},
 			neuronValueFont: NEURON_VALUE_FONT
 		}
