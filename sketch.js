@@ -79,6 +79,7 @@ buildNeuralNetwork = () => {
 
 		// Various visual arguments
 		vArgs={
+			showBiasNeurons: false,
 			gapRateX: 0.7, gapRateY: 0.8,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
@@ -160,6 +161,8 @@ onChangeDataset = () => {
 
 // Initializes dataset with given URL
 buildDataset = (csvURL) => {
+	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return;
+
 	// Build CSVDataset & get full array
 	tf.data.csv(csvURL).toArray().then(csvDataset => {
 		// Set builded dataset as main
@@ -205,8 +208,10 @@ buildDataset = (csvURL) => {
 //// Sketch
 // Initialize GUI components
 initializeGUI = () => {
-	// Create buttons
-	let buttons = {
+	// Create GUI components
+	let guiComponents = {
+		loadDatasetInput: createInput(),
+		loadDatasetButton: createButton("Load Dataset"),
 		sampleStageButton: createButton("Get sample"),
 		predictButton: createButton("Predict"),
 		sampleStagePredictButton: createButton("Get sample&predict"),
@@ -217,24 +222,30 @@ initializeGUI = () => {
 	}
 
 	// Set positions of buttons
-	Object.values(buttons).forEach((button, buttonIndex) => {
+	Object.values(guiComponents).forEach((button, buttonIndex) => {
 		button.position(50 + (buttonIndex * 150), 10);
 	});
 
+	// Load dataset input
+	guiComponents.loadDatasetButton.mousePressed(args => {
+		buildDataset(guiComponents.loadDatasetInput.value());
+		guiComponents.loadDatasetInput.value("");
+	});
+
 	// Sample button
-	buttons.sampleStageButton.mousePressed(args => {
+	guiComponents.sampleStageButton.mousePressed(args => {
 		// Get random sample from dataset for stage
 		getStageSampleFromDataset();
 	});
 
 	// Predict button
-	buttons.predictButton.mousePressed(args => {
+	guiComponents.predictButton.mousePressed(args => {
 		// Predict!
 		nn.predict(data.stageSample.input);
 	});
 
 	// Sample&predict button
-	buttons.sampleStagePredictButton.mousePressed(args => {
+	guiComponents.sampleStagePredictButton.mousePressed(args => {
 		// Get random sample from dataset for stage
 		getStageSampleFromDataset();
 		// Predict!
@@ -242,7 +253,7 @@ initializeGUI = () => {
 	});
 
 	// Train button
-	buttons.fitButton.mousePressed(args => {
+	guiComponents.fitButton.mousePressed(args => {
 		// Train!
 		nn.fit(
 			data.X, data.y,
@@ -254,21 +265,21 @@ initializeGUI = () => {
 	});
 
 	// Add hidden layer button
-	buttons.addHiddenLayerButton.mousePressed(args => {
+	guiComponents.addHiddenLayerButton.mousePressed(args => {
 		// Add one layer to config & rebuild neural network
 		nnStructure.hiddenLayers.push(createDenseLayerConfig());
 		onChangeNeuralNetwork();
 	});
 
 	// Remove hidden layers button
-	buttons.removeHiddenLayersButton.mousePressed(args => {
+	guiComponents.removeHiddenLayersButton.mousePressed(args => {
 		// Remove hidden layers & rebuild neural network
 		nnStructure.hiddenLayers = [];
 		onChangeNeuralNetwork();
 	});
 
 	// Reset neural network button
-	buttons.resetButton.mousePressed(args => {
+	guiComponents.resetButton.mousePressed(args => {
 		// Reset configs & rebuild neural network
 		nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
 		onChangeNeuralNetwork();

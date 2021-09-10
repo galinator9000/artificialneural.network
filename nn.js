@@ -47,7 +47,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			// Check if next layer uses bias
 			let nextLayerUsesBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
-			if(nextLayerUsesBias){
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				neuronCount++;
 			}
 
@@ -68,7 +68,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Check if next layer uses bias
 			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
 			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
-			if(nextLayerUsesBias){
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
 			
@@ -127,7 +127,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Check if next layer uses bias
 			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
 			// If next layer is using bias, also add 1 value to the top of the current output
-			if(nextLayerUsesBias){
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				neuronOutputs = [1.0, ...neuronOutputs];
 			};
 
@@ -213,7 +213,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Check if next layer uses bias
 			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
 			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
-			if(nextLayerUsesBias){
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
 			
@@ -384,7 +384,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Check if next layer uses bias
 			let nextLayerUsesBias = (this.layers[1] && (this.layers[1].useBias === true));
 			// If next layer is using bias, add value 1 to the top of the input
-			if(nextLayerUsesBias){
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				inputVec = [1.0, ...inputVec];
 			};
 
