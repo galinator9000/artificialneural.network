@@ -79,10 +79,12 @@ buildNeuralNetwork = () => {
 
 		// Various visual arguments
 		vArgs={
+			scaleX: 0.65, scaleY: 0.8,
+			translateX: -0.05,
 			showBiasNeurons: false,
-			gapRateX: 0.7, gapRateY: 0.8,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
+			animatePropagation: true,
 			propagation: {
 				// Width and step values (ratio value for width of the canvas) of the propagation wave
 				width: 0.005, step: 0.01,

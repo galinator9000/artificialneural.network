@@ -2,15 +2,15 @@
 
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{
+	// vArgs holds our custom values (for visual purposes) for our class
+	vArgs = {};
+
 	constructor(
 		sequentialArgs,
 		vArgs
 	){
 		super(sequentialArgs);
-		// vArgs holds our custom values (for visual purposes usually) for our class
-		this.vArgs = {
-			...vArgs
-		};
+		this.vArgs = vArgs;
 	};
 
 	// Override add method
@@ -34,7 +34,81 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	compile = (compileArgs) => {
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
+		this.recompile();
+	};
+	
+	// Override predict method
+	predict = (X) => {
+		// If provided more than one sample, predict it and simply return, no need to visualize
+		if(X.shape[0] > 1){
+			// Forward-propagation with given tensor
+			return super.predict(X);
+		}
 
+		// Feed layer by layer
+		let layerOutput = X;
+		this.layers.forEach((layer, layerIndex) => {
+			// Feed to current layer & get output as tensor
+			layerOutput = layer.call(layerOutput);
+
+			// Get the output in a nested-list
+			let neuronOutputs = layerOutput.arraySync()[0];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
+			// If next layer is using bias, also add 1 value to the top of the current output
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				neuronOutputs = [1.0, ...neuronOutputs];
+			};
+
+			// Set each neuron's output
+			neuronOutputs.forEach((neuronOutput, neuronIndex) => {
+				// Set neuron's output
+				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
+			});
+		});
+
+		// Neuron values changed, call it!
+		this.onChangeNeurons();
+		
+		// Fire the neurons forward ;)
+		this.vArgs.propagation.x = 0.0;
+		this.vArgs.propagation.xAnim = 0.0;
+		this.vArgs.propagation.xTarget = 1.0;
+
+		// Log final output
+		console.log("Prediction", layerOutput.toString());
+	};
+	
+	// Override fit method
+	fit = (X, y, args) => {
+		super.fit(X, y, args).then(({history}) => {
+			// Update all Weight objects' values
+			this.updateAllWeights();
+
+			// Weight values changed, call it!
+			this.onChangeWeights();
+
+			// Fire the neurons backward ;)
+			this.vArgs.propagation.x = 1.0;
+			this.vArgs.propagation.xAnim = 1.0;
+			this.vArgs.propagation.xTarget = 0.0;
+			
+			// Log loss output
+			console.log("Loss", history.loss[history.loss.length-1]);
+		});
+	};
+
+	//// Custom methods
+	setvArgs = (newvArgs) => {
+		this.vArgs = {
+			...this.vArgs,
+			...newvArgs
+		};
+		this.recompile();
+	};
+
+	recompile = () => {
 		// First reset own values
 		this.reset();
 
@@ -106,70 +180,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 	};
-	
-	// Override predict method
-	predict = (X) => {
-		// If provided more than one sample, predict it and simply return, no need to visualize
-		if(X.shape[0] > 1){
-			// Forward-propagation with given tensor
-			return super.predict(X);
-		}
 
-		// Feed layer by layer
-		let layerOutput = X;
-		this.layers.forEach((layer, layerIndex) => {
-			// Feed to current layer & get output as tensor
-			layerOutput = layer.call(layerOutput);
-
-			// Get the output in a nested-list
-			let neuronOutputs = layerOutput.arraySync()[0];
-
-			// Check if next layer uses bias
-			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
-			// If next layer is using bias, also add 1 value to the top of the current output
-			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
-				neuronOutputs = [1.0, ...neuronOutputs];
-			};
-
-			// Set each neuron's output
-			neuronOutputs.forEach((neuronOutput, neuronIndex) => {
-				// Set neuron's output
-				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
-			});
-		});
-
-		// Neuron values changed, call it!
-		this.onChangeNeurons();
-		
-		// Fire the neurons forward ;)
-		this.vArgs.propagation.x = 0.0;
-		this.vArgs.propagation.xAnim = 0.0;
-		this.vArgs.propagation.xTarget = 1.0;
-
-		// Log final output
-		console.log("Prediction", layerOutput.toString());
-	};
-	
-	// Override fit method
-	fit = (X, y, args) => {
-		super.fit(X, y, args).then(({history}) => {
-			// Update all Weight objects' values
-			this.updateAllWeights();
-
-			// Weight values changed, call it!
-			this.onChangeWeights();
-
-			// Fire the neurons backward ;)
-			this.vArgs.propagation.x = 1.0;
-			this.vArgs.propagation.xAnim = 1.0;
-			this.vArgs.propagation.xTarget = 0.0;
-			
-			// Log loss output
-			console.log("Loss", history.loss[history.loss.length-1]);
-		});
-	};
-
-	//// Custom methods
 	reset = () => {
 		// Propagation wave values
 		this.vArgs.propagation = {
@@ -293,59 +304,66 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
 		)));
 		// Calculate step per neuron in +Y direction
-		let perNeuronY = ((canvas.height * this.vArgs.gapRateY) / (
+		let perNeuronY = ((canvas.height * this.vArgs.scaleY) / (
 			// Limit maximum neuron size when there's few neurons
 			Math.max(10, maxUnitCount)
 		));
 		// Calculate step per layer in +X direction
-		let perLayerX = ((canvas.width * this.vArgs.gapRateX) / (this.layers.length-1));
+		let perLayerX = ((canvas.width * this.vArgs.scaleX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network
-		let startLayerX = (canvas.width * ((1-this.vArgs.gapRateX) / 2));
+		let startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (perNeuronY / 1.25);
 
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
-			(startLayerX - (Neuron.r/2)) + (curX * ((canvas.width * this.vArgs.gapRateX) + Neuron.r))
+			(startLayerX - (Neuron.r/2)) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r)) + (canvas.width * this.vArgs.translateX)
 		));
 
-		// Update propagation wave position (towards target, smoothly)
-		if(this.vArgs.propagation.xTarget > this.vArgs.propagation.x){
-			this.vArgs.propagation.x += this.vArgs.propagation.step;
+		// Update propagation wave position (set directly or go towards to target smoothly)
+		if(this.vArgs.animatePropagation){
+			if(this.vArgs.propagation.xTarget > this.vArgs.propagation.x){
+				this.vArgs.propagation.x += this.vArgs.propagation.step;
+			}
+			else if(this.vArgs.propagation.xTarget < this.vArgs.propagation.x){
+				this.vArgs.propagation.x -= this.vArgs.propagation.step;
+			}
+			// Limit between 0 and 1
+			this.vArgs.propagation.x = Math.min(1, Math.max(0, this.vArgs.propagation.x));
+		}else{
+			this.vArgs.propagation.x = this.vArgs.propagation.xTarget;
 		}
-		else if(this.vArgs.propagation.xTarget < this.vArgs.propagation.x){
-			this.vArgs.propagation.x -= this.vArgs.propagation.step;
-		}
-		// Limit between 0 and 1
-		this.vArgs.propagation.x = Math.min(1, Math.max(0, this.vArgs.propagation.x));
 
 		//// Calculate current propagation wave point with using the animation function
 		// Apply animation layer by layer (looks nicer ;D)
-		if(this.vArgs.propagation.animationApplyType == "layer"){
-			let eachLayerX = 1 / (this.layers.length-1);
-			let currentLayerIdx = Math.floor(this.vArgs.propagation.x / eachLayerX);
-			let currentLayerX = (this.vArgs.propagation.x % eachLayerX) / eachLayerX;
-
-			// Reversing the animation function if going towards negative
-			if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
-				this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + (this.vArgs.propagation.animFn(currentLayerX) / (this.layers.length - 1));
-			}else{
-				this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + ((1 - this.vArgs.propagation.animFn(1 - currentLayerX)) / (this.layers.length - 1));
+		if(this.vArgs.animatePropagation){
+			if(this.vArgs.propagation.animationApplyType == "layer"){
+				let eachLayerX = 1 / (this.layers.length-1);
+				let currentLayerIdx = Math.floor(this.vArgs.propagation.x / eachLayerX);
+				let currentLayerX = (this.vArgs.propagation.x % eachLayerX) / eachLayerX;
+	
+				// Reversing the animation function if going towards negative
+				if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
+					this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + (this.vArgs.propagation.animFn(currentLayerX) / (this.layers.length - 1));
+				}else{
+					this.vArgs.propagation.xAnim = (currentLayerIdx * eachLayerX) + ((1 - this.vArgs.propagation.animFn(1 - currentLayerX)) / (this.layers.length - 1));
+				}
 			}
-		}
-		// Apply animation to whole network
-		else if(this.vArgs.propagation.animationApplyType == "network"){
-			// Reversing the animation function if going towards negative
-			if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
-				this.vArgs.propagation.xAnim = this.vArgs.propagation.animFn(this.vArgs.propagation.x);
-			}else{
-				this.vArgs.propagation.xAnim = (1 - this.vArgs.propagation.animFn(1 - this.vArgs.propagation.x));
+			// Apply animation to whole network
+			else if(this.vArgs.propagation.animationApplyType == "network"){
+				// Reversing the animation function if going towards negative
+				if((this.vArgs.propagation.xTarget - this.vArgs.propagation.x) > 0){
+					this.vArgs.propagation.xAnim = this.vArgs.propagation.animFn(this.vArgs.propagation.x);
+				}else{
+					this.vArgs.propagation.xAnim = (1 - this.vArgs.propagation.animFn(1 - this.vArgs.propagation.x));
+				}
 			}
 		}
 
 		//// Process neurons for drawing
 		// Each layer
+		// Get each draw call of neurons in a nested-list
 		let neuronDrawCalls = this.layerNeurons.map((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
@@ -354,7 +372,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Each neuron
 			return layer.map((neuron, neuronIndex) => {
 				// Set position of neuron & draw it
-				neuron.x = (startLayerX + (perLayerX * layerIndex));
+				neuron.x = (startLayerX + (perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
 				neuron.y = (startNeuronY + (perNeuronY * neuronIndex));
 				return () => {neuron.draw(canvas, this.vArgs)};
 			});
@@ -447,22 +465,28 @@ class Neuron{
 		this.fill = this.strokeWeight*255;
 	};
 
+	// Sets visual value
+	updateVisualValue = (vArgs) => {
+		// Smoothly go towards the actual value visually
+		this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
+		// Set directly if it's close enough to the target
+		if(abs(this.value - this.visualValue) < 0.001){
+			this.visualValue = this.value;
+		}
+	};
+
 	// Gets called every frame
 	draw = (canvas, vArgs) => {
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
 			// Adjust the visible value after propagation (forward) wave passes over it
 			if(
-				(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) >= this.x)
-				&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) > 0)
+				(
+					(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) >= this.x)
+					&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) > 0)
+				) || (!vArgs.animatePropagation)
 			){
-				// Smoothly go towards the actual value visually
-				this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
-				// Set directly if it's close enough to the target
-				if(abs(this.value - this.visualValue) < 0.001){
-					this.visualValue = this.value;
-				}
-
+				this.updateVisualValue(vArgs);
 				this.updateOuterLook(vArgs);
 			}
 		}
@@ -506,20 +530,26 @@ class Weight{
 		this.stroke = (1-this.strokeWeight)*255;
 	};
 
+	// Sets visual value
+	updateVisualValue = (vArgs) => {
+		// Smoothly go towards the actual value visually
+		this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
+		// Set directly if it's close enough to the target
+		if(abs(this.value - this.visualValue) < 0.001){
+			this.visualValue = this.value;
+		}
+	};
+
 	// Gets called every frame
 	draw = (canvas, vArgs) => {
 		// Adjust the visual value after propagation (backward) wave passes over it
 		if(
-			(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) <= this.from.x)
-			&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) < 0)
+			(
+				(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) <= this.from.x)
+				&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) < 0)
+			) || (!vArgs.animatePropagation)
 		){
-			// Smoothly go towards the actual value visually
-			this.visualValue += ((this.value - this.visualValue) * vArgs.weightVisualChangeSpeed);
-			// Set directly if it's close enough to the target
-			if(abs(this.value - this.visualValue) < 0.001){
-				this.visualValue = this.value;
-			}
-
+			this.updateVisualValue(vArgs);
 			this.updateOuterLook(vArgs);
 		}
 
