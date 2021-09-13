@@ -22,8 +22,8 @@ let nnStructure = {
 	// Input layer
 	inputLayer: {
 		class: tf.layers.inputLayer,
-		// (set input shape to random initially)
-		args: {inputShape: [getRandomInt(4, 17)]}
+		// (set input unit to 1 initially)
+		args: {inputShape: [1]}
 	},
 
 	// Hidden layers (create them randomly at start: min 1, max 3 layers)
@@ -33,7 +33,8 @@ let nnStructure = {
 
 	// Output layer
 	outputLayer: createDenseLayerConfig({
-		units: getRandomInt(1, 5),
+		// (set output unit to 1 initially)
+		units: 1,
 		useBias: true,
 		// Regression
 		// activation: null,
@@ -50,16 +51,6 @@ let nnStructure = {
 		// Classification (binary)
 		loss: "binaryCrossentropy"
 	},
-};
-
-// Canvas which our neural network will be drawn
-let nnCanvas;
-let nnCanvasRatio = {x: 1.0, y: 1.0};
-let nnCreateCanvas = () => {
-	nnCanvas = createGraphics(
-		(windowWidth*nnCanvasRatio.x),
-		(windowHeight*nnCanvasRatio.y)
-	);
 };
 
 // Our main neural network model
@@ -210,6 +201,7 @@ buildDataset = (csvURL) => {
 //// Sketch
 // Initialize GUI components
 initializeGUI = () => {
+	// return;
 	// Create GUI components
 	let guiComponents = {
 		loadDatasetInput: createInput(),
@@ -288,13 +280,28 @@ initializeGUI = () => {
 	});
 };
 
+//// Sub canvas
+let currentSubCanvasIdx = 1;
+let subCanvas = {
+	dataset: null,
+	nn: null,
+	stats: null,
+};
+let createSubCanvas = () => {
+	// Create sub canvas objects
+	Object.entries(subCanvas).forEach(([k, v]) => {
+		subCanvas[k] = createGraphics(windowWidth, windowHeight);
+	});
+};
+
+//// Main functions
 // Setup
 setup = () => {
 	// Create main canvas
 	createCanvas(windowWidth, windowHeight);
 
-	// Create the canvas which will neural network be drawn
-	nnCreateCanvas();
+	// Create the sub-canvases
+	createSubCanvas();
 
 	// Initialize GUI components
 	initializeGUI();
@@ -310,21 +317,23 @@ setup = () => {
 draw = () => {
 	// Clear backgrounds
 	background(1, 0, 2, 255);
-	nnCanvas.background(1, 0, 2, 255);
+	Object.values(subCanvas).forEach(sc => {
+		sc.background(1, 0, 2, 255);
+	});
 
-	// Draw the whole network on the given canvas
+	// Draw the whole network on the given subcanvas
 	nn.draw(
-		nnCanvas,
+		subCanvas.nn,
 		data.stageSample
 	);
 
-	// Draw the network canvas to the main canvas 
+	// Draw the current sub-canvas to the main canvas 
 	image(
-		nnCanvas,
+		Object.values(subCanvas)[currentSubCanvasIdx],
 		// Position
-		(windowWidth*(1-nnCanvasRatio.x)/2), (windowHeight*(1-nnCanvasRatio.y)),
+		0, 0,
 		// Size
-		(windowWidth*nnCanvasRatio.x), (windowHeight*nnCanvasRatio.y),
+		windowWidth, windowHeight
 	);
 };
 
@@ -332,5 +341,19 @@ draw = () => {
 // Resizes canvas' size when window is resized
 windowResized = () => {
 	resizeCanvas(windowWidth, windowHeight);
-	nnCreateCanvas();
+	// Recreate subcanvas objects
+	createSubCanvas();
+};
+
+// Change the current subcanvas (tab)
+mouseWheel = (event) => {
+	// Increment&decrement index of subcanvas
+	if(event.deltaY > 0) currentSubCanvasIdx++;
+	if(event.deltaY < 0) currentSubCanvasIdx--;
+
+	// Limit index number
+	currentSubCanvasIdx = Math.min(
+		Object.keys(subCanvas).length-1,
+		Math.max(0, currentSubCanvasIdx)
+	);
 };
