@@ -310,7 +310,8 @@ let subCanvas = {
 		direction: 1,
 		step: 0.05,
 		animFn: AnimationUtils.easeOutExpo
-	}
+	},
+	tabWidthRatio: 0.05,
 };
 
 // Updates subcanvas related things
@@ -342,7 +343,10 @@ let updateSubCanvas = () => {
 // Creates sub canvas objects
 let createSubCanvas = () => {
 	Object.entries(subCanvas.c).forEach(([k, v], cIdx) => {
-		subCanvas.c[cIdx].obj = createGraphics(windowWidth, windowHeight);
+		subCanvas.c[cIdx].obj = createGraphics(
+			(windowWidth * (1 - subCanvas.tabWidthRatio)),
+			windowHeight
+		);
 	});
 };
 
@@ -386,6 +390,9 @@ draw = () => {
 	// Update subcanvas related things
 	updateSubCanvas();
 
+	// Starting X position for all subcanvases
+	let startX = (windowWidth * subCanvas.tabWidthRatio);
+
 	// Draw the current&next sub-canvas if transition is happening
 	if(subCanvas.inTransition){
 		// Calculate subcanvas' starting y positions
@@ -400,14 +407,14 @@ draw = () => {
 		image(
 			subCanvas.c[subCanvas.currentIdx].obj,
 			// Position
-			0, currentY,
+			startX, currentY,
 			// Size
 			windowWidth, windowHeight
 		);
 		image(
 			subCanvas.c[subCanvas.nextIdx].obj,
 			// Position
-			0, nextY,
+			startX, nextY,
 			// Size
 			windowWidth, windowHeight
 		);
@@ -417,14 +424,14 @@ draw = () => {
 		image(
 			subCanvas.c[subCanvas.currentIdx].obj,
 			// Position
-			0, 0,
+			startX, 0,
 			// Size
 			windowWidth, windowHeight
 		);
 	}
 
 	// Draw subcanvas' tabs to the left
-	let eachTabW = (windowWidth * 0.04);
+	let eachTabW = (windowWidth * subCanvas.tabWidthRatio);
 	let eachTabH = (windowHeight / subCanvas.c.length);
 
 	rectMode(CORNER);
