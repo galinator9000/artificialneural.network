@@ -198,89 +198,6 @@ buildDataset = (csvURL) => {
 	});
 };
 
-//// Sketch
-// Initialize GUI components
-initializeGUI = () => {
-	return;
-
-	// Create GUI components
-	let guiComponents = {
-		loadDatasetInput: createInput(),
-		loadDatasetButton: createButton("Load Dataset"),
-		sampleStageButton: createButton("Get sample"),
-		predictButton: createButton("Predict"),
-		sampleStagePredictButton: createButton("Get sample&predict"),
-		fitButton: createButton("Fit dataset"),
-		addHiddenLayerButton: createButton("Add hidden layer"),
-		removeHiddenLayersButton: createButton("Remove hidden layers"),
-		resetButton: createButton("Reset network"),
-	}
-
-	// Set positions of buttons
-	Object.values(guiComponents).forEach((button, buttonIndex) => {
-		button.position(50 + (buttonIndex * 150), 10);
-	});
-
-	// Load dataset input
-	guiComponents.loadDatasetButton.mousePressed(args => {
-		buildDataset(guiComponents.loadDatasetInput.value());
-		guiComponents.loadDatasetInput.value("");
-	});
-
-	// Sample button
-	guiComponents.sampleStageButton.mousePressed(args => {
-		// Get random sample from dataset for stage
-		getStageSampleFromDataset();
-	});
-
-	// Predict button
-	guiComponents.predictButton.mousePressed(args => {
-		// Predict!
-		nn.predict(data.stageSample.input);
-	});
-
-	// Sample&predict button
-	guiComponents.sampleStagePredictButton.mousePressed(args => {
-		// Get random sample from dataset for stage
-		getStageSampleFromDataset();
-		// Predict!
-		nn.predict(data.stageSample.input);
-	});
-
-	// Train button
-	guiComponents.fitButton.mousePressed(args => {
-		// Train!
-		nn.fit(
-			data.X, data.y,
-			{
-				epochs: 100,
-				batchSize: data.structure.n_samples
-			}
-		);
-	});
-
-	// Add hidden layer button
-	guiComponents.addHiddenLayerButton.mousePressed(args => {
-		// Add one layer to config & rebuild neural network
-		nnStructure.hiddenLayers.push(createDenseLayerConfig());
-		onChangeNeuralNetwork();
-	});
-
-	// Remove hidden layers button
-	guiComponents.removeHiddenLayersButton.mousePressed(args => {
-		// Remove hidden layers & rebuild neural network
-		nnStructure.hiddenLayers = [];
-		onChangeNeuralNetwork();
-	});
-
-	// Reset neural network button
-	guiComponents.resetButton.mousePressed(args => {
-		// Reset configs & rebuild neural network
-		nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
-		onChangeNeuralNetwork();
-	});
-};
-
 //// Sub canvas system
 let subCanvas = {
 	// Subcanvas objects 
@@ -300,7 +217,7 @@ let subCanvas = {
 	],
 
 	currentIdx: 1,
-	nextIdx: 0,
+	nextIdx: 1,
 
 	// Animation of subcanvas transitions
 	inTransition: false,
@@ -350,7 +267,7 @@ let createSubCanvas = () => {
 	});
 };
 
-//// Main functions
+//// Sketch
 // Setup
 setup = () => {
 	// Create main canvas
@@ -362,9 +279,6 @@ setup = () => {
 
 	// Create the sub-canvases
 	createSubCanvas();
-
-	// Initialize GUI components
-	initializeGUI();
 
 	// Initialize dataset
 	buildDataset(csvURLs[0]);
@@ -393,6 +307,10 @@ draw = () => {
 	// Starting X position for all subcanvases
 	let startX = (windowWidth * subCanvas.tabWidthRatio);
 
+	// Get the current&next subcanvas objects
+	let currentCanvas = subCanvas.c[subCanvas.currentIdx].obj;
+	let nextCanvas = subCanvas.c[subCanvas.nextIdx].obj;
+	
 	// Draw the current&next sub-canvas if transition is happening
 	if(subCanvas.inTransition){
 		// Calculate subcanvas' starting y positions
@@ -405,28 +323,28 @@ draw = () => {
 		);
 
 		image(
-			subCanvas.c[subCanvas.currentIdx].obj,
+			currentCanvas,
 			// Position
 			startX, currentY,
 			// Size
-			windowWidth, windowHeight
+			currentCanvas.width, currentCanvas.height
 		);
 		image(
-			subCanvas.c[subCanvas.nextIdx].obj,
+			nextCanvas,
 			// Position
 			startX, nextY,
 			// Size
-			windowWidth, windowHeight
+			nextCanvas.width, nextCanvas.height
 		);
 	}
 	// Draw only the current sub-canvas if transition isn't happening
 	else{
 		image(
-			subCanvas.c[subCanvas.currentIdx].obj,
+			currentCanvas,
 			// Position
 			startX, 0,
 			// Size
-			windowWidth, windowHeight
+			currentCanvas.width, currentCanvas.height
 		);
 	}
 
@@ -437,25 +355,23 @@ draw = () => {
 	rectMode(CORNER);
 	angleMode(DEGREES);
 
-	subCanvas.c.forEach((sc, scIndex) => {
+	let curScIdx = (subCanvas.nextIdx);
+	subCanvas.c.forEach((sc, scIdx) => {
 		stroke(255);
-		strokeWeight((scIndex == subCanvas.currentIdx) ? 3 : 0);
+		strokeWeight((scIdx == curScIdx) ? 3 : 0);
 
-		line(
-			eachTabW, (eachTabH * (scIndex)),
-			eachTabW, (eachTabH * (scIndex + 1))
-		);
-		// noFill();
-		// rect(0, (eachTabH*scIndex), eachTabW, eachTabH);
+		// Line or rect
+		line(eachTabW, (eachTabH * (scIdx)), eachTabW, (eachTabH * (scIdx+1)));
+		// noFill(); rect(0, (eachTabH*scIdx), eachTabW, eachTabH);
 
 		// Write tab title
-		stroke((scIndex == subCanvas.currentIdx) ? 255 : 64);
-		fill((scIndex == subCanvas.currentIdx) ? 255 : 64);
+		stroke((scIdx == curScIdx) ? 255 : 64);
+		fill((scIdx == curScIdx) ? 255 : 64);
 		strokeWeight(1);
 		textSize(32);
 		// Use translate&rotate for drawing titles sideways
 		push();
-		translate(eachTabW/2, ((eachTabH*scIndex) + eachTabH/2));
+		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
 		rotate(-90);
 		text(sc.title, 0, 0);
 		pop();
