@@ -291,7 +291,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Draws the whole network, gets called at each frame
-	draw = (canvas, sample) => {
+	draw = (canvas, sample, addvArgs) => {
+		this.vArgs = {...this.vArgs, ...addvArgs};
+
 		// Setting some of the canvas parameters
 		canvas.colorMode(RGB);
 		canvas.textAlign(CENTER, CENTER);
@@ -313,12 +315,12 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate X coordinate of starting point of the network
 		let startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
 		// Calculate each neuron size with using step per neuron value
-		Neuron.r = (perNeuronY / 1.25);
+		Neuron.r = (perNeuronY / 1.25 / 2);
 
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
-			(startLayerX - (Neuron.r/2)) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r)) + (canvas.width * this.vArgs.translateX)
+			(startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2)) + (canvas.width * this.vArgs.translateX)
 		));
 
 		// Update propagation wave position (set directly or go towards to target smoothly)
@@ -413,11 +415,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			// Draw input values to the left side
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
-				let posX = (inputNeuron.x - (Neuron.r * 1.5));
+				let posX = (inputNeuron.x - (Neuron.r*3));
 				let posY = inputNeuron.y;
 
 				canvas.noFill();
-				canvas.rect(posX, posY, Neuron.r * 1.5, Neuron.r);
+				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
 
 				canvas.fill(255);
 				canvas.text(
@@ -428,11 +430,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			// Draw target values to the right side
 			this.layerNeurons[this.layerNeurons.length-1].forEach((outputNeuron, neuronIndex) => {
-				let posX = (outputNeuron.x + (Neuron.r * 1.5));
+				let posX = (outputNeuron.x + (Neuron.r*3));
 				let posY = outputNeuron.y;
 
 				canvas.noFill();
-				canvas.rect(posX, posY, Neuron.r * 1.5, Neuron.r);
+				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
 
 				canvas.fill(255);
 				canvas.text(
@@ -477,6 +479,12 @@ class Neuron{
 
 	// Gets called every frame
 	draw = (canvas, vArgs) => {
+		let distanceToMouse = dist(
+			this.x, this.y,
+			vArgs.mouseX, vArgs.mouseY
+		);
+		let hoover = (distanceToMouse < Neuron.r);
+
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
 			// Adjust the visible value after propagation (forward) wave passes over it
@@ -492,10 +500,10 @@ class Neuron{
 		}
 
 		// Neuron as circle
-		canvas.strokeWeight(this.strokeWeight);
+		canvas.strokeWeight(hoover ? 5 : this.strokeWeight);
 		canvas.stroke(this.stroke);
 		canvas.fill(this.fill);
-		canvas.circle(this.x, this.y, Neuron.r);
+		canvas.circle(this.x, this.y, Neuron.r*2);
 
 		// Draw the value as text
 		canvas.fill(255);
@@ -554,9 +562,9 @@ class Weight{
 		}
 
 		// Calculate line's start&end positions
-		let fromX = (this.from.x + (Neuron.r/2));
+		let fromX = (this.from.x + Neuron.r);
 		let fromY = this.from.y;
-		let toX = (this.to.x - (Neuron.r/2));
+		let toX = (this.to.x - Neuron.r);
 		let toY = this.to.y;
 
 		// Draw weight between neurons

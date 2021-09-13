@@ -231,6 +231,10 @@ let subCanvas = {
 	tabWidthRatio: 0.05,
 };
 
+// Position converter functions
+subCanvas.xToSubcanvasPosX = (x) => (x - (windowWidth * subCanvas.tabWidthRatio));
+subCanvas.yToSubcanvasPosY = (y) => (y);
+
 // Updates subcanvas related things
 let updateSubCanvas = () => {
 	// Update subcanvas transition value
@@ -298,7 +302,12 @@ draw = () => {
 	// Draw the whole network on the given subcanvas
 	nn.draw(
 		subCanvas.c[1].obj,
-		data.stageSample
+		data.stageSample,
+		// Additional vArgs
+		{
+			mouseX: subCanvas.xToSubcanvasPosX(mouseX),
+			mouseY: subCanvas.yToSubcanvasPosY(mouseY)
+		}
 	);
 
 	// Update subcanvas related things
