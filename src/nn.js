@@ -1,4 +1,105 @@
-// This file contains SequentialNeuralNetwork, Neuron and Weight classes for visualizing each one of them
+// Neural network related variables, functions & classes.
+
+// Creates a dense layer config object with given values
+createDenseLayerConfig = (denseArgs={activation: "sigmoid"}) => ({
+	class: tf.layers.dense,
+	args: {
+		// Min 4, max 15 neurons, if not specified
+		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 16)),
+		// Randomly choose if use bias or not, if not specified
+		useBias: ((denseArgs.useBias) ? denseArgs.useBias : (getRandomInt(0, 2)===1)),
+		// No activation, if not specified
+		activation: denseArgs.activation
+	}
+});
+
+// Our main neural network model
+let nn;
+
+// Specifies our neural network structure (layers, losses etc.)
+let nnStructure = {
+	// Input layer
+	inputLayer: {
+		class: tf.layers.inputLayer,
+		// (set input unit to 1 initially)
+		args: {inputShape: [1]}
+	},
+
+	// Hidden layers (create them randomly at start: min 1, max 3 layers)
+	hiddenLayers: [...Array(getRandomInt(1, 4)).keys()].map(layer => (
+		createDenseLayerConfig()
+	)),
+
+	// Output layer
+	outputLayer: createDenseLayerConfig({
+		// (set output unit to 1 initially)
+		units: 1,
+		useBias: true,
+		// Regression
+		// activation: null,
+		// Classification (binary)
+		activation: "sigmoid",
+	}),
+
+	// Compile arguments (optimizer, loss)
+	compileArgs: {
+		optimizer: tf.train.sgd(0.001),
+
+		// Regression
+		// loss: "meanSquaredError",
+		// Classification (binary)
+		loss: "binaryCrossentropy"
+	},
+};
+
+// Gets called whenever neural network needs to rebuild
+onChangeNeuralNetwork = () => {
+	buildNeuralNetwork();
+};
+
+// Builds neural network object at tf.js side with structure config
+buildNeuralNetwork = () => {
+	// Build NN sequentially with our custom class
+	nn = new SequentialNeuralNetwork(
+		// Arguments which will be passed to tf.Sequential
+		sequentialArgs={},
+
+		// Various visual arguments
+		vArgs={
+			scaleX: 0.65, scaleY: 0.60,
+			translateX: -0.05,
+			showBiasNeurons: false,
+			weightVisualChangeSpeed: 0.25,
+			neuronVisualChangeSpeed: 0.25,
+			animatePropagation: true,
+			propagation: {
+				// Width and step values (ratio value for width of the canvas) of the propagation wave
+				width: 0.005, step: 0.01,
+				// Animation smoothing function
+				animFn: AnimationUtils.easeOutQuad,
+				// Apply animation layer by layer or to whole network?
+				animationApplyType: (1 ? "layer" : "network")
+			},
+			neuronValueFont: MAIN_FONT
+		}
+	);
+
+	// Put all layer configs in a list, add each of them to the model
+	[
+		nnStructure.inputLayer,
+		...nnStructure.hiddenLayers,
+		nnStructure.outputLayer
+	].forEach(layer => {
+		nn.add(
+			layer.class(layer.args)
+		);
+	});
+
+	// Compile the model with args
+	nn.compile(nnStructure.compileArgs);
+
+	console.log("NN built", nnStructure);
+};
 
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{

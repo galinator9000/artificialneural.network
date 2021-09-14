@@ -1,0 +1,161 @@
+let MAIN_FONT;
+preload = () => {
+	MAIN_FONT = loadFont("assets/Inconsolata-SemiBold.ttf");
+};
+
+// Setup
+setup = () => {
+	// Create main canvas
+	createCanvas(windowWidth, windowHeight);
+
+	colorMode(RGB);
+	textAlign(CENTER, CENTER);
+	textFont(MAIN_FONT);
+
+	// Create the sub-canvases
+	createSubCanvas();
+
+	// Initialize&Update GUI components of subcanvases
+	initializeGUI();
+	updateGUI();
+
+	// Initialize dataset
+	buildDataset(csvURLs[0]);
+
+	// Build neural network
+	buildNeuralNetwork();
+};
+
+// Main loop
+draw = () => {
+	rectMode(CORNER);
+	angleMode(DEGREES);
+
+	// Clear backgrounds
+	background(1, 0, 2, 255);
+	Object.values(subCanvas.c).forEach(sc => {
+		sc.obj.background(1, 0, 2, 255);
+	});
+
+	// Update GUI components of subcanvases
+	updateGUI();
+
+	// Draw the whole network on the given subcanvas
+	nn.draw(
+		subCanvas.c[1].obj,
+		data.stageSample,
+		// Additional vArgs
+		{
+			mouseX: subCanvas.xToSubcanvasPosX(mouseX),
+			mouseY: subCanvas.yToSubcanvasPosY(mouseY)
+		}
+	);
+
+	// Draw dataset on given subcanvas
+	drawDataset(subCanvas.c[0].obj);
+
+	// Update subcanvas related things
+	updateSubCanvas();
+
+	// Starting X position for all subcanvases
+	let startX = (windowWidth * subCanvas.leftTabWidthRatio);
+
+	// Get the current&next subcanvas objects
+	let currentCanvas = subCanvas.c[subCanvas.currentIdx].obj;
+	let nextCanvas = subCanvas.c[subCanvas.nextIdx].obj;
+	
+	// Draw the current&next sub-canvas if transition is happening
+	if(subCanvas.inTransition){
+		// Calculate subcanvas' starting y positions
+		let currentY = (
+			(subCanvas.transition.direction * subCanvas.transition.xAnim * windowHeight)
+		);
+		let nextY = (
+			(-1 * subCanvas.transition.direction * windowHeight) +
+			(subCanvas.transition.direction * subCanvas.transition.xAnim * windowHeight)
+		);
+
+		image(
+			currentCanvas,
+			// Position
+			startX, currentY,
+			// Size
+			currentCanvas.width, currentCanvas.height
+		);
+		image(
+			nextCanvas,
+			// Position
+			startX, nextY,
+			// Size
+			nextCanvas.width, nextCanvas.height
+		);
+	}
+	// Draw only the current sub-canvas if transition isn't happening
+	else{
+		image(
+			currentCanvas,
+			// Position
+			startX, 0,
+			// Size
+			currentCanvas.width, currentCanvas.height
+		);
+	}
+
+	// Draw subcanvas' tabs to the left
+	let eachTabW = (windowWidth * subCanvas.leftTabWidthRatio);
+	let eachTabH = (windowHeight / subCanvas.c.length);
+
+	let curScIdx = (subCanvas.nextIdx);
+	subCanvas.c.forEach((sc, scIdx) => {
+		stroke(255);
+		strokeWeight((scIdx == curScIdx) ? 3 : 0);
+
+		// Line or rect
+		line(eachTabW, (eachTabH * (scIdx)), eachTabW, (eachTabH * (scIdx+1)));
+		// noFill(); rect(0, (eachTabH*scIdx), eachTabW, eachTabH);
+
+		// Write tab title
+		stroke((scIdx == curScIdx) ? 255 : 64);
+		fill((scIdx == curScIdx) ? 255 : 64);
+		strokeWeight(1);
+		textSize(32);
+		// Use translate&rotate for drawing titles sideways
+		push();
+		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
+		rotate(-90);
+		text(sc.title, 0, 0);
+		pop();
+	})
+};
+
+// User-Events
+// Resizes canvas' size when window is resized
+windowResized = () => {
+	resizeCanvas(windowWidth, windowHeight);
+	// Recreate subcanvas objects
+	createSubCanvas();
+};
+
+// Change the current subcanvas (tab)
+mouseWheel = (event) => {
+	// Return if already in transition process
+	if(subCanvas.inTransition) return;
+
+	// Increment&decrement index of subcanvas
+	if(event.deltaY > 0) subCanvas.nextIdx = subCanvas.currentIdx + 1;
+	if(event.deltaY < 0) subCanvas.nextIdx = subCanvas.currentIdx - 1;
+
+	// Limit index number
+	subCanvas.nextIdx = Math.min(
+		subCanvas.c.length-1,
+		Math.max(0, subCanvas.nextIdx)
+	);
+
+	// Start transition
+	if(subCanvas.nextIdx != subCanvas.currentIdx){
+		subCanvas.transition.x = 0;
+		subCanvas.transition.xAnim = 0;
+		subCanvas.transition.direction = (subCanvas.nextIdx > subCanvas.currentIdx) ? -1 : 1;
+		subCanvas.inTransition = true;
+	}
+};
