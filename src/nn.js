@@ -52,11 +52,6 @@ let nnStructure = {
 	},
 };
 
-// Gets called whenever neural network needs to rebuild
-onChangeNeuralNetwork = () => {
-	buildNeuralNetwork();
-};
-
 // Builds neural network object at tf.js side with structure config
 buildNeuralNetwork = () => {
 	// Build NN sequentially with our custom class

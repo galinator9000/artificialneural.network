@@ -68,7 +68,7 @@ onChangeDataset = () => {
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayer.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayer.args.units = data.structure.n_targets;
-	onChangeNeuralNetwork();
+	buildNeuralNetwork();
 };
 
 compileDataset = () => {

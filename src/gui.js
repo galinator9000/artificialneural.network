@@ -75,7 +75,6 @@ initializeGUI = () => {
 					(() => {
 						// Add one layer to config & rebuild neural network
 						nnStructure.hiddenLayers.push(createDenseLayerConfig());
-						onChangeNeuralNetwork();
 					})
 				]},
 			],
@@ -97,7 +96,6 @@ initializeGUI = () => {
 					(() => {
 						// Remove hidden layers & rebuild neural network
 						nnStructure.hiddenLayers = [];
-						onChangeNeuralNetwork();
 					})
 				]},
 			],
@@ -119,11 +117,31 @@ initializeGUI = () => {
 					(() => {
 						// Reset configs & rebuild neural network
 						nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
-						onChangeNeuralNetwork();
 					})
 				]},
 			],
 			canvasRelativePosition: [0.25, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Compile network button
+		{
+			id: "compile_network_button",
+			subCanvasIndex: 1,
+			obj: createButton("Compile network!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("compile_network_button").subCanvasIndex].isActive())}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Compile neural network
+						buildNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.36, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -187,6 +205,10 @@ initializeGUI = () => {
 			id: "compile_dataset_button",
 			subCanvasIndex: 0,
 			obj: createButton("Compile dataset"),
+			attributes: [
+				// "Disabled" attribute for compile button (if data is compiled, disable it)
+				{name: "disabled", value: "", condition: () => (data.isCompiled)}
+			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
