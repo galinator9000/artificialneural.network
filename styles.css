@@ -11,3 +11,17 @@ body {
 	/* align-items: flex-end; */
 	align-content: space-around;
 }
+
+button{
+	background-color: #010002;
+	color: white;
+	font-size: 100%;
+	border-style: solid;
+	font-family: 'Inconsolata', monospace;
+	font-weight: bold;
+}
+button:hover {
+	background-color: white;
+	color: #010002;
+	font-size: 110%;
+}

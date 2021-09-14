@@ -235,6 +235,15 @@ let subCanvas = {
 subCanvas.xToSubcanvasPosX = (x) => (x - (windowWidth * subCanvas.tabWidthRatio));
 subCanvas.yToSubcanvasPosY = (y) => (y);
 
+getSubCanvasWidthWithIndex = (cIdx) => {
+	if(cIdx == -1) return windowWidth;
+	return subCanvas.c[cIdx].obj.width;
+};
+getSubCanvasHeightWithIndex = (cIdx) => {
+	if(cIdx == -1) return windowHeight;
+	return subCanvas.c[cIdx].obj.height;
+};
+
 // Updates subcanvas related things
 let updateSubCanvas = () => {
 	// Update subcanvas transition value
@@ -271,6 +280,76 @@ let createSubCanvas = () => {
 	});
 };
 
+//// GUI
+let guiComponents = [];
+
+// Initializes GUI components of main canvas & sub canvases
+initializeGUI = () => {
+	guiComponents = [
+		//// Main components
+		{
+			subCanvasIndex: -1,
+			obj: createImg(
+				"./assets/join-globalaihub.png"
+			),
+			initCalls: [
+				{fnName: "style", args: ["cursor", "pointer"]},
+				{fnName: "mousePressed", args: [
+					(() => openURLInNewTab("https://globalaihub.com"))
+				]}
+			],
+			canvasRelativePosition: [0.855, 0.015],
+			canvasRelativeSize: [0.14, 0.08]
+		},
+
+		//// NN components
+		// Get sample button
+		{
+			subCanvasIndex: 1,
+			obj: createButton("Get sample"),
+			initCalls: [
+				// Call for setting mouse press to getting random sample from dataset for stage
+				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
+			],
+			canvasRelativePosition: [0.115, 0.1],
+			canvasRelativeSize: [0.10, 0.06]
+		}
+	];
+
+	// Call init calls of GUI components
+	guiComponents.forEach(gc => {
+		gc.initCalls.forEach((ic) => {
+			// Call one of the init calls of GUI object
+			gc.obj[ic.fnName](...ic.args);
+		});
+	});
+};
+
+// Updates GUI components of main canvas & sub canvases
+updateGUI = () => {
+	guiComponents.forEach(gc => {
+		// Update position
+		gc.obj.position(
+			(getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0]),
+			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[1]),
+		);
+		// Update size
+		gc.obj.size(
+			(getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativeSize[0]),
+			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativeSize[1]),
+		);
+
+		// Hide the object
+		gc.obj.style("display", "none");
+
+		// Show the object if conditions are met
+		if((gc.subCanvasIndex == -1) || (gc.subCanvasIndex == subCanvas.nextIdx)){
+		// if((gc.subCanvasIndex == -1) || ((!subCanvas.inTransition) && (gc.subCanvasIndex == subCanvas.currentIdx))){
+			gc.obj.show();
+		}
+	});
+};
+
 //// Sketch
 // Setup
 setup = () => {
@@ -283,6 +362,9 @@ setup = () => {
 
 	// Create the sub-canvases
 	createSubCanvas();
+
+	// Initialize GUI components of subcanvases
+	initializeGUI();
 
 	// Initialize dataset
 	buildDataset(csvURLs[0]);
@@ -298,6 +380,9 @@ draw = () => {
 	Object.values(subCanvas.c).forEach(sc => {
 		sc.obj.background(1, 0, 2, 255);
 	});
+
+	// Update GUI components of subcanvases
+	updateGUI();
 
 	// Draw the whole network on the given subcanvas
 	nn.draw(

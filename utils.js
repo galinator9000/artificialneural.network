@@ -14,6 +14,11 @@ const getRandomInt = (min, max) => {
 	return Math.floor(Math.random() * (max - min) + min);
 }
 
+// Opens link in new tab
+const openURLInNewTab = (url) => {
+	window.open(url, "_blank").focus();
+};
+
 // Animation related functions
 class AnimationUtils{
 	// Exponential
