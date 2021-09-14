@@ -111,7 +111,7 @@ initializeGUI = () => {
 				// Behave as ghost button
 				{fnName: "addClass", args: ["ghostButton"]},
 			],
-			canvasRelativePosition: [0.03, 0.02],
+			canvasRelativePosition: [0.02, 0.02],
 			canvasRelativeSize: [0.05, 0.06]
 		},
 
@@ -139,7 +139,7 @@ initializeGUI = () => {
 						// Load given URL
 						if(selectedValue === "Enter CSV URL"){
 							let selectedValue = window.prompt("Enter CSV URL");
-							if(buildDataset(selectedValue)){
+							if(loadDataset(selectedValue)){
 								// Add as option & make it selected
 								selectComponent.option(selectedValue);
 								selectComponent.selected(selectedValue);
@@ -147,7 +147,7 @@ initializeGUI = () => {
 						}
 						// Load dataset
 						else{
-							buildDataset(selectedValue);
+							loadDataset(selectedValue);
 						}
 					}
 				]},

@@ -73,6 +73,10 @@ updateSubCanvas = () => {
 // Creates sub canvas objects
 createSubCanvas = () => {
 	Object.entries(subCanvas.c).forEach(([k, v], cIdx) => {
+		// Remove canvas first, if exists
+		if(subCanvas.c[cIdx].obj) subCanvas.c[cIdx].obj.remove();
+
+		// Create a fresh one
 		subCanvas.c[cIdx].obj = createGraphics(
 			(windowWidth * (1 - subCanvas.leftTabWidthRatio)),
 			windowHeight

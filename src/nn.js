@@ -79,8 +79,7 @@ buildNeuralNetwork = () => {
 				animFn: AnimationUtils.easeOutQuad,
 				// Apply animation layer by layer or to whole network?
 				animationApplyType: (1 ? "layer" : "network")
-			},
-			neuronValueFont: MAIN_FONT
+			}
 		}
 	);
 
@@ -399,7 +398,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		canvas.colorMode(RGB);
 		canvas.textAlign(CENTER, CENTER);
 		canvas.rectMode(CENTER, CENTER);
-		canvas.textFont(this.vArgs.neuronValueFont);
+		canvas.textFont(MAIN_FONT);
 
 		//// Calculate values for drawing
 		// Get maximum neuron count

@@ -20,7 +20,7 @@ setup = () => {
 	updateGUI();
 
 	// Initialize dataset
-	buildDataset(csvURLs[0]);
+	loadDataset(csvURLs[0]);
 
 	// Build neural network
 	buildNeuralNetwork();
@@ -52,7 +52,15 @@ draw = () => {
 	);
 
 	// Draw dataset on given subcanvas
-	drawDataset(subCanvas.c[0].obj);
+	drawDataset(
+		subCanvas.c[0].obj,
+		// Additional vArgs
+		{
+			scaleX: 0.90, scaleY: 0.75,
+			mouseX: subCanvas.xToSubcanvasPosX(mouseX),
+			mouseY: subCanvas.yToSubcanvasPosY(mouseY)
+		}
+	);
 
 	// Update subcanvas related things
 	updateSubCanvas();
