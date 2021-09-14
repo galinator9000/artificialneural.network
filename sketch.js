@@ -70,7 +70,7 @@ buildNeuralNetwork = () => {
 
 		// Various visual arguments
 		vArgs={
-			scaleX: 0.65, scaleY: 0.8,
+			scaleX: 0.65, scaleY: 0.60,
 			translateX: -0.05,
 			showBiasNeurons: false,
 			weightVisualChangeSpeed: 0.25,
@@ -228,11 +228,11 @@ let subCanvas = {
 		step: 0.05,
 		animFn: AnimationUtils.easeOutExpo
 	},
-	tabWidthRatio: 0.05,
+	leftTabWidthRatio: 0.05,
 };
 
 // Position converter functions
-subCanvas.xToSubcanvasPosX = (x) => (x - (windowWidth * subCanvas.tabWidthRatio));
+subCanvas.xToSubcanvasPosX = (x) => (x - (windowWidth * subCanvas.leftTabWidthRatio));
 subCanvas.yToSubcanvasPosY = (y) => (y);
 
 getSubCanvasWidthWithIndex = (cIdx) => {
@@ -274,7 +274,7 @@ let updateSubCanvas = () => {
 let createSubCanvas = () => {
 	Object.entries(subCanvas.c).forEach(([k, v], cIdx) => {
 		subCanvas.c[cIdx].obj = createGraphics(
-			(windowWidth * (1 - subCanvas.tabWidthRatio)),
+			(windowWidth * (1 - subCanvas.leftTabWidthRatio)),
 			windowHeight
 		);
 	});
@@ -298,7 +298,7 @@ initializeGUI = () => {
 					(() => openURLInNewTab("https://globalaihub.com"))
 				]}
 			],
-			canvasRelativePosition: [0.855, 0.015],
+			canvasRelativePosition: [0.805, 0.015],
 			canvasRelativeSize: [0.14, 0.08]
 		},
 
@@ -311,7 +311,71 @@ initializeGUI = () => {
 				// Call for setting mouse press to getting random sample from dataset for stage
 				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
 			],
-			canvasRelativePosition: [0.115, 0.1],
+			canvasRelativePosition: [0.03, 0.02],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+		// Predict button
+		{
+			subCanvasIndex: 1,
+			obj: createButton("Predict"),
+			initCalls: [
+				// Call for setting mouse press to getting random sample from dataset for stage
+				{fnName: "mousePressed", args: [
+					(() => nn.predict(data.stageSample.input))
+				]},
+			],
+			canvasRelativePosition: [0.14, 0.02],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+		// Add hidden layer button
+		{
+			subCanvasIndex: 1,
+			obj: createButton("Add hidden layer"),
+			initCalls: [
+				// Call for setting mouse press to getting random sample from dataset for stage
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Add one layer to config & rebuild neural network
+						nnStructure.hiddenLayers.push(createDenseLayerConfig());
+						onChangeNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.03, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+		// Remove hidden layer button
+		{
+			subCanvasIndex: 1,
+			obj: createButton("Remove hidden layer"),
+			initCalls: [
+				// Call for setting mouse press to getting random sample from dataset for stage
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Remove hidden layers & rebuild neural network
+						nnStructure.hiddenLayers = [];
+						onChangeNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.14, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+		// Reset network button
+		{
+			subCanvasIndex: 1,
+			obj: createButton("Reset network"),
+			initCalls: [
+				// Call for setting mouse press to getting random sample from dataset for stage
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Reset configs & rebuild neural network
+						nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
+						onChangeNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.25, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		}
 	];
@@ -330,7 +394,7 @@ updateGUI = () => {
 	guiComponents.forEach(gc => {
 		// Update position
 		gc.obj.position(
-			(getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0]),
+			((windowWidth * subCanvas.leftTabWidthRatio) + (getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0])),
 			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[1]),
 		);
 		// Update size
@@ -363,8 +427,9 @@ setup = () => {
 	// Create the sub-canvases
 	createSubCanvas();
 
-	// Initialize GUI components of subcanvases
+	// Initialize&Update GUI components of subcanvases
 	initializeGUI();
+	updateGUI();
 
 	// Initialize dataset
 	buildDataset(csvURLs[0]);
@@ -375,6 +440,9 @@ setup = () => {
 
 // Main loop
 draw = () => {
+	rectMode(CORNER);
+	angleMode(DEGREES);
+
 	// Clear backgrounds
 	background(1, 0, 2, 255);
 	Object.values(subCanvas.c).forEach(sc => {
@@ -399,7 +467,7 @@ draw = () => {
 	updateSubCanvas();
 
 	// Starting X position for all subcanvases
-	let startX = (windowWidth * subCanvas.tabWidthRatio);
+	let startX = (windowWidth * subCanvas.leftTabWidthRatio);
 
 	// Get the current&next subcanvas objects
 	let currentCanvas = subCanvas.c[subCanvas.currentIdx].obj;
@@ -443,11 +511,8 @@ draw = () => {
 	}
 
 	// Draw subcanvas' tabs to the left
-	let eachTabW = (windowWidth * subCanvas.tabWidthRatio);
+	let eachTabW = (windowWidth * subCanvas.leftTabWidthRatio);
 	let eachTabH = (windowHeight / subCanvas.c.length);
-
-	rectMode(CORNER);
-	angleMode(DEGREES);
 
 	let curScIdx = (subCanvas.nextIdx);
 	subCanvas.c.forEach((sc, scIdx) => {
