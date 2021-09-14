@@ -7,6 +7,7 @@ initializeGUI = () => {
 	guiComponents = [
 		//// Main GUI components
 
+		// GlobalAIHub. REGISTER THERE! QUICK!
 		{
 			subCanvasIndex: -1,
 			obj: createImg(
@@ -26,8 +27,13 @@ initializeGUI = () => {
 
 		// Get sample button
 		{
+			id: "get_sample_button",
 			subCanvasIndex: 1,
 			obj: createButton("Get sample"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive())}
+			],
 			initCalls: [
 				// Get random sample from dataset for stage
 				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
@@ -38,8 +44,13 @@ initializeGUI = () => {
 
 		// Predict button
 		{
+			id: "predict_button",
 			subCanvasIndex: 1,
 			obj: createButton("Predict"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive())}
+			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					// Predict current stage sample
@@ -52,8 +63,13 @@ initializeGUI = () => {
 
 		// Add hidden layer button
 		{
+			id: "add_hidden_layer_button",
 			subCanvasIndex: 1,
 			obj: createButton("Add hidden layer"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("add_hidden_layer_button").subCanvasIndex].isActive())}
+			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
@@ -69,8 +85,13 @@ initializeGUI = () => {
 
 		// Remove hidden layer button
 		{
+			id: "remove_hidden_layer_button",
 			subCanvasIndex: 1,
 			obj: createButton("Remove hidden layer"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("remove_hidden_layer_button").subCanvasIndex].isActive())}
+			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
@@ -86,8 +107,13 @@ initializeGUI = () => {
 
 		// Reset network button
 		{
+			id: "reset_network_button",
 			subCanvasIndex: 1,
 			obj: createButton("Reset network"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("reset_network_button").subCanvasIndex].isActive())}
+			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
@@ -106,16 +132,16 @@ initializeGUI = () => {
 		// Dataset source text
 		{
 			subCanvasIndex: 0,
-			obj: createButton("Source:"),
+			obj: createButton("Source"),
 			initCalls: [
 				// Behave as ghost button
-				{fnName: "addClass", args: ["ghostButton"]},
+				{fnName: "addClass", args: ["textButton"]},
 			],
 			canvasRelativePosition: [0.02, 0.02],
 			canvasRelativeSize: [0.05, 0.06]
 		},
 
-		// Dataset raw URL input
+		// Dataset source select / raw CSV URL provider
 		{
 			id: "dataset_url_select",
 			subCanvasIndex: 0,
@@ -152,8 +178,25 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.09, 0.02],
+			canvasRelativePosition: [0.07, 0.02],
 			canvasRelativeSize: [0.25, 0.06]
+		},
+
+		// Dataset compile button
+		{
+			id: "compile_dataset_button",
+			subCanvasIndex: 0,
+			obj: createButton("Compile dataset"),
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Compile dataset!
+						compileDataset();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.33, 0.02],
+			canvasRelativeSize: [0.10, 0.06]
 		},
 	];
 
@@ -175,6 +218,7 @@ updateGUI = () => {
 	guiComponents.forEach(gc => {
 		// Call updates of the GUI component
 		((gc && gc.updateCalls) ? gc.updateCalls : []).forEach((uc) => {
+			// Call from object if function is property of the GUI component
 			gc.obj[uc.fnName](...uc.args);
 		});
 
@@ -197,5 +241,14 @@ updateGUI = () => {
 		// if((gc.subCanvasIndex == -1) || ((!subCanvas.inTransition) && (gc.subCanvasIndex == subCanvas.currentIdx))){
 			gc.obj.show();
 		}
+
+		// Process attributes
+		((gc && gc.attributes) ? gc.attributes : []).forEach(attr => {
+			if(attr.condition()){
+				gc.obj.attribute(attr.name, attr.value);
+			}else{
+				gc.obj.removeAttribute(attr.name);
+			}
+		});
 	});
 };

@@ -16,7 +16,7 @@ let data = {
 		target: null
 	},
 
-	compiled: false
+	isCompiled: false
 };
 
 const csvURLs = [
@@ -24,6 +24,28 @@ const csvURLs = [
 	"datasets/regression_data.csv",
 	"https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 ];
+
+// Resets everything about data
+resetDataset = () => {
+	data = {
+		dataset: null,
+		columns: {},
+		structure: {
+			n_samples: 0,
+			n_features: 0,
+			n_targets: 0
+		},
+	
+		X: null,
+		y: null,
+		stageSample: {
+			input: null,
+			target: null
+		},
+	
+		isCompiled: false
+	};
+};
 
 getStageSampleFromDataset = (idx=null) => {
 	// Sample randomly if index is not given
@@ -51,10 +73,11 @@ onChangeDataset = () => {
 
 compileDataset = () => {
 	// Set dataset as compiled
-	data.compiled = true;
+	data.isCompiled = true;
+	console.log("Dataset compiled");
 };
 
-// Initializes dataset with given URL
+// Loads&initializes dataset with given URL
 loadDataset = (csvURL) => {
 	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return false;
 
@@ -68,8 +91,10 @@ loadDataset = (csvURL) => {
 	if(!csvDataset) return false;
 
 	csvDataset.toArray().then(csvDatasetArray => {
-		// Set dataset as not-compiled yet
-		data.compiled = false;
+		// Reset everything
+		resetDataset();
+
+		// Set everything initially
 
 		// Set builded dataset as main
 		data.dataset = csvDataset;
@@ -87,11 +112,11 @@ loadDataset = (csvURL) => {
 		// Set data structure values
 		data.structure.n_samples = csvDatasetArray.length;
 
-		// Taking last column as target, others are X's
+		// Taking last column as target, others are X's (I SAID INITIALLY!)
 		data.structure.n_features = (Object.keys(csvDatasetArray[0]).length-1);
 		data.structure.n_targets = 1;
 
-		// Get input and target tensors
+		// Get input and target tensors of data
 		data.X = tf.tensor(
 			// Get all feature values in a nested-list
 			csvDatasetArray.map((row) => {
@@ -119,7 +144,7 @@ loadDataset = (csvURL) => {
 			]
 		);
 
-		console.log("Dataset built", data.structure);
+		console.log("Dataset loaded", data.structure);
 		onChangeDataset();
 		return true;
 	});

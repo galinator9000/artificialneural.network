@@ -12,6 +12,7 @@ body {
 	align-content: space-around;
 }
 
+/* Button and select styles */
 button, select {
 	background-color: #010002;
 	color: white;
@@ -20,12 +21,22 @@ button, select {
 	font-family: 'Inconsolata', monospace;
 	font-weight: bold;
 }
+/* Hover on button */
 button:hover {
 	background-color: white;
 	color: #010002;
 	font-size: 110%;
 }
 
-.ghostButton {
+/* Disabled button */
+button:disabled, button[disabled]{
+	border: none;
+	color: grey;
 	pointer-events: none;
+}
+
+/* "Ghost" kind of button */
+.textButton {
+	pointer-events: none;
+	border: none;
 }

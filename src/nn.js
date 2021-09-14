@@ -111,6 +111,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	){
 		super(sequentialArgs);
 		this.vArgs = vArgs;
+		this.isCompiled = false;
 	};
 
 	// Override add method
@@ -279,9 +280,12 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+		this.isCompiled = true;
 	};
 
 	reset = () => {
+		this.isCompiled = false;
+
 		// Propagation wave values
 		this.vArgs.propagation = {
 			...this.vArgs.propagation,
