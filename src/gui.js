@@ -5,7 +5,8 @@ let guiComponents = [];
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
 	guiComponents = [
-		//// Main components
+		//// Main GUI components
+
 		{
 			subCanvasIndex: -1,
 			obj: createImg(
@@ -21,37 +22,39 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.14, 0.08]
 		},
 
-		//// NN components
+		//// NN GUI components
+
 		// Get sample button
 		{
 			subCanvasIndex: 1,
 			obj: createButton("Get sample"),
 			initCalls: [
-				// Call for setting mouse press to getting random sample from dataset for stage
+				// Get random sample from dataset for stage
 				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
 			],
 			canvasRelativePosition: [0.03, 0.02],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+
 		// Predict button
 		{
 			subCanvasIndex: 1,
 			obj: createButton("Predict"),
 			initCalls: [
-				// Call for setting mouse press to getting random sample from dataset for stage
 				{fnName: "mousePressed", args: [
+					// Predict current stage sample
 					(() => nn.predict(data.stageSample.input))
 				]},
 			],
 			canvasRelativePosition: [0.14, 0.02],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+
 		// Add hidden layer button
 		{
 			subCanvasIndex: 1,
 			obj: createButton("Add hidden layer"),
 			initCalls: [
-				// Call for setting mouse press to getting random sample from dataset for stage
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Add one layer to config & rebuild neural network
@@ -63,12 +66,12 @@ initializeGUI = () => {
 			canvasRelativePosition: [0.03, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+
 		// Remove hidden layer button
 		{
 			subCanvasIndex: 1,
 			obj: createButton("Remove hidden layer"),
 			initCalls: [
-				// Call for setting mouse press to getting random sample from dataset for stage
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Remove hidden layers & rebuild neural network
@@ -80,12 +83,12 @@ initializeGUI = () => {
 			canvasRelativePosition: [0.14, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+
 		// Reset network button
 		{
 			subCanvasIndex: 1,
 			obj: createButton("Reset network"),
 			initCalls: [
-				// Call for setting mouse press to getting random sample from dataset for stage
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Reset configs & rebuild neural network
@@ -96,7 +99,62 @@ initializeGUI = () => {
 			],
 			canvasRelativePosition: [0.25, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
-		}
+		},
+
+		//// Dataset GUI components
+
+		// Dataset source text
+		{
+			subCanvasIndex: 0,
+			obj: createButton("Source:"),
+			initCalls: [
+				// Behave as ghost button
+				{fnName: "addClass", args: ["ghostButton"]},
+			],
+			canvasRelativePosition: [0.03, 0.02],
+			canvasRelativeSize: [0.05, 0.06]
+		},
+
+		// Dataset raw URL input
+		{
+			id: "dataset_url_select",
+			subCanvasIndex: 0,
+			obj: createSelect(),
+			initCalls: [
+				// Add option
+				{fnName: "option", args: ["Enter CSV URL"]},
+
+				// All options
+				...(csvURLs.map(url => ({fnName: "option", args: [url]}))),
+				// First CSV URL is selected
+				{fnName: "selected", args: [csvURLs[0]]},
+
+				// onChange event
+				{fnName: "changed", args: [
+					(event) => {
+						// Get selected value
+						let selectComponent = getGUIComponentWithID("dataset_url_select").obj;
+						let selectedValue = selectComponent.value();
+
+						// Load given URL
+						if(selectedValue === "Enter CSV URL"){
+							let selectedValue = window.prompt("Enter CSV URL");
+							if(buildDataset(selectedValue)){
+								// Add as option & make it selected
+								selectComponent.option(selectedValue);
+								selectComponent.selected(selectedValue);
+							}
+						}
+						// Load dataset
+						else{
+							buildDataset(selectedValue);
+						}
+					}
+				]},
+			],
+			canvasRelativePosition: [0.09, 0.02],
+			canvasRelativeSize: [0.25, 0.06]
+		},
 	];
 
 	// Call init calls of GUI components
@@ -108,9 +166,18 @@ initializeGUI = () => {
 	});
 };
 
+getGUIComponentWithID = (id) => {
+	return guiComponents.filter(gc => (gc.id && gc.id == id))[0];
+};
+
 // Updates GUI components of main canvas & sub canvases
 updateGUI = () => {
 	guiComponents.forEach(gc => {
+		// Call updates of the GUI component
+		((gc && gc.updateCalls) ? gc.updateCalls : []).forEach((uc) => {
+			gc.obj[uc.fnName](...uc.args);
+		});
+
 		// Update position
 		gc.obj.position(
 			((windowWidth * subCanvas.leftTabWidthRatio) + (getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0])),

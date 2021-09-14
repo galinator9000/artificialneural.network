@@ -47,10 +47,18 @@ onChangeDataset = () => {
 
 // Initializes dataset with given URL
 buildDataset = (csvURL) => {
-	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return;
+	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return false;
 
 	// Build CSVDataset & get full array
-	tf.data.csv(csvURL).toArray().then(csvDataset => {
+	let dataSetPromise = null;
+	try{
+		dataSetPromise = tf.data.csv(csvURL).toArray();
+	}catch{
+		return false;
+	}
+	if(!dataSetPromise) return false;
+	
+	dataSetPromise.then(csvDataset => {
 		// Set builded dataset as main
 		data.dataset = csvDataset;
 
@@ -88,7 +96,9 @@ buildDataset = (csvURL) => {
 
 		console.log("Dataset built", data.structure);
 		onChangeDataset();
+		return true;
 	});
+	return true;
 };
 
 // Draws the dataset on the given canvas

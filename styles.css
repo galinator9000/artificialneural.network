@@ -12,7 +12,7 @@ body {
 	align-content: space-around;
 }
 
-button{
+button, select {
 	background-color: #010002;
 	color: white;
 	font-size: 100%;
@@ -24,4 +24,9 @@ button:hover {
 	background-color: white;
 	color: #010002;
 	font-size: 110%;
+}
+
+.ghostButton {
+	border: none;
+	pointer-events: none;
 }
