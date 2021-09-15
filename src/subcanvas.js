@@ -87,10 +87,30 @@ createSubCanvas = () => {
 	subCanvas.c[0].isActive = () => true;
 	subCanvas.c[1].isActive = () => (
 		// NN GUI components are ready when nn&data is ready
-		data.isCompiled && nn.isCompiled
+		(!data.isLoading) && data.isCompiled && nn.isCompiled
 	);
 	subCanvas.c[2].isActive = () => (
 		// Statistics GUI components are ready when nn&data is ready
-		data.isCompiled && nn.isCompiled
+		(!data.isLoading) && data.isCompiled && nn.isCompiled
 	);
+};
+
+// Switches (transition) to given subcanvas idx
+switchSubcanvas = (switchIdx) => {
+	// Return if already in transition process
+	if(subCanvas.inTransition) return;
+	
+	// Limit index number
+	subCanvas.nextIdx = Math.min(
+		subCanvas.c.length-1,
+		Math.max(0, switchIdx)
+	);
+
+	// Start transition
+	if(subCanvas.nextIdx != subCanvas.currentIdx){
+		subCanvas.transition.x = 0;
+		subCanvas.transition.xAnim = 0;
+		subCanvas.transition.direction = (subCanvas.nextIdx > subCanvas.currentIdx) ? -1 : 1;
+		subCanvas.inTransition = true;
+	}
 };

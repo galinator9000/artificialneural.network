@@ -1,6 +1,7 @@
 // GUI related variables and functions.
 
 let guiComponents = [];
+let cursors = [];
 
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
@@ -204,10 +205,15 @@ initializeGUI = () => {
 		{
 			id: "compile_dataset_button",
 			subCanvasIndex: 0,
-			obj: createButton("Compile dataset"),
+			obj: createButton("Compile dataset!"),
 			attributes: [
 				// "Disabled" attribute for compile button (if data is compiled, disable it)
-				{name: "disabled", value: "", condition: () => (data.isCompiled)}
+				{
+					name: "disabled", value: "",
+					condition: () => (
+						(data.isLoading) || (data.isCompiled)
+					)
+				}
 			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
@@ -229,6 +235,11 @@ initializeGUI = () => {
 			gc.obj[ic.fnName](...ic.args);
 		});
 	});
+
+	// Set GUI cursors and conditions of them
+	cursors = [
+		{name: "pointer", condition: () => (mouseX < (windowWidth * subCanvas.leftTabWidthRatio))}
+	];
 };
 
 getGUIComponentWithID = (id) => {
@@ -237,6 +248,14 @@ getGUIComponentWithID = (id) => {
 
 // Updates GUI components of main canvas & sub canvases
 updateGUI = () => {
+	// Set cursor according to mouse position
+	cursor("");
+	for(let c = 0; c<cursors.length; c++){
+		if(cursors[c].condition()){
+			cursor(cursors[c].name);
+		}
+	}
+
 	guiComponents.forEach(gc => {
 		// Call updates of the GUI component
 		((gc && gc.updateCalls) ? gc.updateCalls : []).forEach((uc) => {

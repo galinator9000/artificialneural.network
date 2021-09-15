@@ -1,6 +1,7 @@
 html, body {
 	width: 100%;
 	height: 100%;
+	background-color: #010002;
 }
 
 body {
@@ -10,6 +11,7 @@ body {
 	justify-content: center;
 	/* align-items: flex-end; */
 	align-content: space-around;
+	background-color: #010002;
 }
 
 /* Button and select styles */

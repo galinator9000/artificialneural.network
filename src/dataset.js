@@ -16,7 +16,8 @@ let data = {
 		target: null
 	},
 
-	isCompiled: false
+	isCompiled: false,
+	isLoading: false,
 };
 
 const csvURLs = [
@@ -43,10 +44,12 @@ resetDataset = () => {
 			target: null
 		},
 	
-		isCompiled: false
+		isCompiled: false,
+		isLoading: false
 	};
 };
 
+// Gets one sample and puts it to stage (side of the network)
 getStageSampleFromDataset = (idx=null) => {
 	// Sample randomly if index is not given
 	idx = (idx !== null ? idx : getRandomInt(0, data.structure.n_samples));
@@ -60,18 +63,12 @@ getStageSampleFromDataset = (idx=null) => {
 	console.log(data.stageSample.target.toString());
 };
 
-// Gets called whenever dataset changes
-onChangeDataset = () => {
-	// Get first sample on stage
-	getStageSampleFromDataset(0);
-
+// Compiles dataset, sets networks input/output unit counts
+compileDataset = () => {
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayer.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayer.args.units = data.structure.n_targets;
 	buildNeuralNetwork();
-};
-
-compileDataset = () => {
 	// Set dataset as compiled
 	data.isCompiled = true;
 	console.log("Dataset compiled");
@@ -81,14 +78,21 @@ compileDataset = () => {
 loadDataset = (csvURL) => {
 	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return false;
 
+	// Set as loading
+	data.isLoading = true;
+
 	// Build CSVDataset & get full array
 	let csvDataset = null;
 	try{
 		csvDataset = tf.data.csv(csvURL);
 	}catch{
+		data.isLoading = false;
 		return false;
 	}
-	if(!csvDataset) return false;
+	if(!csvDataset){
+		data.isLoading = false;
+		return false;
+	}
 
 	csvDataset.toArray().then(csvDatasetArray => {
 		// Reset everything
@@ -145,7 +149,6 @@ loadDataset = (csvURL) => {
 		);
 
 		console.log("Dataset loaded", data.structure);
-		onChangeDataset();
 		return true;
 	});
 	return true;

@@ -144,26 +144,25 @@ windowResized = () => {
 	createSubCanvas();
 };
 
-// Change the current subcanvas (tab)
+// Processes mouse wheel events
 mouseWheel = (event) => {
-	// Return if already in transition process
-	if(subCanvas.inTransition) return;
+	// Change the current subcanvas (tab)
+	if(event.deltaY > 0) switchSubcanvas(subCanvas.currentIdx+1);
+	if(event.deltaY < 0) switchSubcanvas(subCanvas.currentIdx-1);
+};
 
-	// Increment&decrement index of subcanvas
-	if(event.deltaY > 0) subCanvas.nextIdx = subCanvas.currentIdx + 1;
-	if(event.deltaY < 0) subCanvas.nextIdx = subCanvas.currentIdx - 1;
+// Processes mouse pressed event, tab switch or subcanvas events
+mousePressed = (event) => {
+	let subcanvasStartX = (windowWidth * subCanvas.leftTabWidthRatio);
+	let eachTabH = (windowHeight / subCanvas.c.length);
 
-	// Limit index number
-	subCanvas.nextIdx = Math.min(
-		subCanvas.c.length-1,
-		Math.max(0, subCanvas.nextIdx)
-	);
+	// Check if it's on the main canvas
+	if(event.x <= subcanvasStartX){
+		let clickedSubcanvasIndex = Math.floor(event.y / eachTabH);
 
-	// Start transition
-	if(subCanvas.nextIdx != subCanvas.currentIdx){
-		subCanvas.transition.x = 0;
-		subCanvas.transition.xAnim = 0;
-		subCanvas.transition.direction = (subCanvas.nextIdx > subCanvas.currentIdx) ? -1 : 1;
-		subCanvas.inTransition = true;
+		// Switch tab
+		switchSubcanvas(clickedSubcanvasIndex);
+	}else{
+		// Pass event to subcanvas
 	}
 };
