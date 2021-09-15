@@ -31,108 +31,25 @@ initializeGUI = () => {
 
 		//// NN GUI components
 
-		// Get sample button
+		// Compile network button
 		{
-			id: "get_sample_button",
+			id: "compile_network_button",
 			subCanvasIndex: 1,
-			obj: createButton("Get sample"),
+			obj: createButton("Compile network!"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				// Get random sample from dataset for stage
-				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
-			],
-			canvasRelativePosition: [0.03, 0.02],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Predict button
-		{
-			id: "predict_button",
-			subCanvasIndex: 1,
-			obj: createButton("Predict"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					// Predict current stage sample
-					(() => nn.predict(data.stageSample.input))
-				]},
-			],
-			canvasRelativePosition: [0.14, 0.02],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Fit button
-		{
-			id: "fit_button",
-			subCanvasIndex: 1,
-			obj: createButton("Train on dataset!"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					// Fit the model on dataset
-					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
-				]},
-			],
-			canvasRelativePosition: [0.25, 0.02],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Add hidden layer button
-		{
-			id: "add_hidden_layer_button",
-			subCanvasIndex: 1,
-			obj: createButton("Add hidden layer"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("add_hidden_layer_button").subCanvasIndex].isActive())}
+				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
 			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Add one layer to config & reinitialize the network
-						nnStructure.hiddenLayers.push(createDenseLayerConfig());
-						initializeNeuralNetwork();
+						// Compile neural network
+						compileNeuralNetwork();
 					})
 				]},
 			],
-			canvasRelativePosition: [0.03, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Remove hidden layer button
-		{
-			id: "remove_hidden_layer_button",
-			subCanvasIndex: 1,
-			obj: createButton("Remove hidden layer"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("remove_hidden_layer_button").subCanvasIndex].isActive())}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Remove hidden layers & reinitialize the network
-						nnStructure.hiddenLayers = [];
-						initializeNeuralNetwork();
-					})
-				]},
-			],
-			canvasRelativePosition: [0.14, 0.92],
+			showCond: () => ((nn && !nn.isCompiled)),
+			canvasRelativePosition: [0.40, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -154,28 +71,72 @@ initializeGUI = () => {
 					})
 				]},
 			],
-			canvasRelativePosition: [0.25, 0.92],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.275, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Compile network button
+		// Get sample button
 		{
-			id: "compile_network_button",
+			id: "get_sample_button",
 			subCanvasIndex: 1,
-			obj: createButton("Compile network!"),
+			obj: createButton("Get sample"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				// Get random sample from dataset for stage
+				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.385, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Predict button
+		{
+			id: "predict_button",
+			subCanvasIndex: 1,
+			obj: createButton("Predict"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
 			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
-					(() => {
-						// Compile neural network
-						compileNeuralNetwork();
-					})
+					// Predict current stage sample
+					(() => nn.predict(data.stageSample.input))
 				]},
 			],
-			canvasRelativePosition: [0.36, 0.92],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.495, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Fit button
+		{
+			id: "fit_button",
+			subCanvasIndex: 1,
+			obj: createButton("Train on dataset!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					// Fit the model on dataset
+					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.605, 0.92],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -189,7 +150,7 @@ initializeGUI = () => {
 				// Behave as ghost button
 				{fnName: "addClass", args: ["textButton"]},
 			],
-			canvasRelativePosition: [0.02, 0.02],
+			canvasRelativePosition: [0.05, 0.02],
 			canvasRelativeSize: [0.05, 0.06]
 		},
 
@@ -234,7 +195,7 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.07, 0.02],
+			canvasRelativePosition: [0.10, 0.02],
 			canvasRelativeSize: [0.25, 0.06]
 		},
 
@@ -260,7 +221,7 @@ initializeGUI = () => {
 					})
 				]},
 			],
-			canvasRelativePosition: [0.33, 0.02],
+			canvasRelativePosition: [0.36, 0.02],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 	];
@@ -310,8 +271,12 @@ updateGUI = () => {
 		gc.obj.style("display", "none");
 
 		// Show the object if conditions are met
-		if((gc.subCanvasIndex == -1) || (gc.subCanvasIndex == subCanvas.nextIdx)){
-		// if((gc.subCanvasIndex == -1) || ((!subCanvas.inTransition) && (gc.subCanvasIndex == subCanvas.currentIdx))){
+		if(
+			(
+				(gc.subCanvasIndex == -1)
+				|| (gc.subCanvasIndex == subCanvas.nextIdx)
+			) && ((gc.showCond === undefined) || (gc && gc.showCond && gc.showCond()))
+		){
 			gc.obj.show();
 		}
 

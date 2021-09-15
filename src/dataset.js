@@ -70,7 +70,35 @@ compileDataset = () => {
 	nnStructure.outputLayer.args.units = data.structure.n_targets;
 	// Reinitialize neural network
 	initializeNeuralNetwork();
-	
+
+	// Get input and target tensors of data
+	data.X = tf.tensor(
+		// Get all feature values in a nested-list
+		data.dataset.map((row) => {
+			return Object.entries(row).map(([k, v]) => {
+				return (!data.columns[k].isTarget) ? v : null;
+			}).filter(v => v !== null);
+		}),
+		// Shape
+		[
+			data.structure.n_samples,
+			data.structure.n_features
+		]
+	);
+	data.y = tf.tensor(
+		// Get all target values in a nested-list
+		data.dataset.map((row) => {
+			return Object.entries(row).map(([k, v]) => {
+				return (data.columns[k].isTarget) ? v : null;
+			}).filter(v => v !== null);
+		}),
+		// Shape
+		[
+			data.structure.n_samples,
+			data.structure.n_targets
+		]
+	);
+
 	// Set dataset as compiled
 	data.isCompiled = true;
 	console.log("Dataset compiled");
@@ -105,7 +133,7 @@ loadDataset = async (url) => {
 
 	// Set everything initially
 	// Set builded dataset as main
-	data.dataset = csvDataset;
+	data.dataset = csvDatasetArray;
 
 	// Get data columns
 	data.columns = {};
@@ -123,34 +151,6 @@ loadDataset = async (url) => {
 	// Taking last column as target, others are X's (I SAID INITIALLY!)
 	data.structure.n_features = (Object.keys(csvDatasetArray[0]).length-1);
 	data.structure.n_targets = 1;
-
-	// Get input and target tensors of data
-	data.X = tf.tensor(
-		// Get all feature values in a nested-list
-		csvDatasetArray.map((row) => {
-			return Object.entries(row).map(([k, v]) => {
-				return (!data.columns[k].isTarget) ? v : null;
-			}).filter(v => v !== null);
-		}),
-		// Shape
-		[
-			data.structure.n_samples,
-			data.structure.n_features
-		]
-	);
-	data.y = tf.tensor(
-		// Get all target values in a nested-list
-		csvDatasetArray.map((row) => {
-			return Object.entries(row).map(([k, v]) => {
-				return (data.columns[k].isTarget) ? v : null;
-			}).filter(v => v !== null);
-		}),
-		// Shape
-		[
-			data.structure.n_samples,
-			data.structure.n_targets
-		]
-	);
 
 	console.log("Dataset loaded", data.structure);
 	return true;

@@ -20,7 +20,7 @@ setup = () => {
 	updateGUI();
 
 	// Load dataset
-	loadDataset(Object.values(csvURLs)[0]);
+	loadDataset(Object.values(csvURLs)[0]).then(() => {compileDataset()});
 };
 
 // Main loop

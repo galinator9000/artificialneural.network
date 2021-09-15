@@ -17,8 +17,8 @@ let subCanvas = {
 		},
 	],
 
-	currentIdx: 0,
-	nextIdx: 0,
+	currentIdx: 1,
+	nextIdx: 1,
 
 	// Animation of subcanvas transitions
 	inTransition: false,
