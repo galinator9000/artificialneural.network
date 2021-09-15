@@ -15,6 +15,7 @@ initializeGUI = () => {
 
 		// GlobalAIHub. REGISTER THERE! QUICK!
 		{
+			id: "join_globalaihub",
 			subCanvasIndex: -1,
 			obj: createImg(
 				"assets/join-globalaihub.png"
@@ -146,6 +147,7 @@ initializeGUI = () => {
 
 		// Dataset source text
 		{
+			id: "dataset_source_text",
 			subCanvasIndex: 0,
 			obj: createButton("Source"),
 			initCalls: [
@@ -239,6 +241,30 @@ initializeGUI = () => {
 
 getGUIComponentWithID = (id) => {
 	return guiComponents.filter(gc => (gc.id && gc.id == id))[0];
+};
+
+// Removes GUI component with given ID
+removeGUIComponentWithID = (id) => {
+	// Get GUI component itself and it's index on the list
+	let [gc, gcIdx] = guiComponents.map(
+		(gc, gcIdx) => ([gc, gcIdx])
+	).filter(
+		([gc, gcIdx]) => (gc.id == id)
+	)[0];
+
+	// Remove HTML element, pop it from the list
+	gc.obj.remove();
+	guiComponents.splice(gcIdx, 1);
+};
+
+// Adds given GUI component & initializes it
+addGUIComponent = (guiComponentObj) => {
+	guiComponents.push(guiComponentObj);
+	
+	// Call init calls of added GUI object
+	guiComponentObj.initCalls.forEach((ic) => {
+		guiComponentObj.obj[ic.fnName](...ic.args);
+	});
 };
 
 // Updates GUI components of main canvas & sub canvases

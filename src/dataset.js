@@ -66,8 +66,8 @@ getStageSampleFromDataset = (idx=null) => {
 // Compiles dataset, sets networks input/output unit counts
 compileDataset = () => {
 	// Set neural network input/output layers' neuron count
-	nnStructure.inputLayer.args.inputShape = [data.structure.n_features];
-	nnStructure.outputLayer.args.units = data.structure.n_targets;
+	nnStructure.inputLayerConfig.args.inputShape = [data.structure.n_features];
+	nnStructure.outputLayerConfig.args.units = data.structure.n_targets;
 	// Reinitialize neural network
 	initializeNeuralNetwork();
 

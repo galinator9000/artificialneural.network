@@ -13,23 +13,23 @@ createDenseLayerConfig = (denseArgs={activation: "sigmoid"}) => ({
 	}
 });
 
+// Builds tf layer with given config
+layerConfigToLayer = (layer) => layer.class(layer.args);
+
 // Our main neural network model
 let nn;
 
-// Specifies our neural network structure (layers, losses etc.)
+// Specifies our neural network structure (input/output layers, losses etc.)
 let nnStructure = {
-	// Input layer
-	inputLayer: {
+	// Input layer config
+	inputLayerConfig: {
 		class: tf.layers.inputLayer,
 		// (set input unit to 1 initially)
 		args: {inputShape: [1]}
 	},
 
-	// Hidden layers empty initially
-	hiddenLayers: [],
-
-	// Output layer
-	outputLayer: createDenseLayerConfig({
+	// Output layer config
+	outputLayerConfig: createDenseLayerConfig({
 		// (set output unit to 1 initially)
 		units: 1,
 		useBias: true,
@@ -52,8 +52,6 @@ let nnStructure = {
 
 // Resets neural network
 resetNeuralNetwork = () => {
-	// Empty hidden layers
-	nnStructure.hiddenLayers = [];
 	// Remove current nn object
 	nn = undefined;
 };
@@ -85,15 +83,7 @@ initializeNeuralNetwork = () => {
 	);
 
 	// Put all layer configs in a list, add each of them to the model
-	[
-		nnStructure.inputLayer,
-		...nnStructure.hiddenLayers,
-		nnStructure.outputLayer
-	].forEach(layer => {
-		nn.add(
-			layer.class(layer.args)
-		);
-	});
+	[nnStructure.inputLayerConfig, nnStructure.outputLayerConfig].forEach(layerConfig => nn.add(layerConfigToLayer(layerConfig)));
 
 	// "Precompile" the network for being able to draw it
 	nn.precompile();
@@ -139,6 +129,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Add layer to the Sequential model
 		super.add(layer);
+
+		// "Precompile" the network for being able to draw it
+		nn.precompile();
 	}
 
 	// Override compile method
@@ -446,25 +439,25 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		//// Calculate values for drawing
 		// Get maximum neuron count
-		let maxUnitCount = Math.max(...(this.layers.map(layer => 
+		this.vArgs.maxUnitCount = Math.max(...(this.layers.map(layer => 
 			(layer.units) || (layer.batchInputShape && layer.batchInputShape[1])
 		)));
 		// Calculate step per neuron in +Y direction
-		let perNeuronY = ((canvas.height * this.vArgs.scaleY) / (
+		this.vArgs.perNeuronY = ((canvas.height * this.vArgs.scaleY) / (
 			// Limit maximum neuron size when there's few neurons
-			Math.max(10, maxUnitCount)
+			Math.max(10, this.vArgs.maxUnitCount)
 		));
 		// Calculate step per layer in +X direction
-		let perLayerX = ((canvas.width * this.vArgs.scaleX) / (this.layers.length-1));
+		this.vArgs.perLayerX = ((canvas.width * this.vArgs.scaleX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network
-		let startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
+		this.vArgs.startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
 		// Calculate each neuron size with using step per neuron value
-		Neuron.r = (perNeuronY / 1.25 / 2);
+		Neuron.r = (this.vArgs.perNeuronY / 1.25 / 2);
 
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
-			(startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2)) + (canvas.width * this.vArgs.translateX)
+			(this.vArgs.startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2)) + (canvas.width * this.vArgs.translateX)
 		));
 
 		// Update propagation wave position (set directly or go towards to target smoothly)
@@ -513,13 +506,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		let neuronDrawCalls = this.layerNeurons.map((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
-			let startNeuronY = ((canvas.height/2) - ((perNeuronY * layer.length) / 2)) + (perNeuronY/2);
+			let startNeuronY = ((canvas.height/2) - ((this.vArgs.perNeuronY * layer.length) / 2)) + (this.vArgs.perNeuronY/2);
 
 			// Each neuron
 			return layer.map((neuron, neuronIndex) => {
 				// Set position of neuron & draw it
-				neuron.x = (startLayerX + (perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
-				neuron.y = (startNeuronY + (perNeuronY * neuronIndex));
+				neuron.x = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
+				neuron.y = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex));
 				return () => {neuron.draw(canvas, this.vArgs)};
 			});
 		});
