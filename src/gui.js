@@ -166,33 +166,37 @@ initializeGUI = () => {
 			subCanvasIndex: 0,
 			obj: createSelect(),
 			initCalls: [
-				// Add option
+				// Enter CSV URL option
 				{fnName: "option", args: ["Enter CSV URL"]},
 
-				// All options
-				...(csvURLs.map(url => ({fnName: "option", args: [url]}))),
+				// All constant options
+				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
 				// First CSV URL is selected
-				{fnName: "selected", args: [csvURLs[0]]},
+				{fnName: "selected", args: [Object.values(csvURLs)[0]]},
 
 				// onChange event
 				{fnName: "changed", args: [
 					(event) => {
 						// Get selected value
 						let selectComponent = getGUIComponentWithID("dataset_url_select").obj;
-						let selectedValue = selectComponent.value();
+						let selectedURL = selectComponent.value();
 
 						// Load given URL
-						if(selectedValue === "Enter CSV URL"){
-							let selectedValue = window.prompt("Enter CSV URL");
-							if(loadDataset(selectedValue)){
-								// Add as option & make it selected
-								selectComponent.option(selectedValue);
-								selectComponent.selected(selectedValue);
-							}
+						if(selectedURL === "Enter CSV URL"){
+							selectedURL = window.prompt("Enter CSV URL");
+
+							// Attempt to load given URL, if successful, add as an option
+							loadDataset(selectedURL).then((success) => {
+								if(success){
+									// Add as option & make it selected
+									selectComponent.option(selectedURL, selectedURL);
+									selectComponent.selected(selectedURL);
+								}
+							});
 						}
 						// Load dataset
 						else{
-							loadDataset(selectedValue);
+							loadDataset(selectedURL);
 						}
 					}
 				]},

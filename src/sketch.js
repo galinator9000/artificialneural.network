@@ -20,7 +20,7 @@ setup = () => {
 	updateGUI();
 
 	// Initialize dataset
-	loadDataset(csvURLs[0]);
+	loadDataset(Object.values(csvURLs)[0]);
 
 	// Build neural network
 	buildNeuralNetwork();

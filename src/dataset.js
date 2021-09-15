@@ -20,11 +20,11 @@ let data = {
 	isLoading: false,
 };
 
-const csvURLs = [
-	"datasets/binary_classification_data.csv",
-	"datasets/regression_data.csv",
-	"https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
-];
+const csvURLs = {
+	"Classification": "datasets/binary_classification_data.csv",
+	"Regression": "datasets/regression_data.csv",
+	"Boston Housing Regression": "https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
+};
 
 // Resets everything about data
 resetDataset = () => {
@@ -75,8 +75,9 @@ compileDataset = () => {
 };
 
 // Loads&initializes dataset with given URL
-loadDataset = (csvURL) => {
-	if(csvURL.length == 0 || !csvURL.endsWith(".csv")) return false;
+loadDataset = async (url) => {
+	if(url === null || url === undefined) url = "";
+	if(url.length == 0 || !url.endsWith(".csv")) return false;
 
 	// Set as loading
 	data.isLoading = true;
@@ -84,7 +85,7 @@ loadDataset = (csvURL) => {
 	// Build CSVDataset & get full array
 	let csvDataset = null;
 	try{
-		csvDataset = tf.data.csv(csvURL);
+		csvDataset = tf.data.csv(url);
 	}catch{
 		data.isLoading = false;
 		return false;
@@ -94,63 +95,61 @@ loadDataset = (csvURL) => {
 		return false;
 	}
 
-	csvDataset.toArray().then(csvDatasetArray => {
-		// Reset everything
-		resetDataset();
+	let csvDatasetArray = await csvDataset.toArray();
 
-		// Set everything initially
+	// Reset everything
+	resetDataset();
 
-		// Set builded dataset as main
-		data.dataset = csvDataset;
+	// Set everything initially
+	// Set builded dataset as main
+	data.dataset = csvDataset;
 
-		// Get data columns
-		data.columns = {};
-		csvDataset.fullColumnNames.forEach(
-			(colName, colIndex) => {
-				data.columns[colName] = {
-					isTarget: (colIndex == (csvDataset.fullColumnNames.length-1))
-				}
+	// Get data columns
+	data.columns = {};
+	csvDataset.fullColumnNames.forEach(
+		(colName, colIndex) => {
+			data.columns[colName] = {
+				isTarget: (colIndex == (csvDataset.fullColumnNames.length-1))
 			}
-		);
+		}
+	);
 
-		// Set data structure values
-		data.structure.n_samples = csvDatasetArray.length;
+	// Set data structure values
+	data.structure.n_samples = csvDatasetArray.length;
 
-		// Taking last column as target, others are X's (I SAID INITIALLY!)
-		data.structure.n_features = (Object.keys(csvDatasetArray[0]).length-1);
-		data.structure.n_targets = 1;
+	// Taking last column as target, others are X's (I SAID INITIALLY!)
+	data.structure.n_features = (Object.keys(csvDatasetArray[0]).length-1);
+	data.structure.n_targets = 1;
 
-		// Get input and target tensors of data
-		data.X = tf.tensor(
-			// Get all feature values in a nested-list
-			csvDatasetArray.map((row) => {
-				return Object.entries(row).map(([k, v]) => {
-					return (!data.columns[k].isTarget) ? v : null;
-				}).filter(v => v !== null);
-			}),
-			// Shape
-			[
-				data.structure.n_samples,
-				data.structure.n_features
-			]
-		);
-		data.y = tf.tensor(
-			// Get all target values in a nested-list
-			csvDatasetArray.map((row) => {
-				return Object.entries(row).map(([k, v]) => {
-					return (data.columns[k].isTarget) ? v : null;
-				}).filter(v => v !== null);
-			}),
-			// Shape
-			[
-				data.structure.n_samples,
-				data.structure.n_targets
-			]
-		);
+	// Get input and target tensors of data
+	data.X = tf.tensor(
+		// Get all feature values in a nested-list
+		csvDatasetArray.map((row) => {
+			return Object.entries(row).map(([k, v]) => {
+				return (!data.columns[k].isTarget) ? v : null;
+			}).filter(v => v !== null);
+		}),
+		// Shape
+		[
+			data.structure.n_samples,
+			data.structure.n_features
+		]
+	);
+	data.y = tf.tensor(
+		// Get all target values in a nested-list
+		csvDatasetArray.map((row) => {
+			return Object.entries(row).map(([k, v]) => {
+				return (data.columns[k].isTarget) ? v : null;
+			}).filter(v => v !== null);
+		}),
+		// Shape
+		[
+			data.structure.n_samples,
+			data.structure.n_targets
+		]
+	);
 
-		console.log("Dataset loaded", data.structure);
-		return true;
-	});
+	console.log("Dataset loaded", data.structure);
 	return true;
 };
 
