@@ -150,10 +150,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Create Neuron & Weight objects
 		this.createNeurons();
-		this.createWeights();
+		this.createWeights(true);
 
 		// Initially call them
-		this.onChangeWeights();
+		this.onChangeWeights(true);
 		this.onChangeNeurons();
 
 		// Update all weights' outer look initially by calling their updateOuterLook method
@@ -164,6 +164,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+
+		// Mark as compiled
 		this.isCompiled = true;
 	};
 	
@@ -217,7 +219,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			this.updateAllWeights();
 
 			// Weight values changed, call it!
-			this.onChangeWeights();
+			this.onChangeWeights(true);
 
 			// Fire the neurons backward ;)
 			this.vArgs.propagation.x = 1.0;
@@ -255,7 +257,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Create Neuron objects for each of weight in the network
-	createWeights = () => {
+	createWeights = (withRealValues) => {
 		// Create a nested-list for keeping 'Weight' objects of each layer
 		this.layerWeights = this.layers.slice(1).map(layer => []);
 
@@ -270,9 +272,16 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
 				toLayerNeurons = toLayerNeurons.slice(1);
 			};
-			
-			// Get the 2D weight tensor of the layer, turn it into a nested-list
-			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
+
+			// Get or build layer weight matrix
+			let layerWeightMatrix;
+			if(withRealValues){
+				// Get the 2D weight tensor of the layer, turn it into a nested-list
+				layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
+			}else{
+				// Build a tensor that has fake values (for being able to draw them before compiling)
+				layerWeightMatrix = tf.ones([fromLayerNeurons.length, toLayerNeurons.length]).arraySync();
+			}
 
 			// Create each Weight object between the layers
 			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
@@ -296,6 +305,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Precompile method prepares the variables for being able to draw the network before compiling
 	precompile = () => {
 		this.createNeurons();
+		this.createWeights(false);
+		this.onChangeWeights(false);
+
+		// Update all weights' outer look initially by calling their updateOuterLook method
+		this.layerWeights.forEach(layer => {
+			layer.forEach(neuron => {
+				neuron.forEach(weight => {
+					weight.updateOuterLook(this.vArgs);
+				});
+			});
+		});
 	};
 
 	reset = () => {
@@ -361,9 +381,14 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Should be called when Weight values change
-	onChangeWeights = () => {
+	onChangeWeights = (withRealValues) => {
 		// Get all weights in a 1D tensor
-		let allWeights = this.getAllWeights().arraySync();
+		let allWeights;
+		if(withRealValues){
+			allWeights = this.getAllWeights().arraySync();
+		}else{
+			allWeights = [1, 1];
+		}
 
 		// Update weight stats
 		this.vArgs.weightsStats = {
@@ -501,17 +526,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		//// Draw weights if compiled
 		// Each layer
-		if(this.isCompiled){
-			this.layerWeights.forEach((layer) => {
-				// Each neuron
-				layer.forEach((neuron) => {
-					// Each weight
-					neuron.forEach(weight => {
-						weight.draw(canvas, this.vArgs);
-					});
+		this.layerWeights.forEach((layer) => {
+			// Each neuron
+			layer.forEach((neuron) => {
+				// Each weight
+				neuron.forEach(weight => {
+					weight.draw(canvas, this.vArgs);
 				});
 			});
-		}
+		});
 
 		//// Draw neurons over weights
 		neuronDrawCalls.forEach(drawCalls => {drawCalls.forEach(drawCall => {drawCall()})});

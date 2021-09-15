@@ -45,6 +45,8 @@ initializeGUI = () => {
 					(() => {
 						// Compile neural network
 						compileNeuralNetwork();
+						// Get random sample on stage
+						getStageSampleFromDataset();
 					})
 				]},
 			],
