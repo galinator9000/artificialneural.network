@@ -95,20 +95,25 @@ initializeNeuralNetwork = () => {
 		);
 	});
 
-	// Compile the model with args
-	nn.compile(nnStructure.compileArgs);
+	// "Precompile" the network for being able to draw it
+	nn.precompile();
 };
 
 // Compiles neural network
 compileNeuralNetwork = () => {
-	nn.isCompiled = true;
-	console.log("NN built", nnStructure);
+	// Compile the model with args
+	nn.compile(nnStructure.compileArgs);
+	console.log("NN compiled", nnStructure);
 };
 
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{
 	// vArgs holds our custom values (for visual purposes) for our class
 	vArgs = {};
+
+	// These variable holds our Neuron and Weight objects for our layers as a nested-list
+	layerNeurons = [];
+	layerWeights = [];
 
 	constructor(
 		sequentialArgs,
@@ -143,62 +148,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// First reset own values
 		this.reset();
 
-		// Create a nested-list for keeping 'Neuron' objects of each layer
-		this.layerNeurons = this.layers.map(layer => []);
-		// Create Neuron objects for each layer
-		this.layers.forEach((layer, layerIndex) => {
-			// Get neuron counts
-			let neuronCount = (layer.units) || (layer.batchInputShape && layer.batchInputShape[1]);
+		// Create Neuron & Weight objects
+		this.createNeurons();
+		this.createWeights();
 
-			// Check if next layer uses bias
-			let nextLayerUsesBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
-			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
-				neuronCount++;
-			}
-
-			// Each neuron
-			[...Array(neuronCount).keys()].forEach(neuronIndex => {
-				// Create Neuron object & push it to the list
-				this.layerNeurons[layerIndex].push(new Neuron());
-			});
-		});
-
-		// Create a nested-list for keeping 'Weight' objects of each layer
-		this.layerWeights = this.layers.slice(1).map(layer => []);
-		// Create Weight objects for each layer (with pairing layers)
-		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
-			let fromLayerNeurons = this.layerNeurons[layerIndex];
-			let toLayerNeurons = this.layerNeurons[layerIndex+1];
-
-			// Check if next layer uses bias
-			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
-			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
-			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
-				toLayerNeurons = toLayerNeurons.slice(1);
-			};
-			
-			// Get the 2D weight tensor of the layer, turn it into a nested-list
-			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
-
-			// Create each Weight object between the layers
-			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
-				this.layerWeights[layerIndex].push([]);
-
-				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
-					// Create Weight object & push it to the nested-list
-					this.layerWeights[layerIndex][fromNeuronIndex].push(
-						new Weight(
-							fromNeuron,
-							toNeuron,
-							// Carried value, get it from the matrix
-							layerWeightMatrix[fromNeuronIndex][toNeuronIndex]
-						)
-					);
-				});
-			});
-		});
-
-		// Initially call them.
+		// Initially call them
 		this.onChangeWeights();
 		this.onChangeNeurons();
 
@@ -210,6 +164,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
+		this.isCompiled = true;
 	};
 	
 	// Override predict method
@@ -275,6 +230,74 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	//// Custom methods
+	// Create Neuron objects for each of neuron in the network
+	createNeurons = () => {
+		// Create a nested-list for keeping 'Neuron' objects of each layer
+		this.layerNeurons = this.layers.map(layer => []);
+
+		// Create Neuron objects for each layer
+		this.layers.forEach((layer, layerIndex) => {
+			// Get neuron counts
+			let neuronCount = (layer.units) || (layer.batchInputShape && layer.batchInputShape[1]);
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = ((this.layers[layerIndex+1]) && (this.layers[layerIndex+1].useBias === true));
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				neuronCount++;
+			}
+
+			// Each neuron
+			[...Array(neuronCount).keys()].forEach(neuronIndex => {
+				// Create Neuron object & push it to the list
+				this.layerNeurons[layerIndex].push(new Neuron());
+			});
+		});
+	};
+
+	// Create Neuron objects for each of weight in the network
+	createWeights = () => {
+		// Create a nested-list for keeping 'Weight' objects of each layer
+		this.layerWeights = this.layers.slice(1).map(layer => []);
+
+		// Create Weight objects for each layer (with pairing layers)
+		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
+			let fromLayerNeurons = this.layerNeurons[layerIndex];
+			let toLayerNeurons = this.layerNeurons[layerIndex+1];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				toLayerNeurons = toLayerNeurons.slice(1);
+			};
+			
+			// Get the 2D weight tensor of the layer, turn it into a nested-list
+			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
+
+			// Create each Weight object between the layers
+			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
+				this.layerWeights[layerIndex].push([]);
+
+				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
+					// Create Weight object & push it to the nested-list
+					this.layerWeights[layerIndex][fromNeuronIndex].push(
+						new Weight(
+							fromNeuron,
+							toNeuron,
+							// Carried value, get it from the matrix
+							layerWeightMatrix[fromNeuronIndex][toNeuronIndex]
+						)
+					);
+				});
+			});
+		});
+	}
+
+	// Precompile method prepares the variables for being able to draw the network before compiling
+	precompile = () => {
+		this.createNeurons();
+	};
+
 	reset = () => {
 		this.isCompiled = false;
 
@@ -476,23 +499,25 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
-		//// Draw weights
+		//// Draw weights if compiled
 		// Each layer
-		this.layerWeights.forEach((layer) => {
-			// Each neuron
-			layer.forEach((neuron) => {
-				// Each weight
-				neuron.forEach(weight => {
-					weight.draw(canvas, this.vArgs);
+		if(this.isCompiled){
+			this.layerWeights.forEach((layer) => {
+				// Each neuron
+				layer.forEach((neuron) => {
+					// Each weight
+					neuron.forEach(weight => {
+						weight.draw(canvas, this.vArgs);
+					});
 				});
 			});
-		});
+		}
 
 		//// Draw neurons over weights
 		neuronDrawCalls.forEach(drawCalls => {drawCalls.forEach(drawCall => {drawCall()})});
 
 		//// Draw sample input/targets to the side of the network
-		if(sample && sample.input && sample.target){
+		if(this.isCompiled && (sample && sample.input && sample.target)){
 			// Get the sample (currently tensor) in a nested-list
 			let inputVec = sample.input.arraySync()[0];
 			let targetVec = sample.target.arraySync()[0];

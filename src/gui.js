@@ -38,7 +38,9 @@ initializeGUI = () => {
 			obj: createButton("Get sample"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive())}
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
 			],
 			initCalls: [
 				// Get random sample from dataset for stage
@@ -55,7 +57,9 @@ initializeGUI = () => {
 			obj: createButton("Predict"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive())}
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
 			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
@@ -64,6 +68,27 @@ initializeGUI = () => {
 				]},
 			],
 			canvasRelativePosition: [0.14, 0.02],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Fit button
+		{
+			id: "fit_button",
+			subCanvasIndex: 1,
+			obj: createButton("Train on dataset!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					// Fit the model on dataset
+					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
+				]},
+			],
+			canvasRelativePosition: [0.25, 0.02],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -79,8 +104,9 @@ initializeGUI = () => {
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Add one layer to config & rebuild neural network
-						// nnStructure.hiddenLayers.push(createDenseLayerConfig());
+						// Add one layer to config & reinitialize the network
+						nnStructure.hiddenLayers.push(createDenseLayerConfig());
+						initializeNeuralNetwork();
 					})
 				]},
 			],
@@ -100,8 +126,9 @@ initializeGUI = () => {
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Remove hidden layers & rebuild neural network
-						// nnStructure.hiddenLayers = [];
+						// Remove hidden layers & reinitialize the network
+						nnStructure.hiddenLayers = [];
+						initializeNeuralNetwork();
 					})
 				]},
 			],
@@ -121,8 +148,9 @@ initializeGUI = () => {
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Reset configs & rebuild neural network
-						// nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
+						// Reset & reinitialize the network
+						resetNeuralNetwork();
+						initializeNeuralNetwork();
 					})
 				]},
 			],

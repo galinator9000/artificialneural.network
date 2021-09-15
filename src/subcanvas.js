@@ -86,8 +86,8 @@ createSubCanvas = () => {
 	// Set isActive functions of subcanvases
 	subCanvas.c[0].isActive = () => true;
 	subCanvas.c[1].isActive = () => (
-		// NN GUI components are ready when nn&data is ready
-		(!data.isLoading) && data.isCompiled && (nn && nn.isCompiled)
+		// NN GUI components are ready when data is ready
+		(!data.isLoading) && data.isCompiled
 	);
 	subCanvas.c[2].isActive = () => (
 		// Statistics GUI components are ready when nn&data is ready
