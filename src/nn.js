@@ -25,10 +25,8 @@ let nnStructure = {
 		args: {inputShape: [1]}
 	},
 
-	// Hidden layers (create them randomly at start: min 1, max 3 layers)
-	hiddenLayers: [...Array(getRandomInt(1, 4)).keys()].map(layer => (
-		createDenseLayerConfig()
-	)),
+	// Hidden layers empty initially
+	hiddenLayers: [],
 
 	// Output layer
 	outputLayer: createDenseLayerConfig({
@@ -52,8 +50,16 @@ let nnStructure = {
 	},
 };
 
-// Builds neural network object at tf.js side with structure config
-buildNeuralNetwork = () => {
+// Resets neural network
+resetNeuralNetwork = () => {
+	// Empty hidden layers
+	nnStructure.hiddenLayers = [];
+	// Remove current nn object
+	nn = undefined;
+};
+
+// Initializes neural network
+initializeNeuralNetwork = () => {
 	// Build NN sequentially with our custom class
 	nn = new SequentialNeuralNetwork(
 		// Arguments which will be passed to tf.Sequential
@@ -91,7 +97,11 @@ buildNeuralNetwork = () => {
 
 	// Compile the model with args
 	nn.compile(nnStructure.compileArgs);
+};
 
+// Compiles neural network
+compileNeuralNetwork = () => {
+	nn.isCompiled = true;
 	console.log("NN built", nnStructure);
 };
 
@@ -102,10 +112,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	constructor(
 		sequentialArgs,
-		vArgs
+		initialVArgs
 	){
 		super(sequentialArgs);
-		this.vArgs = vArgs;
+		this.vArgs = initialVArgs;
 		this.isCompiled = false;
 	};
 
@@ -130,81 +140,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	compile = (compileArgs) => {
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
-		this.recompile();
-	};
-	
-	// Override predict method
-	predict = (X) => {
-		// If provided more than one sample, predict it and simply return, no need to visualize
-		if(X.shape[0] > 1){
-			// Forward-propagation with given tensor
-			return super.predict(X);
-		}
-
-		// Feed layer by layer
-		let layerOutput = X;
-		this.layers.forEach((layer, layerIndex) => {
-			// Feed to current layer & get output as tensor
-			layerOutput = layer.call(layerOutput);
-
-			// Get the output in a nested-list
-			let neuronOutputs = layerOutput.arraySync()[0];
-
-			// Check if next layer uses bias
-			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
-			// If next layer is using bias, also add 1 value to the top of the current output
-			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
-				neuronOutputs = [1.0, ...neuronOutputs];
-			};
-
-			// Set each neuron's output
-			neuronOutputs.forEach((neuronOutput, neuronIndex) => {
-				// Set neuron's output
-				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
-			});
-		});
-
-		// Neuron values changed, call it!
-		this.onChangeNeurons();
-		
-		// Fire the neurons forward ;)
-		this.vArgs.propagation.x = 0.0;
-		this.vArgs.propagation.xAnim = 0.0;
-		this.vArgs.propagation.xTarget = 1.0;
-
-		// Log final output
-		console.log("Prediction", layerOutput.toString());
-	};
-	
-	// Override fit method
-	fit = (X, y, args) => {
-		super.fit(X, y, args).then(({history}) => {
-			// Update all Weight objects' values
-			this.updateAllWeights();
-
-			// Weight values changed, call it!
-			this.onChangeWeights();
-
-			// Fire the neurons backward ;)
-			this.vArgs.propagation.x = 1.0;
-			this.vArgs.propagation.xAnim = 1.0;
-			this.vArgs.propagation.xTarget = 0.0;
-			
-			// Log loss output
-			console.log("Loss", history.loss[history.loss.length-1]);
-		});
-	};
-
-	//// Custom methods
-	setvArgs = (newvArgs) => {
-		this.vArgs = {
-			...this.vArgs,
-			...newvArgs
-		};
-		this.recompile();
-	};
-
-	recompile = () => {
 		// First reset own values
 		this.reset();
 
@@ -275,9 +210,71 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				});
 			});
 		});
-		this.isCompiled = true;
+	};
+	
+	// Override predict method
+	predict = (X) => {
+		// If provided more than one sample, predict it and simply return, no need to visualize
+		if(X.shape[0] > 1){
+			// Forward-propagation with given tensor
+			return super.predict(X);
+		}
+
+		// Feed layer by layer
+		let layerOutput = X;
+		this.layers.forEach((layer, layerIndex) => {
+			// Feed to current layer & get output as tensor
+			layerOutput = layer.call(layerOutput);
+
+			// Get the output in a nested-list
+			let neuronOutputs = layerOutput.arraySync()[0];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+1] && (this.layers[layerIndex+1].useBias === true));
+			// If next layer is using bias, also add 1 value to the top of the current output
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				neuronOutputs = [1.0, ...neuronOutputs];
+			};
+
+			// Set each neuron's output
+			neuronOutputs.forEach((neuronOutput, neuronIndex) => {
+				// Set neuron's output
+				this.layerNeurons[layerIndex][neuronIndex].value = neuronOutput;
+			});
+		});
+
+		// Neuron values changed, call it!
+		this.onChangeNeurons();
+		
+		// Fire the neurons forward ;)
+		this.vArgs.propagation.x = 0.0;
+		this.vArgs.propagation.xAnim = 0.0;
+		this.vArgs.propagation.xTarget = 1.0;
+
+		// Log final output
+		console.log("Prediction", layerOutput.toString());
+	};
+	
+	// Override fit method
+	fit = (X, y, args) => {
+		super.fit(X, y, args).then(({history}) => {
+			// Update all Weight objects' values
+			this.updateAllWeights();
+
+			// Weight values changed, call it!
+			this.onChangeWeights();
+
+			// Fire the neurons backward ;)
+			this.vArgs.propagation.x = 1.0;
+			this.vArgs.propagation.xAnim = 1.0;
+			this.vArgs.propagation.xTarget = 0.0;
+			
+			// Log loss output
+			console.log("Loss", history.loss[history.loss.length-1]);
+		});
 	};
 
+	//// Custom methods
 	reset = () => {
 		this.isCompiled = false;
 

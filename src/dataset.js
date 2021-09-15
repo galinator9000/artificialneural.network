@@ -68,7 +68,9 @@ compileDataset = () => {
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayer.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayer.args.units = data.structure.n_targets;
-	buildNeuralNetwork();
+	// Reinitialize neural network
+	initializeNeuralNetwork();
+	
 	// Set dataset as compiled
 	data.isCompiled = true;
 	console.log("Dataset compiled");
@@ -99,6 +101,7 @@ loadDataset = async (url) => {
 
 	// Reset everything
 	resetDataset();
+	resetNeuralNetwork();
 
 	// Set everything initially
 	// Set builded dataset as main

@@ -15,15 +15,12 @@ setup = () => {
 	// Create the sub-canvases
 	createSubCanvas();
 
-	// Initialize&Update GUI components of subcanvases
+	// Initialize & Update once GUI components
 	initializeGUI();
 	updateGUI();
 
-	// Initialize dataset
+	// Load dataset
 	loadDataset(Object.values(csvURLs)[0]);
-
-	// Build neural network
-	buildNeuralNetwork();
 };
 
 // Main loop
@@ -37,19 +34,21 @@ draw = () => {
 		sc.obj.background(1, 0, 2, 255);
 	});
 
-	// Update GUI components of subcanvases
+	// Update GUI components
 	updateGUI();
 
-	// Draw the whole network on the given subcanvas
-	nn.draw(
-		subCanvas.c[1].obj,
-		data.stageSample,
-		// Additional vArgs
-		{
-			mouseX: subCanvas.xToSubcanvasPosX(mouseX),
-			mouseY: subCanvas.yToSubcanvasPosY(mouseY)
-		}
-	);
+	// Draw the whole network on the given subcanvas (if built and compiled)
+	if(nn){
+		nn.draw(
+			subCanvas.c[1].obj,
+			data.stageSample,
+			// Additional vArgs
+			{
+				mouseX: subCanvas.xToSubcanvasPosX(mouseX),
+				mouseY: subCanvas.yToSubcanvasPosY(mouseY)
+			}
+		);
+	}
 
 	// Draw dataset on given subcanvas
 	drawDataset(

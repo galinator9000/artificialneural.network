@@ -5,6 +5,11 @@ let cursors = [];
 
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
+	// Set GUI cursors and conditions of them
+	cursors = [
+		{name: "pointer", condition: () => (mouseX < (windowWidth * subCanvas.leftTabWidthRatio))}
+	];
+
 	guiComponents = [
 		//// Main GUI components
 
@@ -75,7 +80,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Add one layer to config & rebuild neural network
-						nnStructure.hiddenLayers.push(createDenseLayerConfig());
+						// nnStructure.hiddenLayers.push(createDenseLayerConfig());
 					})
 				]},
 			],
@@ -96,7 +101,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Remove hidden layers & rebuild neural network
-						nnStructure.hiddenLayers = [];
+						// nnStructure.hiddenLayers = [];
 					})
 				]},
 			],
@@ -117,7 +122,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Reset configs & rebuild neural network
-						nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
+						// nnStructure.hiddenLayers = [...Array(getRandomInt(1, 4)).keys()].map(layer => (createDenseLayerConfig()));
 					})
 				]},
 			],
@@ -132,13 +137,13 @@ initializeGUI = () => {
 			obj: createButton("Compile network!"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("compile_network_button").subCanvasIndex].isActive())}
+				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
 			],
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Compile neural network
-						buildNeuralNetwork();
+						compileNeuralNetwork();
 					})
 				]},
 			],
@@ -239,11 +244,6 @@ initializeGUI = () => {
 			gc.obj[ic.fnName](...ic.args);
 		});
 	});
-
-	// Set GUI cursors and conditions of them
-	cursors = [
-		{name: "pointer", condition: () => (mouseX < (windowWidth * subCanvas.leftTabWidthRatio))}
-	];
 };
 
 getGUIComponentWithID = (id) => {
