@@ -548,7 +548,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Set canvas parameters
 			canvas.strokeWeight(1);
 			canvas.stroke(255);
-			canvas.textSize(24);
 
 			// Draw input values to the left side
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
@@ -558,9 +557,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				canvas.noFill();
 				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
 
+				let vText = inputVec[neuronIndex].toFixed(2);
 				canvas.fill(255);
+				canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
 				canvas.text(
-					inputVec[neuronIndex].toFixed(2),
+					vText,
 					posX, posY
 				);
 			});
@@ -573,9 +574,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				canvas.noFill();
 				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
 
+				let vText = targetVec[neuronIndex].toFixed(2);
 				canvas.fill(255);
+				canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
 				canvas.text(
-					targetVec[neuronIndex].toFixed(2),
+					vText,
 					posX, posY
 				);
 			});
@@ -646,9 +649,10 @@ class Neuron{
 		canvas.fill(255);
 		canvas.stroke(255);
 		canvas.strokeWeight(1);
-		canvas.textSize(14);
+		let vText = this.visualValue.toFixed(2);
+		canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
 		canvas.text(
-			this.visualValue.toFixed(2),
+			vText,
 			this.x, this.y
 		);
 	};

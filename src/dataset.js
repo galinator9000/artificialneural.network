@@ -194,9 +194,13 @@ drawDataset = (canvas, vArgs) => {
 
 		// Header text
 		canvas.textAlign(CENTER, CENTER);
-		canvas.textSize(24);
+		// Set text size
+		canvas.textSize(calculateTextSize(
+			colName.slice(0, 6),
+			(eachCellW, eachCellH)
+		));
 		canvas.textFont(MAIN_FONT);
 		canvas.fill(255);
-		canvas.text(colName, centerX, centerY);
+		canvas.text(colName.slice(0, 6), centerX, centerY);
 	});
 };

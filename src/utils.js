@@ -7,6 +7,23 @@ const arrSum = (arr) => {
 	return arr.reduce((a, b) => (a + b), 0);
 };
 
+// Calculates text size with given text
+const calculateTextSize = (text, areaW, areaH) => {
+	let s = Math.floor(
+		areaW / text.length
+	);
+
+	return s;
+};
+
+// Calculates text size with given text list
+const calculateTextsSize = (texts, areaW) => {
+	return Math.floor(
+		// Area / Mean of character count
+		areaW / (arrSum(texts.map(t => t.length)) / texts.length)
+	)
+};
+
 // Random int
 const getRandomInt = (min, max) => {
 	min = Math.ceil(min);

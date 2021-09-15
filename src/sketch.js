@@ -113,6 +113,11 @@ draw = () => {
 	let eachTabH = (windowHeight / subCanvas.c.length);
 
 	let curScIdx = (subCanvas.nextIdx);
+
+	// Calculate tab titles' text size & apply it
+	textSize(calculateTextsSize(subCanvas.c.map(sc => sc.title), eachTabH));
+
+	// Draw each tab title
 	subCanvas.c.forEach((sc, scIdx) => {
 		stroke(255);
 		strokeWeight((scIdx == curScIdx) ? 3 : 0);
@@ -125,7 +130,6 @@ draw = () => {
 		stroke((scIdx == curScIdx) ? 255 : 64);
 		fill((scIdx == curScIdx) ? 255 : 64);
 		strokeWeight(1);
-		textSize(32);
 		// Use translate&rotate for drawing titles sideways
 		push();
 		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
