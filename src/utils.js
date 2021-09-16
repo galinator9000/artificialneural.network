@@ -3,9 +3,9 @@ const lerp = (value, target, amount) => {
 	return (value + ((target - value) * amount));
 };
 
-const arrSum = (arr) => {
-	return arr.reduce((a, b) => (a + b), 0);
-};
+const arrSum = (arr) => arr.reduce((a, b) => (a + b), 0);
+const arrBoolAny = (arr) => arr.reduce((a, b) => (a || b), false);
+const arrBoolAll = (arr) => arr.reduce((a, b) => (a && b), true);
 
 // Calculates text size with given text
 const calculateTextSize = (text, areaW, areaH) => {

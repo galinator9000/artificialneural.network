@@ -71,7 +71,7 @@ initializeNeuralNetwork = () => {
 		// Various visual arguments
 		vArgs={
 			scaleX: 0.75, scaleY: 0.80,
-			translateX: -0.025, translateY: -0.025,
+			translateX: -0.025, translateY: -0.035,
 			showBiasNeurons: false,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
@@ -438,6 +438,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Updates the network, gets called at each main loop of the sketch
 	update = (canvas, addvArgs) => {
+		this.vArgs.isCompiled = nn.isCompiled;
 		this.vArgs = {...this.vArgs, ...addvArgs};
 
 		//// Calculate values for drawing
@@ -514,7 +515,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			layer.forEach((neuron, neuronIndex) => {
 				// Set position of neuron & update it
 				neuron.x = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
-				neuron.y = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex));
+				neuron.y = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex) + (canvas.height * this.vArgs.translateY));
 				neuron.update(this.vArgs);
 			});
 		});
@@ -538,6 +539,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		canvas.textAlign(CENTER, CENTER);
 		canvas.rectMode(CENTER, CENTER);
 		canvas.textFont(MAIN_FONT);
+
+		// Update the value of: if any of the neurons are "hoovered"
+		this.vArgs.hooveringAnyNeuron = arrBoolAny(
+			this.layerNeurons.map(
+				layer => arrBoolAny(
+					layer.map(
+						neuron => neuron.hoover
+					)
+				)
+			)
+		);
 
 		//// Draw weights
 		// Each layer
@@ -625,6 +637,7 @@ class Neuron{
 	x = 0;
 	y = 0;
 	static r = 30.0;
+	hoover = false;
 	constructor(){};
 
 	// Updates visual values
@@ -647,6 +660,7 @@ class Neuron{
 
 	// Gets called every frame
 	update = (vArgs) => {
+		// Decide if the user is hoovering the current neuron with mouse position
 		let distanceToMouse = dist(
 			this.x, this.y,
 			vArgs.mouseX, vArgs.mouseY
@@ -670,21 +684,23 @@ class Neuron{
 
 	draw = (canvas, vArgs) => {
 		// Neuron as circle
-		canvas.strokeWeight(this.hoover ? 5 : this.strokeWeight);
+		canvas.strokeWeight((this.hoover && vArgs.hooveringAnyNeuron) ? (this.strokeWeight*2) : this.strokeWeight);
 		canvas.stroke(this.stroke);
 		canvas.fill(this.fill);
 		canvas.circle(this.x, this.y, Neuron.r*2);
 
-		// Draw the value as text
+		// Draw the output value as text
 		canvas.fill(255);
 		canvas.stroke(255);
-		canvas.strokeWeight(1);
-		let vText = this.visualValue.toFixed(2);
-		canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
-		canvas.text(
-			vText,
-			this.x, this.y
-		);
+		canvas.strokeWeight((this.hoover && vArgs.hooveringAnyNeuron) ? 2 : 1);
+		if(vArgs.isCompiled){
+			let vText = this.visualValue.toFixed(2);
+			canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
+			canvas.text(
+				vText,
+				this.x, this.y
+			);
+		}
 	};
 };
 
@@ -695,6 +711,7 @@ class Weight{
 
 	value = 0;
 	visualValue = 0;
+	hoover = false;
 	constructor(from, to, value){
 		this.from = from;
 		this.to = to;
@@ -734,6 +751,12 @@ class Weight{
 	}
 
 	draw = (canvas, vArgs) => {
+		// If "hoovering" any neuron, but none of the connected neurons are "hoovered", no need to draw this weight
+		if(vArgs.hooveringAnyNeuron && !(this.from.hoover || this.to.hoover)){
+			return;
+		}
+		this.hoover = (vArgs.hooveringAnyNeuron && (this.from.hoover || this.to.hoover));
+
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + Neuron.r);
 		let fromY = this.from.y;
@@ -742,7 +765,7 @@ class Weight{
 
 		// Draw weight between neurons
 		canvas.stroke(this.stroke);
-		canvas.strokeWeight(this.strokeWeight);
+		canvas.strokeWeight(this.hoover ? (this.strokeWeight*2) : this.strokeWeight);
 		canvas.line(
 			// from (neuron)
 			fromX, fromY,
