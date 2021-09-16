@@ -93,6 +93,11 @@ createSubCanvas = () => {
 		// Statistics GUI components are ready when nn&data is ready
 		(!data.isLoading) && data.isCompiled && (nn && nn.isCompiled)
 	);
+
+	// Set shouldDraw functions of subcanvases
+	subCanvas.c[0].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(0));
+	subCanvas.c[1].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(1));
+	subCanvas.c[2].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(2));
 };
 
 // Switches (transition) to given subcanvas idx

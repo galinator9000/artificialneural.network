@@ -32,6 +32,30 @@ initializeGUI = () => {
 
 		//// NN GUI components
 
+		// Add hidden layer button
+		{
+			id: "add_hidden_layer_button",
+			subCanvasIndex: 1,
+			obj: createButton("Add hidden layer"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Add randomly built hidden layer to structure of the network
+						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
+						// Reinitialize the network
+						initializeNeuralNetwork();
+					})
+				]},
+			],
+			showCond: () => ((nn && !nn.isCompiled)),
+			canvasRelativePosition: [0.29, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
 		// Compile network button
 		{
 			id: "compile_network_button",

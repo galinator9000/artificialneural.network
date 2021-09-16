@@ -37,29 +37,41 @@ draw = () => {
 	// Update GUI components
 	updateGUI();
 
-	// Draw the whole network on the given subcanvas (if built and compiled)
+	// Process nn if initialized
 	if(nn){
-		nn.draw(
+		// Update network
+		nn.update(
 			subCanvas.c[1].obj,
-			data.stageSample,
 			// Additional vArgs
 			{
 				mouseX: subCanvas.xToSubcanvasPosX(mouseX),
 				mouseY: subCanvas.yToSubcanvasPosY(mouseY)
 			}
 		);
+
+		// Check if neural network should be drawn to it's subcanvas
+		if(subCanvas.c[1].shouldDraw()){
+			// Draw network
+			nn.draw(
+				subCanvas.c[1].obj,
+				data.stageSample
+			);
+		}
 	}
 
-	// Draw dataset on given subcanvas
-	drawDataset(
-		subCanvas.c[0].obj,
-		// Additional vArgs
-		{
-			scaleX: 0.90, scaleY: 0.75,
-			mouseX: subCanvas.xToSubcanvasPosX(mouseX),
-			mouseY: subCanvas.yToSubcanvasPosY(mouseY)
-		}
-	);
+	// Check if dataset should be drawn to it's subcanvas
+	if(subCanvas.c[0].shouldDraw()){
+		// Draw dataset on given subcanvas
+		drawDataset(
+			subCanvas.c[0].obj,
+			// Additional vArgs
+			{
+				scaleX: 0.90, scaleY: 0.75,
+				mouseX: subCanvas.xToSubcanvasPosX(mouseX),
+				mouseY: subCanvas.yToSubcanvasPosY(mouseY)
+			}
+		);
+	}
 
 	// Update subcanvas related things
 	updateSubCanvas();

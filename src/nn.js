@@ -19,7 +19,7 @@ layerConfigToLayer = (layer) => layer.class(layer.args);
 // Our main neural network model
 let nn;
 
-// Specifies our neural network structure (input/output layers, losses etc.)
+// Specifies our neural network structure (layers, losses etc.)
 let nnStructure = {
 	// Input layer config
 	inputLayerConfig: {
@@ -27,6 +27,9 @@ let nnStructure = {
 		// (set input unit to 1 initially)
 		args: {inputShape: [1]}
 	},
+
+	// Hidden layers config
+	hiddenLayersConfig: [],
 
 	// Output layer config
 	outputLayerConfig: createDenseLayerConfig({
@@ -52,6 +55,8 @@ let nnStructure = {
 
 // Resets neural network
 resetNeuralNetwork = () => {
+	// Reset hidden layers
+	nnStructure.hiddenLayersConfig = [];
 	// Remove current nn object
 	nn = undefined;
 };
@@ -65,8 +70,8 @@ initializeNeuralNetwork = () => {
 
 		// Various visual arguments
 		vArgs={
-			scaleX: 0.65, scaleY: 0.60,
-			translateX: -0.05,
+			scaleX: 0.75, scaleY: 0.80,
+			translateX: -0.025, translateY: -0.025,
 			showBiasNeurons: false,
 			weightVisualChangeSpeed: 0.25,
 			neuronVisualChangeSpeed: 0.25,
@@ -83,7 +88,11 @@ initializeNeuralNetwork = () => {
 	);
 
 	// Put all layer configs in a list, add each of them to the model
-	[nnStructure.inputLayerConfig, nnStructure.outputLayerConfig].forEach(layerConfig => nn.add(layerConfigToLayer(layerConfig)));
+	[
+		nnStructure.inputLayerConfig,
+		...nnStructure.hiddenLayersConfig,
+		nnStructure.outputLayerConfig
+	].forEach(layerConfig => nn.add(layerConfigToLayer(layerConfig)));
 
 	// "Precompile" the network for being able to draw it
 	nn.precompile();
@@ -427,15 +436,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		return this.getAllWeights().size;
 	};
 
-	// Draws the whole network, gets called at each frame
-	draw = (canvas, sample, addvArgs) => {
+	// Updates the network, gets called at each main loop of the sketch
+	update = (canvas, addvArgs) => {
 		this.vArgs = {...this.vArgs, ...addvArgs};
-
-		// Setting some of the canvas parameters
-		canvas.colorMode(RGB);
-		canvas.textAlign(CENTER, CENTER);
-		canvas.rectMode(CENTER, CENTER);
-		canvas.textFont(MAIN_FONT);
 
 		//// Calculate values for drawing
 		// Get maximum neuron count
@@ -500,26 +503,45 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			}
 		}
 
-		//// Process neurons for drawing
+		//// Call update methods of Neuron&Weight objects
 		// Each layer
-		// Get each draw call of neurons in a nested-list
-		let neuronDrawCalls = this.layerNeurons.map((layer, layerIndex) => {
+		this.layerNeurons.forEach((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
 			let startNeuronY = ((canvas.height/2) - ((this.vArgs.perNeuronY * layer.length) / 2)) + (this.vArgs.perNeuronY/2);
 
 			// Each neuron
-			return layer.map((neuron, neuronIndex) => {
-				// Set position of neuron & draw it
+			layer.forEach((neuron, neuronIndex) => {
+				// Set position of neuron & update it
 				neuron.x = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
 				neuron.y = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex));
-				return () => {neuron.draw(canvas, this.vArgs)};
+				neuron.update(this.vArgs);
 			});
 		});
 
-		//// Draw weights if compiled
 		// Each layer
 		this.layerWeights.forEach((layer) => {
+			// Each neuron
+			layer.forEach((neuron) => {
+				// Each weight
+				neuron.forEach(weight => {
+					weight.update(this.vArgs);
+				});
+			});
+		});
+	};
+
+	// Draws the whole network on the given canvas, gets called if subcanvas is active
+	draw = (canvas, sample) => {
+		// Setting some of the canvas parameters
+		canvas.colorMode(RGB);
+		canvas.textAlign(CENTER, CENTER);
+		canvas.rectMode(CENTER, CENTER);
+		canvas.textFont(MAIN_FONT);
+
+		//// Draw weights
+		// Each layer
+		this.layerWeights.forEach(layer => {
 			// Each neuron
 			layer.forEach((neuron) => {
 				// Each weight
@@ -529,8 +551,14 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
-		//// Draw neurons over weights
-		neuronDrawCalls.forEach(drawCalls => {drawCalls.forEach(drawCall => {drawCall()})});
+		//// Draw neurons
+		// Each layer
+		this.layerNeurons.forEach(layer => {
+			// Each neuron
+			layer.forEach((neuron) => {
+				neuron.draw(canvas, this.vArgs);
+			});
+		});
 
 		//// Draw sample input/targets to the side of the network
 		if(this.isCompiled && (sample && sample.input && sample.target)){
@@ -618,12 +646,12 @@ class Neuron{
 	};
 
 	// Gets called every frame
-	draw = (canvas, vArgs) => {
+	update = (vArgs) => {
 		let distanceToMouse = dist(
 			this.x, this.y,
 			vArgs.mouseX, vArgs.mouseY
 		);
-		let hoover = (distanceToMouse < Neuron.r);
+		this.hoover = (distanceToMouse < Neuron.r);
 
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
@@ -638,9 +666,11 @@ class Neuron{
 				this.updateOuterLook(vArgs);
 			}
 		}
+	};
 
+	draw = (canvas, vArgs) => {
 		// Neuron as circle
-		canvas.strokeWeight(hoover ? 5 : this.strokeWeight);
+		canvas.strokeWeight(this.hoover ? 5 : this.strokeWeight);
 		canvas.stroke(this.stroke);
 		canvas.fill(this.fill);
 		canvas.circle(this.x, this.y, Neuron.r*2);
@@ -690,7 +720,7 @@ class Weight{
 	};
 
 	// Gets called every frame
-	draw = (canvas, vArgs) => {
+	update = (vArgs) => {
 		// Adjust the visual value after propagation (backward) wave passes over it
 		if(
 			(
@@ -701,7 +731,9 @@ class Weight{
 			this.updateVisualValue(vArgs);
 			this.updateOuterLook(vArgs);
 		}
+	}
 
+	draw = (canvas, vArgs) => {
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + Neuron.r);
 		let fromY = this.from.y;
