@@ -1,10 +1,14 @@
+// Constants
 let MAIN_FONT;
+let BG_COLOR;
 preload = () => {
 	MAIN_FONT = loadFont("assets/Inconsolata-SemiBold.ttf");
 };
 
 // Setup
 setup = () => {
+	BG_COLOR = color(1, 0, 2, 255);
+	
 	// Create main canvas
 	createCanvas(windowWidth, windowHeight);
 
@@ -29,9 +33,9 @@ draw = () => {
 	angleMode(DEGREES);
 
 	// Clear backgrounds
-	background(1, 0, 2, 255);
+	background(BG_COLOR);
 	Object.values(subCanvas.c).forEach(sc => {
-		sc.obj.background(1, 0, 2, 255);
+		sc.obj.background(BG_COLOR);
 	});
 
 	// Update GUI components
@@ -166,8 +170,13 @@ mouseWheel = (event) => {
 	if(event.deltaY < 0) switchSubcanvas(subCanvas.currentIdx-1);
 };
 
-// Processes mouse pressed event, tab switch or subcanvas events
+// Processes mouse press events
 mousePressed = (event) => {
+	// Reject event if it didn't occur on the main canvas
+	if(event.path[0].className !== "p5Canvas") return true;
+	// Reject event during transition
+	if(subCanvas.inTransition) return true;
+
 	let subcanvasStartX = (windowWidth * subCanvas.leftTabWidthRatio);
 	let eachTabH = (windowHeight / subCanvas.c.length);
 
@@ -177,7 +186,20 @@ mousePressed = (event) => {
 
 		// Switch tab
 		switchSubcanvas(clickedSubcanvasIndex);
-	}else{
-		// Pass event to subcanvas
 	}
+	// Pass event to subcanvas
+	else{
+		// Get current subcanvas' events
+		let events = subCanvas.c[subCanvas.currentIdx].events;
+
+		// Check if event exists, call it
+		if(events && events.mousePressed){
+			events.mousePressed(
+				subCanvas.xToSubcanvasPosX(event.x),
+				subCanvas.yToSubcanvasPosY(event.y)
+			);
+		}
+	}
+
+	return true;
 };

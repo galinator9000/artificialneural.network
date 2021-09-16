@@ -10,6 +10,9 @@ let subCanvas = {
 		{
 			title: "Neural Network",
 			obj: null,
+			events: {
+				mousePressed: (x, y) => {nn.mousePressed(x, y)}
+			}
 		},
 		{
 			title: "Stats",

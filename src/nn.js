@@ -438,7 +438,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Updates the network, gets called at each main loop of the sketch
 	update = (canvas, addvArgs) => {
-		this.vArgs.isCompiled = nn.isCompiled;
+		this.vArgs.nnIsCompiled = nn.isCompiled;
 		this.vArgs = {...this.vArgs, ...addvArgs};
 
 		//// Calculate values for drawing
@@ -532,20 +532,39 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		});
 	};
 
+	// Process mouse click on the network
+	mousePressed = (mouseX, mouseY) => {
+		// Check if clicked on any of the neurons
+		this.layerNeurons.forEach(
+			layer => layer.forEach(
+				neuron => {
+					// Check if distance is less than the radius
+					let distanceToPress = dist(
+						neuron.x, neuron.y,
+						mouseX, mouseY
+					);
+					// If it's already in focus, defocus it
+					neuron.isFocused = ((!neuron.isFocused) && (distanceToPress < Neuron.r));
+				}
+			)
+		);
+	};
+
 	// Draws the whole network on the given canvas, gets called if subcanvas is active
 	draw = (canvas, sample) => {
 		// Setting some of the canvas parameters
 		canvas.colorMode(RGB);
 		canvas.textAlign(CENTER, CENTER);
 		canvas.rectMode(CENTER, CENTER);
+		canvas.angleMode(DEGREES);
 		canvas.textFont(MAIN_FONT);
 
-		// Update the value of: if any of the neurons are "hoovered"
-		this.vArgs.hooveringAnyNeuron = arrBoolAny(
+		// Update the value of: if any of the neurons are focused
+		this.vArgs.focusedAnyNeuron = arrBoolAny(
 			this.layerNeurons.map(
 				layer => arrBoolAny(
 					layer.map(
-						neuron => neuron.hoover
+						neuron => neuron.isFocused
 					)
 				)
 			)
@@ -637,7 +656,7 @@ class Neuron{
 	x = 0;
 	y = 0;
 	static r = 30.0;
-	hoover = false;
+	isFocused = false;
 	constructor(){};
 
 	// Updates visual values
@@ -660,13 +679,6 @@ class Neuron{
 
 	// Gets called every frame
 	update = (vArgs) => {
-		// Decide if the user is hoovering the current neuron with mouse position
-		let distanceToMouse = dist(
-			this.x, this.y,
-			vArgs.mouseX, vArgs.mouseY
-		);
-		this.hoover = (distanceToMouse < Neuron.r);
-
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
 			// Adjust the visible value after propagation (forward) wave passes over it
@@ -684,7 +696,7 @@ class Neuron{
 
 	draw = (canvas, vArgs) => {
 		// Neuron as circle
-		canvas.strokeWeight((this.hoover && vArgs.hooveringAnyNeuron) ? (this.strokeWeight*2) : this.strokeWeight);
+		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? (this.strokeWeight*2) : this.strokeWeight);
 		canvas.stroke(this.stroke);
 		canvas.fill(this.fill);
 		canvas.circle(this.x, this.y, Neuron.r*2);
@@ -692,8 +704,8 @@ class Neuron{
 		// Draw the output value as text
 		canvas.fill(255);
 		canvas.stroke(255);
-		canvas.strokeWeight((this.hoover && vArgs.hooveringAnyNeuron) ? 2 : 1);
-		if(vArgs.isCompiled){
+		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? 2 : 1);
+		if(vArgs.nnIsCompiled){
 			let vText = this.visualValue.toFixed(2);
 			canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
 			canvas.text(
@@ -711,7 +723,7 @@ class Weight{
 
 	value = 0;
 	visualValue = 0;
-	hoover = false;
+	isFocused = false;
 	constructor(from, to, value){
 		this.from = from;
 		this.to = to;
@@ -751,11 +763,12 @@ class Weight{
 	}
 
 	draw = (canvas, vArgs) => {
-		// If "hoovering" any neuron, but none of the connected neurons are "hoovered", no need to draw this weight
-		if(vArgs.hooveringAnyNeuron && !(this.from.hoover || this.to.hoover)){
+		// If focused on any neuron, but none of the connected neurons are focused, no need to draw this weight
+		if(vArgs.focusedAnyNeuron && !(this.from.isFocused || this.to.isFocused)){
 			return;
 		}
-		this.hoover = (vArgs.hooveringAnyNeuron && (this.from.hoover || this.to.hoover));
+		this.isFocused = (vArgs.focusedAnyNeuron && (this.from.isFocused || this.to.isFocused));
+		let drawText = (this.isFocused && vArgs.nnIsCompiled);
 
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + Neuron.r);
@@ -763,15 +776,47 @@ class Weight{
 		let toX = (this.to.x - Neuron.r);
 		let toY = this.to.y;
 
-		// Draw weight between neurons
-		canvas.stroke(this.stroke);
-		canvas.strokeWeight(this.hoover ? (this.strokeWeight*2) : this.strokeWeight);
-		canvas.line(
-			// from (neuron)
-			fromX, fromY,
-			// to (neuron)
-			toX, toY
-		);
+		// Draw the carried value as text if focused
+		if(drawText){
+			let gapStartX = lerp(fromX, toX, 0.40);
+			let gapStartY = lerp(fromY, toY, 0.40);
+			let gapEndX = lerp(fromX, toX, 0.60);
+			let gapEndY = lerp(fromY, toY, 0.60);
+
+			// Draw the line with a gap on the center
+			canvas.stroke(this.stroke);
+			canvas.strokeWeight(this.strokeWeight*2);
+			canvas.line(fromX, fromY, gapStartX, gapStartY);
+			canvas.line(toX, toY, gapEndX, gapEndY);
+
+			// Draw the value as text
+			canvas.push();
+			canvas.translate(lerp(fromX, toX, 0.5), lerp(fromY, toY, 0.5));
+			canvas.rotate(
+				createVector(toX-fromX, 0).normalize().angleBetween(
+					createVector(toX-fromX, toY-fromY).normalize()
+				)
+			);
+			canvas.stroke(255);
+			canvas.strokeWeight(1);
+			canvas.fill(255);
+			let vText = this.visualValue.toFixed(2);
+			canvas.textSize(calculateTextSize("    ", (gapEndX-gapStartX), (gapEndY-gapStartY)));
+			// canvas.textSize(calculateTextSize(vText, (gapEndX-gapStartX), (gapEndY-gapStartY)));
+			canvas.text(vText, 0, 0);
+			canvas.pop();
+		}
+		// Draw weight between neurons as a line
+		else{
+			canvas.stroke(this.stroke);
+			canvas.strokeWeight(this.isFocused ? (this.strokeWeight*2) : this.strokeWeight);
+			canvas.line(
+				// from (neuron)
+				fromX, fromY,
+				// to (neuron)
+				toX, toY
+			);
+		}
 
 		//// Highlight the connection during propagation
 		// If highlighting point reached to the destination, no need to draw anything anymore
