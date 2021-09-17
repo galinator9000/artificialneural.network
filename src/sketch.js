@@ -205,8 +205,8 @@ mouseWheel = (event) => {
 	return true;
 };
 
-// Processes mouse press events
-mousePressed = (event) => {
+// Processes mouse click events
+mouseClicked = (event) => {
 	// Reject event if it didn't occur on the main canvas (should return true!)
 	if(event.path[0].className !== "p5Canvas") return true;
 	// Reject event during transition (should return true!)
@@ -217,9 +217,9 @@ mousePressed = (event) => {
 	let eventProcessed = false;
 
 	// Check if event occured at subcanvas region and event exists.
-	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mousePressed){
+	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseClicked){
 		// Call the event handler
-		eventProcessed = sc.eventHandlers.mousePressed(
+		eventProcessed = sc.eventHandlers.mouseClicked(
 			sc.xToSubCanvasPosX(event.x),
 			sc.yToSubCanvasPosY(event.y)
 		);
@@ -227,11 +227,37 @@ mousePressed = (event) => {
 
 	//// If subcanvases didn't process the event, main functionality handles it
 	if(!eventProcessed){
-		// Switch clicked tab
-		let eachTabH = (windowHeight / subCanvas.c.length);
-		let clickedSubCanvasIndex = Math.floor(event.y / eachTabH);
-		switchSubCanvas(clickedSubCanvasIndex);
+		// Check if clicked on the tab section
+		if(event.x < subCanvas.subcanvasStartX){
+			// Switch clicked tab
+			let eachTabH = (windowHeight / subCanvas.c.length);
+			let clickedSubCanvasIndex = Math.floor(event.y / eachTabH);
+			switchSubCanvas(clickedSubCanvasIndex);
+		}
 	}
+
+	return true;
+};
+
+// Processes mouse drag events
+mouseDragged = (event) => {
+	// Reject event if it didn't occur on the main canvas (should return true!)
+	if(event.path[0].className !== "p5Canvas") return true;
+	// Reject event during transition (should return true!)
+	if(subCanvas.inTransition) return true;
+
+	// Get current subcanvas
+	let sc = subCanvas.c[subCanvas.currentIdx];
+	let eventProcessed = false;
+
+	// Check if event occured at subcanvas region and event exists.
+	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseDragged){
+		// Call the event handler
+		eventProcessed = sc.eventHandlers.mouseDragged(event.movementX, event.movementY);
+	}
+
+	//// If subcanvases didn't process the event, main functionality handles it
+	if(!eventProcessed){}
 
 	return true;
 };

@@ -515,18 +515,18 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Process mouse click on the network
-	mousePressed = (mouseX, mouseY) => {
+	mouseClicked = (mouseX, mouseY) => {
 		// Check if clicked on any of the neurons
 		this.layerNeurons.forEach(
 			layer => layer.forEach(
 				neuron => {
 					// Check if distance is less than the radius
-					let distanceToPress = dist(
+					let distanceToClick = dist(
 						neuron.x, neuron.y,
 						mouseX, mouseY
 					);
 					// If it's already in focus, defocus it
-					neuron.isFocused = ((!neuron.isFocused) && (distanceToPress < Neuron.r));
+					neuron.isFocused = ((!neuron.isFocused) && (distanceToClick < Neuron.r));
 				}
 			)
 		);
