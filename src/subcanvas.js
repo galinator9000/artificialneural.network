@@ -1,12 +1,24 @@
-// Subcanvas system related variables and functions.
+// SubCanvas system related variables and functions.
 
 let subCanvas = {
-	// Subcanvas objects 
+	// SubCanvas objects 
 	c: [
 		{
 			title: "Dataset",
 			obj: null,
 			isActive: () => true,
+			// Event handlers should return true/false if they were able to process the event or not
+			eventHandlers: {
+				mousePressed: (x, y) => {
+					console.log("Dataset mousePressed", x, y);
+					return false;
+				},
+				mouseWheel: (x, y, delta) => {
+					if(delta < 0) zoomSubCanvas(1);
+					if(delta > 0) zoomSubCanvas(-1);
+					return true;
+				},
+			},
 		},
 		{
 			title: "Neural Network",
@@ -15,8 +27,17 @@ let subCanvas = {
 				// NN GUI components are ready when data is ready
 				(!data.isLoading) && data.isCompiled
 			),
+			// Event handlers should return true/false if they were able to process the event or not
 			eventHandlers: {
-				mousePressed: (x, y) => {nn.mousePressed(x, y)}
+				mousePressed: (x, y) => {
+					nn.mousePressed(x, y);
+					return true;
+				},
+				mouseWheel: (x, y, delta) => {
+					if(delta < 0) zoomSubCanvas(1);
+					if(delta > 0) zoomSubCanvas(-1);
+					return true;
+				},
 			},
 		},
 		{
@@ -33,7 +54,16 @@ let subCanvas = {
 	nextIdx: 0,
 
 	// Transforms of current canvas
-	transform: {scale: {x: 1, y: 1}, translate: {x: 0, y: 0}},
+	transform: {
+		scale: {x: 1, y: 1, targetX: 1, targetY: 1},
+		translate: {x: 0, y: 0, targetX: 0, targetY: 0}
+	},
+	
+	// Constants
+	zoomFactor: 0.25,
+	zoomMin: 0.5,
+	zoomMax: 3,
+	movementSpeed: 0.25,
 
 	// Animation of subcanvas transitions
 	inTransition: false,
@@ -80,6 +110,12 @@ updateSubCanvas = () => {
 			subCanvas.currentIdx = subCanvas.nextIdx;
 		}
 	}
+
+	// Smoothly go towards the targets in transform values
+	subCanvas.transform.translate.x += ((subCanvas.transform.translate.targetX - subCanvas.transform.translate.x) * subCanvas.movementSpeed);
+	subCanvas.transform.translate.y += ((subCanvas.transform.translate.targetY - subCanvas.transform.translate.y) * subCanvas.movementSpeed);
+	subCanvas.transform.scale.x += ((subCanvas.transform.scale.targetX - subCanvas.transform.scale.x) * subCanvas.movementSpeed);
+	subCanvas.transform.scale.y += ((subCanvas.transform.scale.targetY - subCanvas.transform.scale.y) * subCanvas.movementSpeed);
 };
 
 // Creates sub canvas objects
@@ -95,6 +131,9 @@ createSubCanvas = () => {
 		);
 		let sc = subCanvas.c[cIdx];
 
+		// Mark the value of starting X position of subcanvases
+		subCanvas.subcanvasStartX = (windowWidth * subCanvas.leftTabWidthRatio);
+
 		// Apply canvas settings which will not be changed
 		sc.obj.colorMode(RGB);
 		sc.obj.angleMode(DEGREES);
@@ -109,7 +148,7 @@ createSubCanvas = () => {
 
 		// Assign utility functions of the subcanvas for later use
 		// Position converter functions (with applying transformations in reverse)
-		sc.xToSubcanvasPosX = (x) => {
+		sc.xToSubCanvasPosX = (x) => {
 			// Calculate tab
 			x = (x - (windowWidth * subCanvas.leftTabWidthRatio));
 
@@ -123,7 +162,7 @@ createSubCanvas = () => {
 
 			return x;
 		};
-		sc.yToSubcanvasPosY = (y) => {
+		sc.yToSubCanvasPosY = (y) => {
 			// Apply transformations in reverse
 			// Translate
 			y -= subCanvas.transform.translate.y;
@@ -143,7 +182,7 @@ createSubCanvas = () => {
 };
 
 // Switches (transition) to given subcanvas idx
-switchSubcanvas = (switchIdx) => {
+switchSubCanvas = (switchIdx) => {
 	// Return if already in transition process
 	if(subCanvas.inTransition) return;
 	
@@ -156,7 +195,10 @@ switchSubcanvas = (switchIdx) => {
 	// Apply transition to given subcanvas
 	if(subCanvas.nextIdx != subCanvas.currentIdx){
 		// Reset transform
-		subCanvas.transform = {scale: {x: 1, y: 1}, translate: {x: 0, y: 0}};
+		subCanvas.transform = {
+			scale: {x: 1, y: 1, targetX: 1, targetY: 1},
+			translate: {x: 0, y: 0, targetX: 0, targetY: 0}
+		};
 
 		// Start transition
 		subCanvas.transition.x = 0;
@@ -176,4 +218,15 @@ applyTransformationsToSubCanvas = (canvas) => {
 	
 	// Apply translation
 	canvas.translate(...Object.values(subCanvas.transform.translate));
+};
+
+// Sets current scale values on transformation
+zoomSubCanvas = (z) => {
+	// New values
+	let newScaleX = (subCanvas.transform.scale.x + (subCanvas.zoomFactor * z));
+	let newScaleY = (subCanvas.transform.scale.y + (subCanvas.zoomFactor * z));
+
+	// Limit new scaling values, set as target
+	subCanvas.transform.scale.targetX = Math.min(Math.max(newScaleX, subCanvas.zoomMin), subCanvas.zoomMax);
+	subCanvas.transform.scale.targetY = Math.min(Math.max(newScaleY, subCanvas.zoomMin), subCanvas.zoomMax);
 };

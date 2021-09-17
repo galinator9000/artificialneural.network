@@ -178,40 +178,59 @@ windowResized = () => {
 
 // Processes mouse wheel events
 mouseWheel = (event) => {
-	// Change the current subcanvas (tab)
-	if(event.deltaY > 0) switchSubcanvas(subCanvas.currentIdx+1);
-	if(event.deltaY < 0) switchSubcanvas(subCanvas.currentIdx-1);
+	// Reject event during transition (should return true!)
+	if(subCanvas.inTransition) return true;
+
+	// Get current subcanvas
+	let sc = subCanvas.c[subCanvas.currentIdx];
+	let eventProcessed = false;
+
+	// Check if event occured at subcanvas region and event exists.
+	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseWheel){
+		// Call the event handler
+		eventProcessed = sc.eventHandlers.mouseWheel(
+			sc.xToSubCanvasPosX(event.x),
+			sc.yToSubCanvasPosY(event.y),
+			event.deltaY
+		);
+	}
+
+	//// If subcanvases didn't process the event, main functionality handles it
+	if(!eventProcessed){
+		// Change the current tab
+		if(event.deltaY > 0) switchSubCanvas(subCanvas.currentIdx+1);
+		if(event.deltaY < 0) switchSubCanvas(subCanvas.currentIdx-1);
+	}
+
+	return true;
 };
 
 // Processes mouse press events
 mousePressed = (event) => {
-	// Reject event if it didn't occur on the main canvas
+	// Reject event if it didn't occur on the main canvas (should return true!)
 	if(event.path[0].className !== "p5Canvas") return true;
-	// Reject event during transition
+	// Reject event during transition (should return true!)
 	if(subCanvas.inTransition) return true;
 
-	let subcanvasStartX = (windowWidth * subCanvas.leftTabWidthRatio);
-	let eachTabH = (windowHeight / subCanvas.c.length);
+	// Get current subcanvas
+	let sc = subCanvas.c[subCanvas.currentIdx];
+	let eventProcessed = false;
 
-	// Check if it's on the main canvas
-	if(event.x <= subcanvasStartX){
-		let clickedSubcanvasIndex = Math.floor(event.y / eachTabH);
-
-		// Switch tab
-		switchSubcanvas(clickedSubcanvasIndex);
+	// Check if event occured at subcanvas region and event exists.
+	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mousePressed){
+		// Call the event handler
+		eventProcessed = sc.eventHandlers.mousePressed(
+			sc.xToSubCanvasPosX(event.x),
+			sc.yToSubCanvasPosY(event.y)
+		);
 	}
-	// Pass event to subcanvas
-	else{
-		// Get current subcanvas & it's event callbacks
-		let sc = subCanvas.c[subCanvas.currentIdx];
 
-		// Check if event exists, call it
-		if(sc.eventHandlers && sc.eventHandlers.mousePressed){
-			sc.eventHandlers.mousePressed(
-				sc.xToSubcanvasPosX(event.x),
-				sc.yToSubcanvasPosY(event.y)
-			);
-		}
+	//// If subcanvases didn't process the event, main functionality handles it
+	if(!eventProcessed){
+		// Switch clicked tab
+		let eachTabH = (windowHeight / subCanvas.c.length);
+		let clickedSubCanvasIndex = Math.floor(event.y / eachTabH);
+		switchSubCanvas(clickedSubCanvasIndex);
 	}
 
 	return true;

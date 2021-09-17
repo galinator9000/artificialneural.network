@@ -247,7 +247,7 @@ initializeGUI = () => {
 						// Compile dataset!
 						compileDataset();
 						// Switch to NN subcanvas
-						switchSubcanvas(1);
+						switchSubCanvas(1);
 					})
 				]},
 			],
