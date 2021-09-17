@@ -11,25 +11,6 @@ initializeGUI = () => {
 	];
 
 	guiComponents = [
-		//// Main GUI components
-
-		// GlobalAIHub. REGISTER THERE! QUICK!
-		{
-			id: "join_globalaihub",
-			subCanvasIndex: -1,
-			obj: createImg(
-				"assets/join-globalaihub.png"
-			),
-			initCalls: [
-				{fnName: "style", args: ["cursor", "pointer"]},
-				{fnName: "mousePressed", args: [
-					(() => openURLInNewTab("https://globalaihub.com"))
-				]}
-			],
-			canvasRelativePosition: [0.805, 0.015],
-			canvasRelativeSize: [0.14, 0.08]
-		},
-
 		//// NN GUI components
 
 		// Add hidden layer button
@@ -178,7 +159,7 @@ initializeGUI = () => {
 				// Behave as ghost button
 				{fnName: "addClass", args: ["textButton"]},
 			],
-			canvasRelativePosition: [0.05, 0.02],
+			canvasRelativePosition: [0.05, 0.0325],
 			canvasRelativeSize: [0.05, 0.06]
 		},
 
@@ -223,7 +204,7 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.10, 0.02],
+			canvasRelativePosition: [0.10, 0.0325],
 			canvasRelativeSize: [0.25, 0.06]
 		},
 
@@ -251,7 +232,7 @@ initializeGUI = () => {
 					})
 				]},
 			],
-			canvasRelativePosition: [0.36, 0.02],
+			canvasRelativePosition: [0.36, 0.0325],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 	];

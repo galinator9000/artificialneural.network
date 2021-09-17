@@ -2,7 +2,7 @@
 let MAIN_FONT;
 let BG_COLOR;
 preload = () => {
-	MAIN_FONT = loadFont("assets/Inconsolata-SemiBold.ttf");
+	MAIN_FONT = loadFont("assets/Inconsolata-Medium.ttf");
 };
 
 // Setup
@@ -82,7 +82,7 @@ draw = () => {
 		drawDataset(
 			datasetCanvas.obj,
 			// Additional vArgs
-			{scaleX: 0.90, scaleY: 0.85, translateX: 0.00, translateY: 0.05}
+			{scaleX: 0.975, scaleY: 0.85, translateX: 0.00, translateY: 0.05}
 		);
 
 		datasetCanvas.obj.pop();

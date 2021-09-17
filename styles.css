@@ -8,10 +8,10 @@ body {
 	margin: 0;
 	display: flex;
 	flex: 1;
-	justify-content: center;
-	/* align-items: flex-end; */
-	align-content: space-around;
-	background-color: #010002;
+	flex-direction: row;
+	justify-content: flex-end;
+	align-content: center;
+	align-items: flex-start;
 }
 
 /* Button and select styles */
@@ -29,18 +29,31 @@ button:hover {
 	color: #010002;
 	font-size: 110%;
 }
-
 /* Disabled button */
 button:disabled, button[disabled]{
 	border: none;
 	color: grey;
 	pointer-events: none;
 }
-
-/* "Ghost" kind of button */
+/* "Text" button */
 .textButton {
 	pointer-events: none;
 	border: none;
+}
+
+/* Top right link div */
+.top-links {
+	display: flex;
+	flex: 1;
+	flex-direction: row;
+	justify-content: flex-end;
+	align-content: flex-end;
+
+	/* Position, top-right */
+	position: absolute;
+	width: fit-content;
+	height: 12.5%;
+	padding-right: 1.25%;
 }
 
 /* Make everything non-selectable */
