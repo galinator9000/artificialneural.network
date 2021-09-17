@@ -778,10 +778,20 @@ class Weight{
 
 		// Draw the carried value as text if focused
 		if(drawText){
-			let gapStartX = lerp(fromX, toX, 0.40);
-			let gapStartY = lerp(fromY, toY, 0.40);
-			let gapEndX = lerp(fromX, toX, 0.60);
-			let gapEndY = lerp(fromY, toY, 0.60);
+			// Text value gap center point and width
+			let gapCenter = 0.50;
+
+			// Adjust gapcenter value for drawing text values in a circular path
+			if(this.to.isFocused) gapCenter = 0.33;
+			if(this.from.isFocused) gapCenter = 0.66;
+
+			let gapWidth = 0.15;
+
+			// Text value gap XY points, linear interpolation from neurons' XY values
+			let gapStartX = lerp(fromX, toX, (gapCenter-gapWidth));
+			let gapStartY = lerp(fromY, toY, (gapCenter-gapWidth));
+			let gapEndX = lerp(fromX, toX, (gapCenter+gapWidth));
+			let gapEndY = lerp(fromY, toY, (gapCenter+gapWidth));
 
 			// Draw the line with a gap on the center
 			canvas.stroke(this.stroke);
@@ -791,7 +801,7 @@ class Weight{
 
 			// Draw the value as text
 			canvas.push();
-			canvas.translate(lerp(fromX, toX, 0.5), lerp(fromY, toY, 0.5));
+			canvas.translate(lerp(fromX, toX, gapCenter), lerp(fromY, toY, gapCenter));
 			canvas.rotate(
 				createVector(toX-fromX, 0).normalize().angleBetween(
 					createVector(toX-fromX, toY-fromY).normalize()

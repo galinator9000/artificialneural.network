@@ -24,7 +24,10 @@ setup = () => {
 	updateGUI();
 
 	// Load dataset
-	loadDataset(Object.values(csvURLs)[0]).then(() => {compileDataset()});
+	loadDataset(Object.values(csvURLs)[0]).then(() => {
+		compileDataset();
+		compileNeuralNetwork();
+	});
 };
 
 // Main loop
