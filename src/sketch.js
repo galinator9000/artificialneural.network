@@ -50,38 +50,42 @@ draw = () => {
 
 	// Process nn if initialized
 	if(nn){
+		// Get the canvas
+		let nnCanvas = subCanvas.c[1];
+
 		// Update network
-		nn.update(
-			subCanvas.c[1].obj,
-			// Additional vArgs
-			{
-				mouseX: subCanvas.xToSubcanvasPosX(mouseX),
-				mouseY: subCanvas.yToSubcanvasPosY(mouseY)
-			}
-		);
+		nn.update(nnCanvas.obj);
 
 		// Check if neural network should be drawn to it's subcanvas
-		if(subCanvas.c[1].shouldDraw()){
+		if(nnCanvas.shouldDraw()){
+			nnCanvas.obj.push();
+
+			// Apply transformations to the nn canvas
+			applyTransformationsToSubCanvas(nnCanvas.obj);
+
 			// Draw network
-			nn.draw(
-				subCanvas.c[1].obj,
-				data.stageSample
-			);
+			nn.draw(nnCanvas.obj, data.stageSample);
+			
+			nnCanvas.obj.pop();
 		}
 	}
 
 	// Check if dataset should be drawn to it's subcanvas
-	if(subCanvas.c[0].shouldDraw()){
+	let datasetCanvas = subCanvas.c[0];
+	if(datasetCanvas.shouldDraw()){
+		datasetCanvas.obj.push();
+
+		// Apply transformations to the dataset canvas
+		applyTransformationsToSubCanvas(datasetCanvas.obj);
+
 		// Draw dataset on given subcanvas
 		drawDataset(
-			subCanvas.c[0].obj,
+			datasetCanvas.obj,
 			// Additional vArgs
-			{
-				scaleX: 0.90, scaleY: 0.75,
-				mouseX: subCanvas.xToSubcanvasPosX(mouseX),
-				mouseY: subCanvas.yToSubcanvasPosY(mouseY)
-			}
+			{scaleX: 0.90, scaleY: 0.85, translateX: 0.00, translateY: 0.05}
 		);
+
+		datasetCanvas.obj.pop();
 	}
 
 	// Update subcanvas related things
@@ -198,14 +202,14 @@ mousePressed = (event) => {
 	}
 	// Pass event to subcanvas
 	else{
-		// Get current subcanvas' events
-		let events = subCanvas.c[subCanvas.currentIdx].events;
+		// Get current subcanvas & it's event callbacks
+		let sc = subCanvas.c[subCanvas.currentIdx];
 
 		// Check if event exists, call it
-		if(events && events.mousePressed){
-			events.mousePressed(
-				subCanvas.xToSubcanvasPosX(event.x),
-				subCanvas.yToSubcanvasPosY(event.y)
+		if(sc.eventHandlers && sc.eventHandlers.mousePressed){
+			sc.eventHandlers.mousePressed(
+				sc.xToSubcanvasPosX(event.x),
+				sc.yToSubcanvasPosY(event.y)
 			);
 		}
 	}

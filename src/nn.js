@@ -420,9 +420,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Updates the network, gets called at each main loop of the sketch
-	update = (canvas, addvArgs) => {
+	update = (canvas) => {
 		this.vArgs.nnIsCompiled = nn.isCompiled;
-		this.vArgs = {...this.vArgs, ...addvArgs};
 
 		//// Calculate values for drawing
 		// Get maximum neuron count

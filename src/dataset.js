@@ -167,8 +167,8 @@ drawDataset = (canvas, vArgs) => {
 	let eachCellH = (tableH / show_n_samples);
 	let eachCellW = (tableW / Object.keys(data.columns).length);
 
-	let startTableX = (canvas.width * (1-vArgs.scaleX) / 2);
-	let startTableY = (canvas.height * (1-vArgs.scaleY) / 2);
+	let startTableX = (canvas.width * (1-vArgs.scaleX) / 2) + (canvas.width * vArgs.translateX);
+	let startTableY = (canvas.height * (1-vArgs.scaleY) / 2) + (canvas.height * vArgs.translateY);
 	let startCellX = startTableX + (eachCellW/2);
 	let startCellY = startTableY + (eachCellH/2);
 

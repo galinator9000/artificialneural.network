@@ -6,22 +6,34 @@ let subCanvas = {
 		{
 			title: "Dataset",
 			obj: null,
+			isActive: () => true,
 		},
 		{
 			title: "Neural Network",
 			obj: null,
-			events: {
+			isActive: () => (
+				// NN GUI components are ready when data is ready
+				(!data.isLoading) && data.isCompiled
+			),
+			eventHandlers: {
 				mousePressed: (x, y) => {nn.mousePressed(x, y)}
-			}
+			},
 		},
 		{
 			title: "Stats",
 			obj: null,
+			isActive: () => (
+				// Statistics GUI components are ready when nn&data is ready
+				(!data.isLoading) && data.isCompiled && (nn && nn.isCompiled)
+			),
 		},
 	],
 
 	currentIdx: 0,
 	nextIdx: 0,
+
+	// Transforms of current canvas
+	transform: {scale: {x: 1, y: 1}, translate: {x: 0, y: 0}},
 
 	// Animation of subcanvas transitions
 	inTransition: false,
@@ -34,9 +46,6 @@ let subCanvas = {
 	},
 	leftTabWidthRatio: 0.05,
 };
-// Position converter functions
-subCanvas.xToSubcanvasPosX = (x) => (x - (windowWidth * subCanvas.leftTabWidthRatio));
-subCanvas.yToSubcanvasPosY = (y) => (y);
 
 getSubCanvasWidthWithIndex = (cIdx) => {
 	if(cIdx == -1) return windowWidth;
@@ -84,30 +93,48 @@ createSubCanvas = () => {
 			(windowWidth * (1 - subCanvas.leftTabWidthRatio)),
 			windowHeight
 		);
+		let sc = subCanvas.c[cIdx];
 
 		// Apply canvas settings which will not be changed
-		subCanvas.c[cIdx].obj.colorMode(RGB);
-		subCanvas.c[cIdx].obj.angleMode(DEGREES);
-		subCanvas.c[cIdx].obj.textFont(MAIN_FONT);
-		subCanvas.c[cIdx].obj.textAlign(CENTER, CENTER);
-		subCanvas.c[cIdx].obj.rectMode(CENTER, CENTER);
+		sc.obj.colorMode(RGB);
+		sc.obj.angleMode(DEGREES);
+		sc.obj.textFont(MAIN_FONT);
+		sc.obj.textAlign(CENTER, CENTER);
+		sc.obj.rectMode(CENTER, CENTER);
 
 		// Specify default values while drawing (unless otherwise specified)
-		subCanvas.c[cIdx].obj.noFill();
-		subCanvas.c[cIdx].obj.stroke(255);
-		subCanvas.c[cIdx].obj.strokeWeight(1);
-	});
+		sc.obj.noFill();
+		sc.obj.stroke(255);
+		sc.obj.strokeWeight(1);
 
-	// Set isActive functions of subcanvases
-	subCanvas.c[0].isActive = () => true;
-	subCanvas.c[1].isActive = () => (
-		// NN GUI components are ready when data is ready
-		(!data.isLoading) && data.isCompiled
-	);
-	subCanvas.c[2].isActive = () => (
-		// Statistics GUI components are ready when nn&data is ready
-		(!data.isLoading) && data.isCompiled && (nn && nn.isCompiled)
-	);
+		// Assign utility functions of the subcanvas for later use
+		// Position converter functions (with applying transformations in reverse)
+		sc.xToSubcanvasPosX = (x) => {
+			// Calculate tab
+			x = (x - (windowWidth * subCanvas.leftTabWidthRatio));
+
+			// Apply transformations in reverse
+			// Translate
+			x -= subCanvas.transform.translate.x;
+			// Scale
+			x -= (sc.obj.width/2);
+			x /= subCanvas.transform.scale.x;
+			x += (sc.obj.width/2);
+
+			return x;
+		};
+		sc.yToSubcanvasPosY = (y) => {
+			// Apply transformations in reverse
+			// Translate
+			y -= subCanvas.transform.translate.y;
+			// Scale
+			y -= (sc.obj.height/2);
+			y /= subCanvas.transform.scale.y;
+			y += (sc.obj.height/2);
+			
+			return y;
+		};
+	});
 
 	// Set shouldDraw functions of subcanvases
 	subCanvas.c[0].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(0));
@@ -126,11 +153,27 @@ switchSubcanvas = (switchIdx) => {
 		Math.max(0, switchIdx)
 	);
 
-	// Start transition
+	// Apply transition to given subcanvas
 	if(subCanvas.nextIdx != subCanvas.currentIdx){
+		// Reset transform
+		subCanvas.transform = {scale: {x: 1, y: 1}, translate: {x: 0, y: 0}};
+
+		// Start transition
 		subCanvas.transition.x = 0;
 		subCanvas.transition.xAnim = 0;
 		subCanvas.transition.direction = (subCanvas.nextIdx > subCanvas.currentIdx) ? -1 : 1;
 		subCanvas.inTransition = true;
 	}
+};
+
+// Applies transformations to given canvas
+applyTransformationsToSubCanvas = (canvas) => {
+	// Apply scaling
+	// Translate to center for scaling & then back
+	canvas.translate(canvas.width/2, canvas.height/2);
+	canvas.scale(...Object.values(subCanvas.transform.scale));
+	canvas.translate(-(canvas.width/2), -(canvas.height/2));
+	
+	// Apply translation
+	canvas.translate(...Object.values(subCanvas.transform.translate));
 };
