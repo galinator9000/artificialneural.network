@@ -20,8 +20,8 @@ let subCanvas = {
 		},
 	],
 
-	currentIdx: 1,
-	nextIdx: 1,
+	currentIdx: 0,
+	nextIdx: 0,
 
 	// Animation of subcanvas transitions
 	inTransition: false,
@@ -84,6 +84,18 @@ createSubCanvas = () => {
 			(windowWidth * (1 - subCanvas.leftTabWidthRatio)),
 			windowHeight
 		);
+
+		// Apply canvas settings which will not be changed
+		subCanvas.c[cIdx].obj.colorMode(RGB);
+		subCanvas.c[cIdx].obj.angleMode(DEGREES);
+		subCanvas.c[cIdx].obj.textFont(MAIN_FONT);
+		subCanvas.c[cIdx].obj.textAlign(CENTER, CENTER);
+		subCanvas.c[cIdx].obj.rectMode(CENTER, CENTER);
+
+		// Specify default values while drawing (unless otherwise specified)
+		subCanvas.c[cIdx].obj.noFill();
+		subCanvas.c[cIdx].obj.stroke(255);
+		subCanvas.c[cIdx].obj.strokeWeight(1);
 	});
 
 	// Set isActive functions of subcanvases

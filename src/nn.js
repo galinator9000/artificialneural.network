@@ -147,7 +147,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	compile = (compileArgs) => {
 		// Compile the tf.Sequential side
 		super.compile(compileArgs);
-		// First reset own values
+
+		// First reset own (custom class) values
 		this.reset();
 
 		// Create Neuron & Weight objects
@@ -157,15 +158,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Initially call them
 		this.onChangeWeights(true);
 		this.onChangeNeurons();
-
-		// Update all weights' outer look initially by calling their updateOuterLook method
-		this.layerWeights.forEach(layer => {
-			layer.forEach(neuron => {
-				neuron.forEach(weight => {
-					weight.updateOuterLook(this.vArgs);
-				});
-			});
-		});
 
 		// Mark as compiled
 		this.isCompiled = true;
@@ -309,15 +301,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.createNeurons();
 		this.createWeights(false);
 		this.onChangeWeights(false);
-
-		// Update all weights' outer look initially by calling their updateOuterLook method
-		this.layerWeights.forEach(layer => {
-			layer.forEach(neuron => {
-				neuron.forEach(weight => {
-					weight.updateOuterLook(this.vArgs);
-				});
-			});
-		});
 	};
 
 	reset = () => {
@@ -513,10 +496,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			// Each neuron
 			layer.forEach((neuron, neuronIndex) => {
-				// Set position of neuron & update it
-				neuron.x = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
-				neuron.y = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex) + (canvas.height * this.vArgs.translateY));
-				neuron.update(this.vArgs);
+				// Calculate new position of neuron & update it
+				let newXpos = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
+				let newYpos = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex) + (canvas.height * this.vArgs.translateY));
+				neuron.update(newXpos, newYpos, this.vArgs);
 			});
 		});
 
@@ -552,13 +535,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Draws the whole network on the given canvas, gets called if subcanvas is active
 	draw = (canvas, sample) => {
-		// Setting some of the canvas parameters
-		canvas.colorMode(RGB);
-		canvas.textAlign(CENTER, CENTER);
-		canvas.rectMode(CENTER, CENTER);
-		canvas.angleMode(DEGREES);
-		canvas.textFont(MAIN_FONT);
-
 		// Update the value of: if any of the neurons are focused
 		this.vArgs.focusedAnyNeuron = arrBoolAny(
 			this.layerNeurons.map(
@@ -604,25 +580,26 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				inputVec = [1.0, ...inputVec];
 			};
 
-			// Set canvas parameters
-			canvas.strokeWeight(1);
-			canvas.stroke(255);
-
 			// Draw input values to the left side
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
 				let posX = (inputNeuron.x - (Neuron.r*3));
 				let posY = inputNeuron.y;
 
-				canvas.noFill();
+				// Value rect outline
+				canvas.push();
 				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
+				canvas.pop();
 
+				// Value as text
 				let vText = inputVec[neuronIndex].toFixed(2);
+				canvas.push();
 				canvas.fill(255);
 				canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
 				canvas.text(
 					vText,
 					posX, posY
 				);
+				canvas.pop();
 			});
 
 			// Draw target values to the right side
@@ -630,42 +607,35 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				let posX = (outputNeuron.x + (Neuron.r*3));
 				let posY = outputNeuron.y;
 
-				canvas.noFill();
+				// Value rect outline
+				canvas.push();
 				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
+				canvas.pop();
 
+				// Value as text
 				let vText = targetVec[neuronIndex].toFixed(2);
+				canvas.push();
 				canvas.fill(255);
 				canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
 				canvas.text(
 					vText,
 					posX, posY
 				);
+				canvas.pop();
 			});
 		}
 	};
 };
 
+// Neuron object represents every output unit of the fully-connected layer, holds output value and XY position on the subcanvas.
 class Neuron{
-	// Visual values (indicates output)
-	strokeWeight = 0.5;
-	stroke = 255;
-	fill = 0;
-
 	value = null;
 	visualValue = 0;
+	isFocused = false;
+
 	x = 0;
 	y = 0;
 	static r = 30.0;
-	isFocused = false;
-	constructor(){};
-
-	// Updates visual values
-	updateOuterLook = (vArgs) => {
-		// These values indicates the output value
-		this.strokeWeight = ((this.visualValue - vArgs.neuronStats.min) / (vArgs.neuronStats.max - vArgs.neuronStats.min));
-		this.stroke = (1-this.strokeWeight)*255;
-		this.fill = this.strokeWeight*255;
-	};
 
 	// Sets visual value
 	updateVisualValue = (vArgs) => {
@@ -678,7 +648,10 @@ class Neuron{
 	};
 
 	// Gets called every frame
-	update = (vArgs) => {
+	update = (newXpos, newYpos, vArgs) => {
+		this.x = newXpos;
+		this.y = newYpos;
+
 		// If no output yet, simply don't update any value
 		if(this.value !== null){
 			// Adjust the visible value after propagation (forward) wave passes over it
@@ -689,53 +662,60 @@ class Neuron{
 				) || (!vArgs.animatePropagation)
 			){
 				this.updateVisualValue(vArgs);
-				this.updateOuterLook(vArgs);
 			}
 		}
 	};
 
 	draw = (canvas, vArgs) => {
-		// Neuron as circle
-		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? (this.strokeWeight*2) : this.strokeWeight);
-		canvas.stroke(this.stroke);
-		canvas.fill(this.fill);
+		// Neuron circle
+		canvas.push();
+		canvas.fill(BG_COLOR);
+		canvas.stroke(255);
+		canvas.strokeWeight(
+			(this.isFocused && vArgs.focusedAnyNeuron)
+			// When focused
+			? 2
+			// When isn't
+			: 1
+		);
 		canvas.circle(this.x, this.y, Neuron.r*2);
+		canvas.pop();
 
 		// Draw the output value as text
-		canvas.fill(255);
-		canvas.stroke(255);
-		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? 2 : 1);
 		if(vArgs.nnIsCompiled){
+			canvas.push();
+			canvas.fill(255);
+			canvas.stroke(255);
+			canvas.strokeWeight(
+				(this.isFocused && vArgs.focusedAnyNeuron)
+				// When focused
+				? 2
+				// When isn't
+				: 1
+			);
+
 			let vText = this.visualValue.toFixed(2);
 			canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
 			canvas.text(
 				vText,
 				this.x, this.y
 			);
+			canvas.pop();
 		}
 	};
 };
 
+// Weight objects are connected to two separate Neuron objects: "from" and "to".
 class Weight{
-	// Visual values (indicates carried value)
-	strokeWeight = 0.5;
-	stroke = 255;
-
-	value = 0;
-	visualValue = 0;
+	value = null;
+	visualValue = null;
 	isFocused = false;
+
 	constructor(from, to, value){
 		this.from = from;
 		this.to = to;
 		this.value = value;
 		this.visualValue = value;
-	};
-
-	// Updates visual values
-	updateOuterLook = (vArgs) => {
-		// These values indicates the carried value
-		this.strokeWeight = AnimationUtils.easeInExpo((this.visualValue - vArgs.weightsStats.min) / (vArgs.weightsStats.max - vArgs.weightsStats.min));
-		this.stroke = (1-this.strokeWeight)*255;
 	};
 
 	// Sets visual value
@@ -758,74 +738,98 @@ class Weight{
 			) || (!vArgs.animatePropagation)
 		){
 			this.updateVisualValue(vArgs);
-			this.updateOuterLook(vArgs);
 		}
 	}
 
 	draw = (canvas, vArgs) => {
-		// If focused on any neuron, but none of the connected neurons are focused, no need to draw this weight
+		// If focused on a neuron, but none of the connected neurons are focused ones, then no need to draw this weight
 		if(vArgs.focusedAnyNeuron && !(this.from.isFocused || this.to.isFocused)){
 			return;
 		}
+
+		// Check if weight is focused
 		this.isFocused = (vArgs.focusedAnyNeuron && (this.from.isFocused || this.to.isFocused));
-		let drawText = (this.isFocused && vArgs.nnIsCompiled);
+
+		// Check if should write the carried value as text
+		let writeCarriedValue = (this.isFocused && vArgs.nnIsCompiled);
 
 		// Calculate line's start&end positions
 		let fromX = (this.from.x + Neuron.r);
 		let fromY = this.from.y;
 		let toX = (this.to.x - Neuron.r);
 		let toY = this.to.y;
+		let gapStartX, gapStartY, gapEndX, gapEndY;
 
-		// Draw the carried value as text if focused
-		if(drawText){
-			// Text value gap center point and width
-			let gapCenter = 0.50;
-
-			// Adjust gapcenter value for drawing text values in a circular path
-			if(this.to.isFocused) gapCenter = 0.33;
-			if(this.from.isFocused) gapCenter = 0.66;
-
-			let gapWidth = 0.15;
-
-			// Text value gap XY points, linear interpolation from neurons' XY values
-			let gapStartX = lerp(fromX, toX, (gapCenter-gapWidth));
-			let gapStartY = lerp(fromY, toY, (gapCenter-gapWidth));
-			let gapEndX = lerp(fromX, toX, (gapCenter+gapWidth));
-			let gapEndY = lerp(fromY, toY, (gapCenter+gapWidth));
-
-			// Draw the line with a gap on the center
-			canvas.stroke(this.stroke);
-			canvas.strokeWeight(this.strokeWeight*2);
-			canvas.line(fromX, fromY, gapStartX, gapStartY);
-			canvas.line(toX, toY, gapEndX, gapEndY);
-
-			// Draw the value as text
+		// Draw weight between neurons (from -> to) as a line
+		if(!writeCarriedValue){
 			canvas.push();
-			canvas.translate(lerp(fromX, toX, gapCenter), lerp(fromY, toY, gapCenter));
-			canvas.rotate(
-				createVector(toX-fromX, 0).normalize().angleBetween(
-					createVector(toX-fromX, toY-fromY).normalize()
-				)
-			);
-			canvas.stroke(255);
-			canvas.strokeWeight(1);
 			canvas.fill(255);
-			let vText = this.visualValue.toFixed(2);
-			canvas.textSize(calculateTextSize("    ", (gapEndX-gapStartX), (gapEndY-gapStartY)));
-			// canvas.textSize(calculateTextSize(vText, (gapEndX-gapStartX), (gapEndY-gapStartY)));
-			canvas.text(vText, 0, 0);
-			canvas.pop();
-		}
-		// Draw weight between neurons as a line
-		else{
-			canvas.stroke(this.stroke);
-			canvas.strokeWeight(this.isFocused ? (this.strokeWeight*2) : this.strokeWeight);
+			canvas.stroke(255);
+			canvas.strokeWeight(
+				this.isFocused
+				// When focused
+				? 2
+				// When isn't
+				: 1
+			);
 			canvas.line(
 				// from (neuron)
 				fromX, fromY,
 				// to (neuron)
 				toX, toY
 			);
+			canvas.pop();
+		}
+		// Draw the carried value as text between the connection if focused
+		else{
+			// Text value gap center point and width
+			let gapCenter = 0.50;
+			// Adjust gapcenter value for drawing text values in a circular path
+			if(this.from.isFocused) gapCenter = 0.70;
+			if(this.to.isFocused) gapCenter = 0.30;
+
+			let gapWidth = 0.15;
+
+			// Text value gap XY points, linear interpolation from neurons' XY values
+			gapStartX = lerp(fromX, toX, (gapCenter - (gapWidth/2)));
+			gapStartY = lerp(fromY, toY, (gapCenter - (gapWidth/2)));
+			gapEndX = lerp(fromX, toX, (gapCenter + (gapWidth/2)));
+			gapEndY = lerp(fromY, toY, (gapCenter + (gapWidth/2)));
+
+			// Draw the line with a gap on the center
+			canvas.push();
+			canvas.fill(255);
+			canvas.stroke(255);
+			canvas.strokeWeight(1);
+			canvas.line(fromX, fromY, gapStartX, gapStartY);
+			canvas.line(gapEndX, gapEndY, toX, toY);
+			canvas.pop();
+
+			// Draw the value as text on the center of the gap with rotating accordingly
+			canvas.push();
+			canvas.fill(255);
+			canvas.stroke(255);
+			canvas.strokeWeight(1);
+			canvas.translate(
+				lerp(fromX, toX, gapCenter),
+				lerp(fromY, toY, gapCenter)
+			);
+			canvas.rotate(
+				createVector(toX-fromX, 0).normalize().angleBetween(
+					createVector(toX-fromX, toY-fromY).normalize()
+				)
+			);
+			let vText = this.visualValue.toFixed(2);
+			canvas.textSize(
+				calculateTextSize(
+					"    ",
+					// Get width&height as distance between gap endpoints
+					(gapEndX-gapStartX),
+					(gapEndY-gapStartY)
+				)
+			);
+			canvas.text(vText, 0, 0);
+			canvas.pop();
 		}
 
 		//// Highlight the connection during propagation
@@ -833,13 +837,29 @@ class Weight{
 		if(abs(vArgs.propagation.xTarget - vArgs.propagation.x) < 0.001) return;
 
 		// Calculate highlight area
-		let highlightStartX = vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim);
-		let highlightEndX = vArgs.propagation.xToCanvasPosX(Math.min(1.0, (vArgs.propagation.xAnim + vArgs.propagation.width)));
-		let hFromX = max(highlightStartX, fromX);
-		let hToX = min(highlightEndX, toX);
+		let hFromX = vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim);
+		let hToX = vArgs.propagation.xToCanvasPosX(Math.min(1.0, (vArgs.propagation.xAnim + vArgs.propagation.width)));
+		hFromX = max(hFromX, fromX);
+		hToX = min(hToX, toX);
 
-		// Check bounds of the highlight area if it intersects with weight line. If not, simply return.
-		if(hFromX > toX || hToX > toX || hFromX < fromX || hToX < fromX) return;
+		// Check bounds of the highlight area if it intersects with weight line. If not, simply return. (also checks the gap)
+		if(
+			(hFromX > toX || hFromX < fromX) || (hToX > toX || hToX < fromX)
+			// Gap condition
+			|| (writeCarriedValue && (
+				(hFromX > gapStartX && hFromX < gapEndX)
+				&& (hToX > gapStartX && hToX < gapEndX)
+			))
+		) return;
+
+		// Adjust highlight position values according to gap :P
+		if(writeCarriedValue){
+			if(hFromX < gapStartX && hToX > gapStartX){
+				hToX = gapStartX;
+			}else if(hFromX < gapEndX && hToX > gapEndX){
+				hFromX = gapEndX;
+			}
+		}
 
 		// Calculate highlighting line's Y coordinates with linear interpolation
 		// AAAAAAAAH MY MIND
@@ -847,13 +867,15 @@ class Weight{
 		let hToY = lerp(fromY, toY, ((hToX-fromX) / (toX-fromX)));
 
 		// Draw the highlighting line!
-		canvas.stroke(this.stroke/2);
-		canvas.strokeWeight(this.strokeWeight*5);
+		canvas.push();
+		canvas.stroke(255);
+		canvas.strokeWeight(3);
 		canvas.line(
 			// from (highlighter line start point)
 			hFromX, hFromY,
 			// to (highlighter line end point)
 			hToX, hToY
 		);
+		canvas.pop();
 	};
 };

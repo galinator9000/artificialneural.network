@@ -8,13 +8,21 @@ preload = () => {
 // Setup
 setup = () => {
 	BG_COLOR = color(1, 0, 2, 255);
-	
+
 	// Create main canvas
 	createCanvas(windowWidth, windowHeight);
 
+	// Apply canvas settings which will not be changed
 	colorMode(RGB);
-	textAlign(CENTER, CENTER);
+	angleMode(DEGREES);
 	textFont(MAIN_FONT);
+	textAlign(CENTER, CENTER);
+	rectMode(CENTER, CENTER);
+
+	// Default values unless otherwise specified while drawing
+	noFill();
+	stroke(255);
+	strokeWeight(1);
 
 	// Create the sub-canvases
 	createSubCanvas();
@@ -26,15 +34,11 @@ setup = () => {
 	// Load dataset
 	loadDataset(Object.values(csvURLs)[0]).then(() => {
 		compileDataset();
-		compileNeuralNetwork();
 	});
 };
 
 // Main loop
 draw = () => {
-	rectMode(CORNER);
-	angleMode(DEGREES);
-
 	// Clear backgrounds
 	background(BG_COLOR);
 	Object.values(subCanvas.c).forEach(sc => {
@@ -83,6 +87,7 @@ draw = () => {
 	// Update subcanvas related things
 	updateSubCanvas();
 
+	//// Draw subcanvases over main one
 	// Starting X position for all subcanvases
 	let startX = (windowWidth * subCanvas.leftTabWidthRatio);
 
@@ -101,6 +106,8 @@ draw = () => {
 			(subCanvas.transition.direction * subCanvas.transition.xAnim * windowHeight)
 		);
 
+		// Draw subcanvases on to main canvas
+		push();
 		image(
 			currentCanvas,
 			// Position
@@ -115,9 +122,11 @@ draw = () => {
 			// Size
 			nextCanvas.width, nextCanvas.height
 		);
+		pop();
 	}
 	// Draw only the current sub-canvas if transition isn't happening
 	else{
+		push();
 		image(
 			currentCanvas,
 			// Position
@@ -125,12 +134,12 @@ draw = () => {
 			// Size
 			currentCanvas.width, currentCanvas.height
 		);
+		pop();
 	}
 
-	// Draw subcanvas' tabs to the left
+	//// Draw subcanvas tabs to the left of the screen
 	let eachTabW = (windowWidth * subCanvas.leftTabWidthRatio);
 	let eachTabH = (windowHeight / subCanvas.c.length);
-
 	let curScIdx = (subCanvas.nextIdx);
 
 	// Calculate tab titles' text size & apply it
@@ -138,19 +147,16 @@ draw = () => {
 
 	// Draw each tab title
 	subCanvas.c.forEach((sc, scIdx) => {
-		stroke(255);
-		strokeWeight((scIdx == curScIdx) ? 3 : 0);
-
-		// Line or rect
-		line(eachTabW, (eachTabH * (scIdx)), eachTabW, (eachTabH * (scIdx+1)));
-		// noFill(); rect(0, (eachTabH*scIdx), eachTabW, eachTabH);
-
-		// Write tab title
-		stroke((scIdx == curScIdx) ? 255 : 64);
-		fill((scIdx == curScIdx) ? 255 : 64);
-		strokeWeight(1);
-		// Use translate&rotate for drawing titles sideways
+		// Active tab underline
 		push();
+		strokeWeight((scIdx == curScIdx) ? 3 : 0);
+		line(eachTabW, (eachTabH * (scIdx)), eachTabW, (eachTabH * (scIdx+1)));
+		pop();
+
+		// Write tab title (use translate&rotate for drawing titles sideways)
+		push();
+		fill((scIdx == curScIdx) ? 255 : 64);
+		stroke((scIdx == curScIdx) ? 255 : 64);
 		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
 		rotate(-90);
 		text(sc.title, 0, 0);

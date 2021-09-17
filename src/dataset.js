@@ -173,11 +173,15 @@ drawDataset = (canvas, vArgs) => {
 	let startCellY = startTableY + (eachCellH/2);
 
 	// Table border
-	canvas.rectMode(CORNER);
-	canvas.noFill();
-	canvas.stroke(255);
+	canvas.push();
 	canvas.strokeWeight(2);
-	canvas.rect(startTableX, startTableY, tableW, tableH);
+	canvas.rect(
+		startTableX+(tableW/2),
+		startTableY+(tableH/2),
+		tableW,
+		tableH
+	);
+	canvas.pop();
 
 	// Draw headers
 	let rowIndex = 0;
@@ -185,22 +189,21 @@ drawDataset = (canvas, vArgs) => {
 		let centerX = (startCellX + (colIndex * eachCellW));
 		let centerY = (startCellY + (rowIndex * eachCellH));
 
-		// Header cell
-		canvas.noFill();
-		canvas.stroke(255);
-		canvas.strokeWeight(1);
-		canvas.rectMode(CENTER, CENTER);
+		// Header cell rect
+		canvas.push();
 		canvas.rect(centerX, centerY, eachCellW, eachCellH);
+		canvas.pop();
 
 		// Header text
-		canvas.textAlign(CENTER, CENTER);
-		// Set text size
-		canvas.textSize(calculateTextSize(
-			colName.slice(0, 6),
-			(eachCellW, eachCellH)
-		));
-		canvas.textFont(MAIN_FONT);
+		canvas.push();
 		canvas.fill(255);
+		canvas.textSize(
+			calculateTextSize(
+				colName.slice(0, 6),
+				(eachCellW, eachCellH)
+			)
+		);
 		canvas.text(colName.slice(0, 6), centerX, centerY);
+		canvas.pop();
 	});
 };
