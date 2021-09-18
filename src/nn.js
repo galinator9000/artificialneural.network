@@ -1,7 +1,25 @@
 // Neural network related variables, functions & classes.
 
+// Various constant visual arguments
+const nnConstVArgs = {
+	scaleX: 0.75, scaleY: 0.80,
+	translateX: -0.025, translateY: -0.035,
+	showBiasNeurons: false,
+	weightVisualChangeSpeed: 0.25,
+	neuronVisualChangeSpeed: 0.25,
+	animatePropagation: true,
+	propagation: {
+		// Width and step values (ratio value for width of the canvas) of the propagation wave
+		width: 0.005, step: 0.01,
+		// Animation smoothing function
+		animFn: AnimationUtils.easeOutQuad,
+		// Apply animation layer by layer or to whole network?
+		animationApplyType: (1 ? "layer" : "network")
+	}
+};
+
 // Creates a dense layer config object with given values
-createDenseLayerConfig = (denseArgs={activation: "sigmoid"}) => ({
+createDenseLayerConfig = (denseArgs={}) => ({
 	class: tf.layers.dense,
 	args: {
 		// Min 4, max 15 neurons, if not specified
@@ -9,7 +27,7 @@ createDenseLayerConfig = (denseArgs={activation: "sigmoid"}) => ({
 		// Randomly choose if use bias or not, if not specified
 		useBias: ((denseArgs.useBias) ? denseArgs.useBias : (getRandomInt(0, 2)===1)),
 		// No activation, if not specified
-		activation: denseArgs.activation
+		activation: ((denseArgs.activation) ? denseArgs.activation : null),
 	}
 });
 
@@ -36,21 +54,11 @@ let nnStructure = {
 		// (set output unit to 1 initially)
 		units: 1,
 		useBias: true,
-		// Regression
-		// activation: null,
-		// Classification (binary)
-		activation: "sigmoid",
+		activation: null
 	}),
 
 	// Compile arguments (optimizer, loss)
-	compileArgs: {
-		optimizer: tf.train.sgd(0.001),
-
-		// Regression
-		// loss: "meanSquaredError",
-		// Classification (binary)
-		loss: "binaryCrossentropy"
-	},
+	compileArgs: {optimizer: tf.train.sgd(0.001), loss: "meanSquaredError"}
 };
 
 // Resets neural network
@@ -59,32 +67,18 @@ resetNeuralNetwork = () => {
 	nnStructure.hiddenLayersConfig = [];
 	// Remove current nn object
 	nn = undefined;
+	// Reset NN GUI (dynamic components)
+	resetNeuralNetworkGUI();
 };
 
-// Initializes neural network
-initializeNeuralNetwork = () => {
+// Builds neural network
+buildNeuralNetwork = () => {
 	// Build NN sequentially with our custom class
 	nn = new SequentialNeuralNetwork(
 		// Arguments which will be passed to tf.Sequential
 		sequentialArgs={},
-
-		// Various visual arguments
-		vArgs={
-			scaleX: 0.75, scaleY: 0.80,
-			translateX: -0.025, translateY: -0.035,
-			showBiasNeurons: false,
-			weightVisualChangeSpeed: 0.25,
-			neuronVisualChangeSpeed: 0.25,
-			animatePropagation: true,
-			propagation: {
-				// Width and step values (ratio value for width of the canvas) of the propagation wave
-				width: 0.005, step: 0.01,
-				// Animation smoothing function
-				animFn: AnimationUtils.easeOutQuad,
-				// Apply animation layer by layer or to whole network?
-				animationApplyType: (1 ? "layer" : "network")
-			}
-		}
+		// Pass visual arguments
+		vArgs=nnConstVArgs
 	);
 
 	// Put all layer configs in a list, add each of them to the model
@@ -96,6 +90,38 @@ initializeNeuralNetwork = () => {
 
 	// "Precompile" the network for being able to draw it
 	nn.precompile();
+
+	// Reset NN GUI (dynamic components)
+	resetNeuralNetworkGUI();
+};
+
+// Resets dynamic NN GUI components
+resetNeuralNetworkGUI = () => {
+	// Remove dynamic NN GUI components
+	getGUIComponentIDs()
+		.filter(gcId => gcId.startsWith("nn_add_hidden_layer_"))
+		.map(gcId => {removeGUIComponentWithID(gcId)});
+
+	// Add them
+	[
+		{
+			id: "nn_add_hidden_layer_0",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("+"),
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Add hidden layer
+						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
+						// Rebuild the network
+						buildNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.605, 0.81],
+			canvasRelativeSize: [0.06, 0.06]
+		},
+	].forEach(addGC => {addGUIComponent(addGC)});
 };
 
 // Compiles neural network
@@ -103,6 +129,8 @@ compileNeuralNetwork = () => {
 	// Compile the model with args
 	nn.compile(nnStructure.compileArgs);
 	console.log("NN compiled", nnStructure);
+	// Reset NN GUI (dynamic components)
+	resetNeuralNetworkGUI();
 };
 
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it

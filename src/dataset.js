@@ -68,8 +68,8 @@ compileDataset = () => {
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayerConfig.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayerConfig.args.units = data.structure.n_targets;
-	// Reinitialize neural network
-	initializeNeuralNetwork();
+	// (Re)build neural network
+	buildNeuralNetwork();
 
 	// Get input and target tensors of data
 	data.X = tf.tensor(

@@ -11,145 +11,8 @@ initializeGUI = () => {
 	];
 
 	guiComponents = [
-		//// NN GUI components
-
-		// Add hidden layer button
-		{
-			id: "add_hidden_layer_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Add hidden layer"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Add randomly built hidden layer to structure of the network
-						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
-						// Reinitialize the network
-						initializeNeuralNetwork();
-					})
-				]},
-			],
-			showCond: () => ((nn && !nn.isCompiled)),
-			canvasRelativePosition: [0.29, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Compile network button
-		{
-			id: "compile_network_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Compile network!"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Compile neural network
-						compileNeuralNetwork();
-						// Get random sample on stage
-						getStageSampleFromDataset();
-					})
-				]},
-			],
-			showCond: () => ((nn && !nn.isCompiled)),
-			canvasRelativePosition: [0.40, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Reset network button
-		{
-			id: "reset_network_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Reset network"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("reset_network_button").subCanvasIndex].isActive())}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Reset & reinitialize the network
-						resetNeuralNetwork();
-						initializeNeuralNetwork();
-					})
-				]},
-			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.275, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Get sample button
-		{
-			id: "get_sample_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Get sample"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				// Get random sample from dataset for stage
-				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
-			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.385, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Predict button
-		{
-			id: "predict_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Predict"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					// Predict current stage sample
-					(() => nn.predict(data.stageSample.input))
-				]},
-			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.495, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
-		// Fit button
-		{
-			id: "fit_button",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Train on dataset!"),
-			attributes: [
-				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
-				)}
-			],
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					// Fit the model on dataset
-					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
-				]},
-			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.605, 0.92],
-			canvasRelativeSize: [0.10, 0.06]
-		},
-
 		//// Dataset GUI components
-
+		
 		// Dataset source text
 		{
 			id: "dataset_source_text",
@@ -165,7 +28,7 @@ initializeGUI = () => {
 
 		// Dataset source select / raw CSV URL provider
 		{
-			id: "dataset_url_select",
+			id: "dataset_source_select",
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createSelect(),
 			initCalls: [
@@ -181,7 +44,7 @@ initializeGUI = () => {
 				{fnName: "changed", args: [
 					(event) => {
 						// Get selected value
-						let selectComponent = getGUIComponentWithID("dataset_url_select").obj;
+						let selectComponent = getGUIComponentWithID("dataset_source_select").obj;
 						let selectedURL = selectComponent.value();
 
 						// Load given URL
@@ -210,7 +73,7 @@ initializeGUI = () => {
 
 		// Dataset compile button
 		{
-			id: "compile_dataset_button",
+			id: "dataset_compile_button",
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createButton("Compile dataset!"),
 			attributes: [
@@ -235,6 +98,119 @@ initializeGUI = () => {
 			canvasRelativePosition: [0.36, 0.0325],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+		
+		//// NN GUI components
+
+		// Compile network button
+		{
+			id: "nn_compile_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Compile network!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Compile neural network
+						compileNeuralNetwork();
+						// Get random sample on stage
+						getStageSampleFromDataset();
+					})
+				]},
+			],
+			showCond: () => ((nn && !nn.isCompiled)),
+			canvasRelativePosition: [0.40, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Reset network button
+		{
+			id: "nn_reset_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Reset network"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("nn_reset_button").subCanvasIndex].isActive())}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Reset & rebuild the network
+						resetNeuralNetwork();
+						buildNeuralNetwork();
+					})
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.275, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Get sample button
+		{
+			id: "nn_get_sample_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Get sample"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("nn_get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				// Get random sample from dataset for stage
+				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.385, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Predict button
+		{
+			id: "nn_predict_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Predict"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("nn_predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					// Predict current stage sample
+					(() => nn.predict(data.stageSample.input))
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.495, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Fit button
+		{
+			id: "nn_fit_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Train on dataset!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[getGUIComponentWithID("nn_fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					// Fit the model on dataset
+					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.605, 0.92],
+			canvasRelativeSize: [0.10, 0.06]
+		},
 	];
 
 	// Call init calls of GUI components
@@ -250,18 +226,30 @@ getGUIComponentWithID = (id) => {
 	return guiComponents.filter(gc => (gc.id && gc.id == id))[0];
 };
 
-// Removes GUI component with given ID
-removeGUIComponentWithID = (id) => {
-	// Get GUI component itself and it's index on the list
-	let [gc, gcIdx] = guiComponents.map(
-		(gc, gcIdx) => ([gc, gcIdx])
-	).filter(
-		([gc, gcIdx]) => (gc.id == id)
-	)[0];
+getGUIComponentIDs = () => {
+	return guiComponents.map(gc => gc.id);
+};
 
-	// Remove HTML element, pop it from the list
-	gc.obj.remove();
-	guiComponents.splice(gcIdx, 1);
+getGUIComponentsIdIndexPair = () => {
+	let id_index_pair = {};
+	guiComponents.forEach((gc, gcIdx) => {
+		id_index_pair[gc.id] = gcIdx;
+	});
+	return id_index_pair;
+};
+
+// Removes GUI component with given ID
+removeGUIComponentWithID = (removeId) => {
+	let removeComponentIDs = guiComponents.map(gc => gc.id).filter(gcId => gcId == removeId);
+
+	removeComponentIDs.forEach(gcId => {
+		// Get current index of the GUI component
+		let gcIdx = getGUIComponentsIdIndexPair()[gcId];
+
+		// Remove HTML element, pop it from the component list
+		guiComponents[gcIdx].obj.remove();
+		guiComponents.splice(gcIdx, 1);
+	});
 };
 
 // Adds given GUI component & initializes it

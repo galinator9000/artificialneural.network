@@ -3,6 +3,8 @@
 const DATASET_SUBCANVAS_INDEX = 1;
 const NN_SUBCANVAS_INDEX = 2;
 
+const INITIAL_SUBCANVAS_INDEX = NN_SUBCANVAS_INDEX;
+
 let subCanvas = {
 	// SubCanvas objects 
 	c: [
@@ -61,8 +63,8 @@ let subCanvas = {
 		},
 	],
 
-	currentIdx: 0,
-	nextIdx: 0,
+	// Keeps the value of the current subcanvas' index (& next one if in transition)
+	currentIdx: INITIAL_SUBCANVAS_INDEX, nextIdx: INITIAL_SUBCANVAS_INDEX,
 
 	// Transforms of current canvas
 	transform: {

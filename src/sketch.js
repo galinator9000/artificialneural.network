@@ -48,7 +48,7 @@ draw = () => {
 	// Update GUI components
 	updateGUI();
 
-	// Process nn if initialized
+	// Process nn if built
 	if(nn){
 		// Get the canvas
 		let nnCanvas = subCanvas.c[NN_SUBCANVAS_INDEX];
