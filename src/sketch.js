@@ -51,7 +51,7 @@ draw = () => {
 	// Process nn if initialized
 	if(nn){
 		// Get the canvas
-		let nnCanvas = subCanvas.c[1];
+		let nnCanvas = subCanvas.c[NN_SUBCANVAS_INDEX];
 
 		// Update network
 		nn.update(nnCanvas.obj);
@@ -71,7 +71,7 @@ draw = () => {
 	}
 
 	// Check if dataset should be drawn to it's subcanvas
-	let datasetCanvas = subCanvas.c[0];
+	let datasetCanvas = subCanvas.c[DATASET_SUBCANVAS_INDEX];
 	if(datasetCanvas.shouldDraw()){
 		datasetCanvas.obj.push();
 
@@ -147,7 +147,12 @@ draw = () => {
 	let curScIdx = (subCanvas.nextIdx);
 
 	// Calculate tab titles' text size & apply it
-	textSize(calculateTextsSize(subCanvas.c.map(sc => sc.title), eachTabH));
+	textSize(
+		calculateTextsSize(
+			subCanvas.c.map(sc => sc.title),
+			(eachTabH*0.90)
+		)
+	);
 
 	// Draw each tab title
 	subCanvas.c.forEach((sc, scIdx) => {

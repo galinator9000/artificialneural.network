@@ -1,8 +1,16 @@
 // SubCanvas system related variables and functions.
 
+const DATASET_SUBCANVAS_INDEX = 1;
+const NN_SUBCANVAS_INDEX = 2;
+
 let subCanvas = {
 	// SubCanvas objects 
 	c: [
+		{
+			title: "Main",
+			obj: null,
+			isActive: () => true,
+		},
 		{
 			title: "Dataset",
 			obj: null,
@@ -189,9 +197,11 @@ createSubCanvas = () => {
 	});
 
 	// Set shouldDraw functions of subcanvases
-	subCanvas.c[0].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(0));
-	subCanvas.c[1].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(1));
-	subCanvas.c[2].shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(2));
+	subCanvas.c.forEach((sc, scIndex) => {
+		subCanvas.c[scIndex].shouldDraw = () => (
+			[subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex)
+		);
+	});
 };
 
 // Switches (transition) to given subcanvas idx

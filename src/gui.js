@@ -16,7 +16,7 @@ initializeGUI = () => {
 		// Add hidden layer button
 		{
 			id: "add_hidden_layer_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Add hidden layer"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -40,7 +40,7 @@ initializeGUI = () => {
 		// Compile network button
 		{
 			id: "compile_network_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Compile network!"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -64,7 +64,7 @@ initializeGUI = () => {
 		// Reset network button
 		{
 			id: "reset_network_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Reset network"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -87,7 +87,7 @@ initializeGUI = () => {
 		// Get sample button
 		{
 			id: "get_sample_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Get sample"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -107,7 +107,7 @@ initializeGUI = () => {
 		// Predict button
 		{
 			id: "predict_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Predict"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -129,7 +129,7 @@ initializeGUI = () => {
 		// Fit button
 		{
 			id: "fit_button",
-			subCanvasIndex: 1,
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Train on dataset!"),
 			attributes: [
 				// "Disabled" attribute for button
@@ -153,20 +153,20 @@ initializeGUI = () => {
 		// Dataset source text
 		{
 			id: "dataset_source_text",
-			subCanvasIndex: 0,
-			obj: createButton("Source"),
+			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
+			obj: createButton("Dataset source"),
 			initCalls: [
 				// Behave as ghost button
 				{fnName: "addClass", args: ["textButton"]},
 			],
-			canvasRelativePosition: [0.05, 0.0325],
-			canvasRelativeSize: [0.05, 0.06]
+			canvasRelativePosition: [0.0125, 0.0325],
+			canvasRelativeSize: [0.0875, 0.06]
 		},
 
 		// Dataset source select / raw CSV URL provider
 		{
 			id: "dataset_url_select",
-			subCanvasIndex: 0,
+			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createSelect(),
 			initCalls: [
 				// Enter CSV URL option
@@ -211,7 +211,7 @@ initializeGUI = () => {
 		// Dataset compile button
 		{
 			id: "compile_dataset_button",
-			subCanvasIndex: 0,
+			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createButton("Compile dataset!"),
 			attributes: [
 				// "Disabled" attribute for compile button (if data is compiled, disable it)
@@ -228,7 +228,7 @@ initializeGUI = () => {
 						// Compile dataset!
 						compileDataset();
 						// Switch to NN subcanvas
-						switchSubCanvas(1);
+						switchSubCanvas(NN_SUBCANVAS_INDEX);
 					})
 				]},
 			],
