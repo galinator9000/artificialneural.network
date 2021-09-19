@@ -53,14 +53,6 @@ let subCanvas = {
 				// },
 			},
 		},
-		{
-			title: "Stats",
-			obj: null,
-			isActive: () => (
-				// Statistics GUI components are ready when nn&data is ready
-				(!data.isLoading) && data.isCompiled && (nn && nn.isCompiled)
-			),
-		},
 	],
 
 	// Keeps the value of the current subcanvas' index (& next one if in transition)
@@ -173,7 +165,7 @@ createSubCanvas = () => {
 		// Position converter functions (with applying transformations in reverse)
 		sc.xToSubCanvasPosX = (x) => {
 			// Calculate tab
-			x = (x - (windowWidth * subCanvas.leftTabWidthRatio));
+			x = (x - subCanvas.subcanvasStartX);
 
 			// Apply transformations in reverse
 			// Translate

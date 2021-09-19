@@ -7,7 +7,7 @@ let cursors = [];
 initializeGUI = () => {
 	// Set GUI cursors and conditions of them
 	cursors = [
-		{name: "pointer", condition: () => (mouseX < (windowWidth * subCanvas.leftTabWidthRatio))}
+		{name: "pointer", condition: () => (mouseX < subCanvas.subcanvasStartX)}
 	];
 
 	guiComponents = [
@@ -32,8 +32,11 @@ initializeGUI = () => {
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createSelect(),
 			initCalls: [
+				// Pick file option
+				// {fnName: "option", args: ["Pick file..."]},
+
 				// Enter CSV URL option
-				{fnName: "option", args: ["Enter CSV URL"]},
+				{fnName: "option", args: ["Enter CSV URL..."]},
 
 				// All constant options
 				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
@@ -45,24 +48,28 @@ initializeGUI = () => {
 					(event) => {
 						// Get selected value
 						let selectComponent = getGUIComponentWithID("dataset_source_select").obj;
-						let selectedURL = selectComponent.value();
+						let selectedValue = selectComponent.value();
 
 						// Load given URL
-						if(selectedURL === "Enter CSV URL"){
-							selectedURL = window.prompt("Enter CSV URL");
+						if(selectedValue === "Enter CSV URL..."){
+							selectedValue = window.prompt("Enter CSV URL...");
 
 							// Attempt to load given URL, if successful, add as an option
-							loadDataset(selectedURL).then((success) => {
+							loadDataset(selectedValue).then((success) => {
 								if(success){
 									// Add as option & make it selected
-									selectComponent.option(selectedURL, selectedURL);
-									selectComponent.selected(selectedURL);
+									selectComponent.option(selectedValue, selectedValue);
+									selectComponent.selected(selectedValue);
 								}
 							});
 						}
+						// Pick file from local
+						// else if(selectedValue === "Pick file..."){
+						// 	document.getElementById("dataset-file-input").click();
+						// }
 						// Load dataset
 						else{
-							loadDataset(selectedURL);
+							loadDataset(selectedValue);
 						}
 					}
 				]},
@@ -281,7 +288,7 @@ updateGUI = () => {
 
 		// Update position
 		gc.obj.position(
-			((windowWidth * subCanvas.leftTabWidthRatio) + (getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0])),
+			(subCanvas.subcanvasStartX + (getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0])),
 			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[1]),
 		);
 		// Update size

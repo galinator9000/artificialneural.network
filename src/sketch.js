@@ -92,9 +92,6 @@ draw = () => {
 	updateSubCanvas();
 
 	//// Draw subcanvases over main one
-	// Starting X position for all subcanvases
-	let startX = (windowWidth * subCanvas.leftTabWidthRatio);
-
 	// Get the current&next subcanvas objects
 	let currentCanvas = subCanvas.c[subCanvas.currentIdx].obj;
 	let nextCanvas = subCanvas.c[subCanvas.nextIdx].obj;
@@ -115,14 +112,14 @@ draw = () => {
 		image(
 			currentCanvas,
 			// Position
-			startX, currentY,
+			subCanvas.subcanvasStartX, currentY,
 			// Size
 			currentCanvas.width, currentCanvas.height
 		);
 		image(
 			nextCanvas,
 			// Position
-			startX, nextY,
+			subCanvas.subcanvasStartX, nextY,
 			// Size
 			nextCanvas.width, nextCanvas.height
 		);
@@ -134,7 +131,7 @@ draw = () => {
 		image(
 			currentCanvas,
 			// Position
-			startX, 0,
+			subCanvas.subcanvasStartX, 0,
 			// Size
 			currentCanvas.width, currentCanvas.height
 		);
@@ -142,7 +139,7 @@ draw = () => {
 	}
 
 	//// Draw subcanvas tabs to the left of the screen
-	let eachTabW = (windowWidth * subCanvas.leftTabWidthRatio);
+	let eachTabW = subCanvas.subcanvasStartX;
 	let eachTabH = (windowHeight / subCanvas.c.length);
 	let curScIdx = (subCanvas.nextIdx);
 

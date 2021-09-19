@@ -52,8 +52,7 @@ button:disabled, button[disabled]{
 	/* Position, top-right */
 	position: absolute;
 	width: fit-content;
-	height: 12.5%;
-	padding-right: 1.25%;
+	height: 10%;
 }
 
 /* Make everything non-selectable */
