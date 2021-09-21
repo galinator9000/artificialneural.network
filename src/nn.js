@@ -91,7 +91,6 @@ buildNeuralNetwork = () => {
 	// "Precompile" the network for being able to draw it
 	nn.precompile();
 
-		
 	// Update network once initially
 	nn.update(subCanvas.c[NN_SUBCANVAS_INDEX].obj);
 
@@ -347,7 +346,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			let layerWeightMatrix;
 			if(withRealValues){
 				// Get the 2D weight tensor of the layer, turn it into a nested-list
-				layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
+				layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1, this.vArgs.showBiasNeurons).arraySync();
 			}else{
 				// Build a tensor that has fake values (for being able to draw them before compiling)
 				layerWeightMatrix = tf.ones([fromLayerNeurons.length, toLayerNeurons.length]).arraySync();
@@ -397,14 +396,14 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Gets weight matrix of a dense layer
-	getLayerWeightMatrix = (layerIdx) => {
+	getLayerWeightMatrix = (layerIdx, withBias) => {
 		// Get all weights of the layer (list)
 		let w = this.layers[layerIdx].getWeights();
 
 		// Get kernel
 		let kernel = w[0];
-		// Directly return the kernel if there's no bias
-		if(w.length === 1){
+		// Directly return the kernel if there's no bias or bias not wanted
+		if((w.length === 1) || (!withBias)){
 			return kernel;
 		}
 
@@ -429,7 +428,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			};
 			
 			// Get the 2D weight tensor of the layer, turn it into a nested-list
-			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1).arraySync();
+			let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex+1, this.vArgs.showBiasNeurons).arraySync();
 
 			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
 				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
@@ -444,12 +443,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Should be called when Weight values change
 	onChangeWeights = (withRealValues) => {
 		// Get all weights in a 1D tensor
-		let allWeights;
-		if(withRealValues){
-			allWeights = this.getAllWeights().arraySync();
-		}else{
-			allWeights = [1, 1];
-		}
+		let allWeights = (withRealValues) ? (this.getAllWeights().arraySync()) : [1, 1];
 
 		// Update weight stats
 		this.vArgs.weightsStats = {
@@ -482,7 +476,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Slice 1 for excluding the input layer (has no kernel&bias)
 			[...Array(this.layers.length).keys()].slice(1).map((layerIndex) => {
 				// Get the 2D weight tensor of the layer
-				let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex);
+				let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex, this.vArgs.showBiasNeurons);
 				// Flatten the tensor (2D to 1D) and return it
 				return layerWeightMatrix.reshape([layerWeightMatrix.size]);
 			}),
