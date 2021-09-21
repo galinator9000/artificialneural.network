@@ -55,8 +55,8 @@ button:disabled, button[disabled]{
 	height: 10%;
 }
 
-/* Make everything non-selectable */
 * {
+	/* Make everything non-selectable */
 	-webkit-user-select: none;
 	-khtml-user-select: none;
 	-moz-user-select: -moz-none;

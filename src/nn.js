@@ -2,8 +2,8 @@
 
 // Various constant visual arguments
 const nnConstVArgs = {
-	scaleX: 0.75, scaleY: 0.80,
-	translateX: -0.025, translateY: -0.035,
+	scaleX: 0.75, scaleY: 0.66,
+	translateX: -0.025, translateY: -0.1,
 	showBiasNeurons: false,
 	weightVisualChangeSpeed: 0.25,
 	neuronVisualChangeSpeed: 0.25,
@@ -91,6 +91,10 @@ buildNeuralNetwork = () => {
 	// "Precompile" the network for being able to draw it
 	nn.precompile();
 
+		
+	// Update network once initially
+	nn.update(subCanvas.c[NN_SUBCANVAS_INDEX].obj);
+
 	// Reset NN GUI (dynamic components)
 	resetNeuralNetworkGUI();
 };
@@ -98,30 +102,74 @@ buildNeuralNetwork = () => {
 // Resets dynamic NN GUI components
 resetNeuralNetworkGUI = () => {
 	// Remove dynamic NN GUI components
-	getGUIComponentIDs()
-		.filter(gcId => gcId.startsWith("nn_add_hidden_layer_"))
-		.map(gcId => {removeGUIComponentWithID(gcId)});
+	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_add_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
+	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
 
-	// Add them
-	[
-		{
-			id: "nn_add_hidden_layer_0",
-			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("+"),
-			initCalls: [
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Add hidden layer
-						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
-						// Rebuild the network
-						buildNeuralNetwork();
-					})
-				]},
-			],
-			canvasRelativePosition: [0.605, 0.81],
-			canvasRelativeSize: [0.06, 0.06]
-		},
-	].forEach(addGC => {addGUIComponent(addGC)});
+	return;
+
+	if(nn && !nn.isCompiled){
+		// Place "add hidden layer" button between every layer
+		[...Array((nn.layerNeurons.length-1)).keys()].forEach((layerIndex) => {
+			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (layerIndex+0.5)) - (Neuron.r*2);
+			let buttonsY = nn.vArgs.layersBottomRowY;
+
+			addGUIComponent({
+				id: ("nn_add_hidden_layer_"+(layerIndex.toString())),
+				subCanvasIndex: NN_SUBCANVAS_INDEX,
+				obj: createButton("+"),
+				initCalls: [
+					{fnName: "mousePressed", args: [
+						(() => {
+							// Add hidden layer
+							nnStructure.hiddenLayersConfig.splice(
+								layerIndex,
+								0,
+								createDenseLayerConfig()
+							);
+							// Rebuild the network
+							buildNeuralNetwork();
+						})
+					]},
+				],
+				canvasRelativePosition: [
+					(buttonX / nn.vArgs.canvasWidth),
+					(buttonsY / nn.vArgs.canvasHeight)
+				],
+				canvasRelativeSize: [
+					(Neuron.r / nn.vArgs.canvasWidth),
+					(Neuron.r / nn.vArgs.canvasHeight)
+				]
+			});
+		});
+
+		// Place layer configuration select below the neurons
+		nn.layerNeurons.forEach((layer, layerIndex) => {
+			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (layerIndex)) - Neuron.r*2;
+			let buttonY = ((nn.vArgs.canvasHeight/2) - ((nn.vArgs.perNeuronY * layer.length+1) / 2));
+
+			addGUIComponent({
+				id: ("nn_hidden_layer_"+(layerIndex.toString())),
+				subCanvasIndex: NN_SUBCANVAS_INDEX,
+				obj: createButton("O"),
+				initCalls: [
+					{fnName: "mousePressed", args: [
+						(() => {
+							// Rebuild the network
+							buildNeuralNetwork();
+						})
+					]},
+				],
+				canvasRelativePosition: [
+					(buttonX / nn.vArgs.canvasWidth),
+					(buttonY / nn.vArgs.canvasHeight)
+				],
+				canvasRelativeSize: [
+					(Neuron.r / nn.vArgs.canvasWidth),
+					(Neuron.r / nn.vArgs.canvasHeight)
+				]
+			});
+		});
+	}
 };
 
 // Compiles neural network
@@ -467,6 +515,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (this.vArgs.perNeuronY / 1.25 / 2);
+
+		this.vArgs.layersTopRowY = ((canvas.height/2) - ((this.vArgs.perNeuronY * this.vArgs.maxUnitCount) / 2)) - (this.vArgs.perNeuronY/2) + (canvas.height * this.vArgs.translateY);
+		this.vArgs.layersBottomRowY = this.vArgs.layersTopRowY + (this.vArgs.perNeuronY * (this.vArgs.maxUnitCount+1));
+		this.vArgs.canvasWidth = canvas.width;
+		this.vArgs.canvasHeight = canvas.height;
 
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
