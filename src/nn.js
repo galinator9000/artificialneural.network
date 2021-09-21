@@ -2,8 +2,8 @@
 
 // Various constant visual arguments
 const nnConstVArgs = {
-	scaleX: 0.75, scaleY: 0.66,
-	translateX: -0.025, translateY: -0.1,
+	scaleX: 0.80, scaleY: 0.66,
+	translateX: -0.035, translateY: -0.025,
 	showBiasNeurons: false,
 	weightVisualChangeSpeed: 0.25,
 	neuronVisualChangeSpeed: 0.25,
@@ -143,7 +143,7 @@ resetNeuralNetworkGUI = () => {
 		});
 
 		// Place layer configuration select below the neurons
-		nn.layerNeurons.forEach((layer, layerIndex) => {
+		nn.layerNeurons.slice(1).forEach((layer, layerIndex) => {
 			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (layerIndex)) - Neuron.r*2;
 			let buttonY = ((nn.vArgs.canvasHeight/2) - ((nn.vArgs.perNeuronY * layer.length+1) / 2));
 
@@ -321,7 +321,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// Each neuron
 			[...Array(neuronCount).keys()].forEach(neuronIndex => {
 				// Create Neuron object & push it to the list
-				this.layerNeurons[layerIndex].push(new Neuron());
+				this.layerNeurons[layerIndex].push(new Neuron(0, 0, layerIndex===0));
 			});
 		});
 	};
@@ -684,15 +684,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				inputVec = [1.0, ...inputVec];
 			};
 
-			// Draw input values to the left side
+			//// Input
+			// Draw input values over input neurons
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
-				let posX = (inputNeuron.x - (Neuron.r*3));
+				let posX = inputNeuron.x;
 				let posY = inputNeuron.y;
-
-				// Value rect outline
-				canvas.push();
-				canvas.rect(posX, posY, Neuron.r*3, Neuron.r*2);
-				canvas.pop();
 
 				// Value as text
 				let vText = inputVec[neuronIndex].toFixed(2);
@@ -706,6 +702,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				canvas.pop();
 			});
 
+			//// Target
 			// Draw target values to the right side
 			this.layerNeurons[this.layerNeurons.length-1].forEach((outputNeuron, neuronIndex) => {
 				let posX = (outputNeuron.x + (Neuron.r*3));
@@ -727,6 +724,33 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				);
 				canvas.pop();
 			});
+
+			//// Draw layer titles
+			canvas.push();
+			canvas.fill(255);
+			canvas.textSize(calculateTextSize(" ", Neuron.r*2, Neuron.r*2));
+
+			// "x" title of input layer
+			canvas.text(
+				"x",
+				(this.layerNeurons[0][0].x),
+				(this.layerNeurons[0][0].y - (this.vArgs.perNeuronY*1.25))
+			);
+
+			// "ŷ" title of output layer
+			canvas.text(
+				"ŷ",
+				(this.layerNeurons[this.layerNeurons.length-1][0].x),
+				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1.25))
+			);
+
+			// "y" title at target value
+			canvas.text(
+				"y",
+				(this.layerNeurons[this.layerNeurons.length-1][0].x) + (Neuron.r*3),
+				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1.25))
+			);
+			canvas.pop();
 		}
 	};
 };
@@ -736,10 +760,17 @@ class Neuron{
 	value = null;
 	visualValue = 0;
 	isFocused = false;
+	isInput = false;
 
 	x = 0;
 	y = 0;
 	static r = 30.0;
+
+	constructor(x, y, isInput){
+		this.x = x;
+		this.y = y;
+		this.isInput = isInput;
+	}
 
 	// Sets visual value
 	updateVisualValue = (vArgs) => {
@@ -785,15 +816,15 @@ class Neuron{
 		canvas.circle(this.x, this.y, Neuron.r*2);
 		canvas.pop();
 
-		// Draw the output value as text
-		if(vArgs.nnIsCompiled){
+		// Draw the hidden/output neurons' output (activation value) as text
+		if(vArgs.nnIsCompiled && (!this.isInput)){
 			canvas.push();
 			canvas.fill(255);
 			canvas.stroke(255);
 			canvas.strokeWeight(
 				(this.isFocused && vArgs.focusedAnyNeuron)
 				// When focused
-				? 2
+				? 1
 				// When isn't
 				: 1
 			);
