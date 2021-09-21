@@ -585,6 +585,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
+		// DEBUG DRAWINGS
+		// canvas.push();
+		// canvas.rectMode(CORNER);
+		// canvas.noFill();
+		// canvas.stroke(255);
+		// canvas.strokeWeight(3);
+		// canvas.rect(0, 0, canvas.width, canvas.height);
+		// canvas.pop();
+
 		//// Draw neurons
 		// Each layer
 		this.layerNeurons.forEach(layer => {
@@ -593,6 +602,21 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				neuron.draw(canvas, this.vArgs);
 			});
 		});
+
+		// DEBUG DRAWINGS
+		// let mx = mouseX; let my = mouseY;
+		// mx = windowWidth/2; my = windowHeight/2;
+		// let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(mx, my)
+		// console.log(mx, my, scPosVec.x, scPosVec.y);
+		// canvas.push();
+		// canvas.fill(255);
+		// canvas.stroke(255, 0, 0);
+		// canvas.strokeWeight(10);
+		// canvas.line(
+		// 	0, 0,
+		// 	scPosVec.x, scPosVec.y
+		// );
+		// canvas.pop();
 
 		//// Draw sample input/targets to the side of the network
 		if(this.isCompiled && (sample && sample.input && sample.target)){

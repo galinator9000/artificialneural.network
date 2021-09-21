@@ -26,9 +26,9 @@ let subCanvas = {
 					if(delta < 0) return zoomSubCanvas(x, y, 1);
 					if(delta > 0) return zoomSubCanvas(x, y, -1);
 				},
-				// mouseDragged: (mx, my) => {
-				// 	return dragSubCanvas(mx, my);
-				// },
+				mouseDragged: (mx, my) => {
+					return dragSubCanvas(mx, my);
+				},
 			},
 		},
 		{
@@ -48,9 +48,9 @@ let subCanvas = {
 					if(delta < 0) return zoomSubCanvas(x, y, 1);
 					if(delta > 0) return zoomSubCanvas(x, y, -1);
 				},
-				// mouseDragged: (mx, my) => {
-				// 	return dragSubCanvas(mx, my);
-				// },
+				mouseDragged: (mx, my) => {
+					return dragSubCanvas(mx, my);
+				},
 			},
 		},
 	],
@@ -162,31 +162,38 @@ createSubCanvas = () => {
 		sc.obj.strokeWeight(1);
 
 		// Assign utility functions of the subcanvas for later use
-		// Position converter functions (with applying transformations in reverse)
-		sc.xToSubCanvasPosX = (x) => {
-			// Calculate tab
-			x = (x - subCanvas.subcanvasStartX);
+		// Position converter function
+		sc.mousePosXY_to_SubCanvasPosXYVec = (x, y) => {
+			let vec = createVector(x, y);
 
-			// Apply transformations in reverse
-			// Translate
-			x -= subCanvas.transform.translate.x;
-			// Scale
-			x -= (sc.obj.width/2);
-			x /= subCanvas.transform.scale.x;
-			x += (sc.obj.width/2);
+			// Mind the tab offset
+			vec.x -= subCanvas.subcanvasStartX;
 
-			return x;
-		};
-		sc.yToSubCanvasPosY = (y) => {
-			// Apply transformations in reverse
+			// Apply transformations, in reverse
+
 			// Translate
-			y -= subCanvas.transform.translate.y;
+			vec.add(
+				-subCanvas.transform.translate.x,
+				-subCanvas.transform.translate.y
+			);
+
 			// Scale
-			y -= (sc.obj.height/2);
-			y /= subCanvas.transform.scale.y;
-			y += (sc.obj.height/2);
-			
-			return y;
+			vec.add(
+				-(sc.obj.width/2),
+				-(sc.obj.height/2)
+			);
+			vec.mult(
+				createVector(
+					1/subCanvas.transform.scale.x,
+					1/subCanvas.transform.scale.y
+				)
+			);
+			vec.add(
+				(sc.obj.width/2),
+				(sc.obj.height/2)
+			);
+
+			return vec;
 		};
 	});
 
@@ -196,6 +203,11 @@ createSubCanvas = () => {
 			[subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex)
 		);
 	});
+
+	// FOR DEBUGGING
+	// subCanvas.transform.translate.targetX = subCanvas.c[0].obj.width/2;
+	// subCanvas.transform.translate.targetY = subCanvas.c[0].obj.height/2;
+	// subCanvas.transform.scale.targetXY = 0.5;
 };
 
 // Switches (transition) to given subcanvas idx
@@ -245,13 +257,15 @@ zoomSubCanvas = (x, y, direction) => {
 	// Limit new scaling value, set as target for both XY
 	subCanvas.transform.scale.targetXY = Math.min(Math.max(newScale, subCanvas.zoomMin), subCanvas.zoomMax);
 
+	// Reset translation
+	subCanvas.transform.translate.targetX = 0.0;
+	subCanvas.transform.translate.targetY = 0.0;
+
 	return true;
 };
 
 // Sets current translation values on transformation
 dragSubCanvas = (mx, my) => {
-	return false;
-
 	// New XY values
 	let newTranslateX = (subCanvas.transform.translate.x + (subCanvas.dragFactor * mx));
 	let newTranslateY = (subCanvas.transform.translate.y + (subCanvas.dragFactor * my));
@@ -261,6 +275,9 @@ dragSubCanvas = (mx, my) => {
 	subCanvas.transform.translate.targetY = newTranslateY;
 	// subCanvas.transform.translate.targetX = Math.min(Math.max(newTranslateX, subCanvas.dragMinLimitX), subCanvas.dragMaxLimitX);
 	// subCanvas.transform.translate.targetY = Math.min(Math.max(newTranslateY, subCanvas.dragMinLimitY), subCanvas.dragMaxLimitY);
+
+	// Reset scaling
+	subCanvas.transform.scale.targetXY = 1.0;
 
 	return true;
 };

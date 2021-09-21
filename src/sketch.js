@@ -168,6 +168,26 @@ draw = () => {
 		text(sc.title, 0, 0);
 		pop();
 	})
+
+	// DEBUG DRAWINGS
+	// let mx = mouseX; let my = mouseY;
+	// mx = windowWidth/2; my = windowHeight/2;
+	// push();
+	// fill(255);
+	// strokeWeight(5);
+	// stroke(0, 255, 0);
+	// line(
+	// 	0, 0,
+	// 	mx, my,
+	// );
+	// pop();
+	// push();
+	// noFill();
+	// rectMode(CORNER);
+	// stroke(255);
+	// strokeWeight(3);
+	// rect(0, 0, width, height)
+	// pop();
 };
 
 // User-Events
@@ -189,10 +209,13 @@ mouseWheel = (event) => {
 
 	// Check if event occured at subcanvas region and event exists.
 	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseWheel){
+		// Main canvas position to subcanvas position
+		let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(event.x, event.y);
+
 		// Call the event handler
 		eventProcessed = sc.eventHandlers.mouseWheel(
-			sc.xToSubCanvasPosX(event.x),
-			sc.yToSubCanvasPosY(event.y),
+			scPosVec.x,
+			scPosVec.y,
 			event.deltaY
 		);
 	}
@@ -220,10 +243,13 @@ mouseClicked = (event) => {
 
 	// Check if event occured at subcanvas region and event exists.
 	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseClicked){
+		// Main canvas position to subcanvas position
+		let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(event.x, event.y);
+
 		// Call the event handler
 		eventProcessed = sc.eventHandlers.mouseClicked(
-			sc.xToSubCanvasPosX(event.x),
-			sc.yToSubCanvasPosY(event.y)
+			scPosVec.x,
+			scPosVec.y
 		);
 	}
 
