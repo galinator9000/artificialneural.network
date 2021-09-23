@@ -1,24 +1,6 @@
 // Dataset related variables and functions.
 
-let data = {
-	dataset: null,
-	columns: {},
-	structure: {
-		n_samples: 0,
-		n_features: 0,
-		n_targets: 0
-	},
-
-	X: null,
-	y: null,
-	stageSample: {
-		input: null,
-		target: null
-	},
-
-	isCompiled: false,
-	isLoading: false,
-};
+let data = {};
 
 const csvURLs = {
 	"Classification": "datasets/binary_classification_data.csv",
@@ -26,7 +8,7 @@ const csvURLs = {
 	"Boston Housing Regression": "https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 };
 
-// Resets everything about data
+// (re)Sets everything about data
 resetDataset = () => {
 	data = {
 		dataset: null,
@@ -48,6 +30,9 @@ resetDataset = () => {
 		isLoading: false
 	};
 };
+
+// Assign structure initially
+resetDataset();
 
 // Gets one sample and puts it to stage (side of the network)
 getStageSampleFromDataset = (idx=null) => {

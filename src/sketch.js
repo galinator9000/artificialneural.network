@@ -33,7 +33,7 @@ setup = () => {
 
 	// Load dataset
 	loadDataset(Object.values(csvURLs)[0]).then(() => {
-		compileDataset();
+		// compileDataset();
 	});
 };
 
@@ -161,8 +161,8 @@ draw = () => {
 
 		// Write tab title (use translate&rotate for drawing titles sideways)
 		push();
-		fill((scIdx == curScIdx) ? 255 : 64);
-		stroke((scIdx == curScIdx) ? 255 : 64);
+		fill(subCanvas.c[scIdx].isActive() ? 192 : 64);
+		stroke(subCanvas.c[scIdx].isActive() ? 192 : 64);
 		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
 		rotate(-90);
 		text(sc.title, 0, 0);

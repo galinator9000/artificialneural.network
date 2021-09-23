@@ -1,9 +1,10 @@
 // SubCanvas system related variables and functions.
 
+const MAIN_SUBCANVAS_INDEX = 0;
 const DATASET_SUBCANVAS_INDEX = 1;
 const NN_SUBCANVAS_INDEX = 2;
 
-const INITIAL_SUBCANVAS_INDEX = NN_SUBCANVAS_INDEX;
+const INITIAL_SUBCANVAS_INDEX = DATASET_SUBCANVAS_INDEX;
 
 let subCanvas = {
 	// SubCanvas objects 
@@ -36,7 +37,7 @@ let subCanvas = {
 			obj: null,
 			isActive: () => (
 				// NN GUI components are ready when data is ready
-				(!data.isLoading) && data.isCompiled
+				(!data.isLoading) && data.isCompiled && (nn !== undefined)
 			),
 			// Event handlers should return true/false if they were able to process the event or not
 			eventHandlers: {
@@ -136,16 +137,16 @@ updateSubCanvas = () => {
 
 // Creates sub canvas objects
 createSubCanvas = () => {
-	Object.entries(subCanvas.c).forEach(([k, v], cIdx) => {
+	[...Array(subCanvas.c.length).keys()].forEach((scIndex) => {
 		// Remove canvas first, if exists
-		if(subCanvas.c[cIdx].obj) subCanvas.c[cIdx].obj.remove();
+		if(subCanvas.c[scIndex].obj) subCanvas.c[scIndex].obj.remove();
 
 		// Create a fresh one
-		subCanvas.c[cIdx].obj = createGraphics(
+		subCanvas.c[scIndex].obj = createGraphics(
 			(windowWidth * (1 - subCanvas.leftTabWidthRatio)),
 			windowHeight
 		);
-		let sc = subCanvas.c[cIdx];
+		let sc = subCanvas.c[scIndex];
 
 		// Mark the value of starting X position of subcanvases
 		subCanvas.subcanvasStartX = (windowWidth * subCanvas.leftTabWidthRatio);
@@ -163,7 +164,11 @@ createSubCanvas = () => {
 		sc.obj.strokeWeight(1);
 
 		// Assign utility functions of the subcanvas for later use
-		// Position converter function
+
+		// Returns if subcanvas should be drawn or not
+		sc.shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex));
+		
+		// Position converter function (absolute mouse position to subcanvas relative position)
 		sc.mousePosXY_to_SubCanvasPosXYVec = (x, y) => {
 			let vec = createVector(x, y);
 
@@ -197,21 +202,16 @@ createSubCanvas = () => {
 			return vec;
 		};
 	});
-
-	// Set shouldDraw functions of subcanvases
-	subCanvas.c.forEach((sc, scIndex) => {
-		subCanvas.c[scIndex].shouldDraw = () => (
-			[subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex)
-		);
-	});
 };
 
 // Switches (transition) to given subcanvas idx
 switchSubCanvas = (switchIdx) => {
 	// Return if already in transition process
 	if(subCanvas.inTransition) return;
+	// Return if the canvas isn't active
+	if(!subCanvas.c[switchIdx].isActive()) return;
 	
-	// Limit index number
+	// Limit index number and set the next id for transition
 	subCanvas.nextIdx = Math.min(
 		subCanvas.c.length-1,
 		Math.max(0, switchIdx)
