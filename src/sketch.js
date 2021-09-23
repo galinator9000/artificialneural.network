@@ -168,26 +168,6 @@ draw = () => {
 		text(sc.title, 0, 0);
 		pop();
 	})
-
-	// DEBUG DRAWINGS
-	// let mx = mouseX; let my = mouseY;
-	// mx = windowWidth/2; my = windowHeight/2;
-	// push();
-	// fill(255);
-	// strokeWeight(5);
-	// stroke(0, 255, 0);
-	// line(
-	// 	0, 0,
-	// 	mx, my,
-	// );
-	// pop();
-	// push();
-	// noFill();
-	// rectMode(CORNER);
-	// stroke(255);
-	// strokeWeight(3);
-	// rect(0, 0, width, height)
-	// pop();
 };
 
 // User-Events

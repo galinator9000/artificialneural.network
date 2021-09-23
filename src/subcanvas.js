@@ -75,7 +75,8 @@ let subCanvas = {
 	zoomMax: 3,
 
 	// Drag consts
-	dragFactor: 1,
+	dragFactor: 2,
+	dragLimitRatio: 0.80,
 
 	// Animation of subcanvas transitions
 	inTransition: false,
@@ -171,12 +172,6 @@ createSubCanvas = () => {
 
 			// Apply transformations, in reverse
 
-			// Translate
-			vec.add(
-				-subCanvas.transform.translate.x,
-				-subCanvas.transform.translate.y
-			);
-
 			// Scale
 			vec.add(
 				-(sc.obj.width/2),
@@ -193,6 +188,12 @@ createSubCanvas = () => {
 				(sc.obj.height/2)
 			);
 
+			// Translate
+			vec.add(
+				-subCanvas.transform.translate.x,
+				-subCanvas.transform.translate.y
+			);
+
 			return vec;
 		};
 	});
@@ -203,11 +204,6 @@ createSubCanvas = () => {
 			[subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex)
 		);
 	});
-
-	// FOR DEBUGGING
-	// subCanvas.transform.translate.targetX = subCanvas.c[0].obj.width/2;
-	// subCanvas.transform.translate.targetY = subCanvas.c[0].obj.height/2;
-	// subCanvas.transform.scale.targetXY = 0.5;
 };
 
 // Switches (transition) to given subcanvas idx
@@ -257,27 +253,31 @@ zoomSubCanvas = (x, y, direction) => {
 	// Limit new scaling value, set as target for both XY
 	subCanvas.transform.scale.targetXY = Math.min(Math.max(newScale, subCanvas.zoomMin), subCanvas.zoomMax);
 
-	// Reset translation
-	subCanvas.transform.translate.targetX = 0.0;
-	subCanvas.transform.translate.targetY = 0.0;
-
 	return true;
 };
 
 // Sets current translation values on transformation
 dragSubCanvas = (mx, my) => {
 	// New XY values
-	let newTranslateX = (subCanvas.transform.translate.x + (subCanvas.dragFactor * mx));
-	let newTranslateY = (subCanvas.transform.translate.y + (subCanvas.dragFactor * my));
+	let newTranslateX = (subCanvas.transform.translate.x + (
+		// Scaling value affects the dragging factors inversely
+		(mx * subCanvas.dragFactor) / subCanvas.transform.scale.targetXY
+	));
+	let newTranslateY = (subCanvas.transform.translate.y + (
+		(my * subCanvas.dragFactor) / subCanvas.transform.scale.targetXY
+	));
 
-	// Limit new translation XY values, then set as target
-	subCanvas.transform.translate.targetX = newTranslateX;
-	subCanvas.transform.translate.targetY = newTranslateY;
-	// subCanvas.transform.translate.targetX = Math.min(Math.max(newTranslateX, subCanvas.dragMinLimitX), subCanvas.dragMaxLimitX);
-	// subCanvas.transform.translate.targetY = Math.min(Math.max(newTranslateY, subCanvas.dragMinLimitY), subCanvas.dragMaxLimitY);
+	// Calculate translation boundaries
+	let width = subCanvas.c[subCanvas.currentIdx].obj.width;
+	let height = subCanvas.c[subCanvas.currentIdx].obj.height;
+	let minX = -(width * subCanvas.dragLimitRatio);
+	let maxX = (width * subCanvas.dragLimitRatio);
+	let minY = -(height * subCanvas.dragLimitRatio);
+	let maxY = (height * subCanvas.dragLimitRatio);
 
-	// Reset scaling
-	subCanvas.transform.scale.targetXY = 1.0;
+	// Limit new translation values, then set as target
+	subCanvas.transform.translate.targetX = Math.min(Math.max(newTranslateX, minX), maxX);
+	subCanvas.transform.translate.targetY = Math.min(Math.max(newTranslateY, minY), maxY);
 
 	return true;
 };

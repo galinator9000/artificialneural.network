@@ -501,7 +501,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate step per neuron in +Y direction
 		this.vArgs.perNeuronY = ((canvas.height * this.vArgs.scaleY) / (
 			// Limit maximum neuron size when there's few neurons
-			Math.max(10, this.vArgs.maxUnitCount)
+			Math.max(7, this.vArgs.maxUnitCount)
 		));
 		// Calculate step per layer in +X direction
 		this.vArgs.perLayerX = ((canvas.width * this.vArgs.scaleX) / (this.layers.length-1));
@@ -632,15 +632,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
-		// DEBUG DRAWINGS
-		// canvas.push();
-		// canvas.rectMode(CORNER);
-		// canvas.noFill();
-		// canvas.stroke(255);
-		// canvas.strokeWeight(3);
-		// canvas.rect(0, 0, canvas.width, canvas.height);
-		// canvas.pop();
-
 		//// Draw neurons
 		// Each layer
 		this.layerNeurons.forEach(layer => {
@@ -649,21 +640,6 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				neuron.draw(canvas, this.vArgs);
 			});
 		});
-
-		// DEBUG DRAWINGS
-		// let mx = mouseX; let my = mouseY;
-		// mx = windowWidth/2; my = windowHeight/2;
-		// let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(mx, my)
-		// console.log(mx, my, scPosVec.x, scPosVec.y);
-		// canvas.push();
-		// canvas.fill(255);
-		// canvas.stroke(255, 0, 0);
-		// canvas.strokeWeight(10);
-		// canvas.line(
-		// 	0, 0,
-		// 	scPosVec.x, scPosVec.y
-		// );
-		// canvas.pop();
 
 		//// Draw sample input/targets to the side of the network
 		if(this.isCompiled && (sample && sample.input && sample.target)){
@@ -824,7 +800,7 @@ class Neuron{
 			);
 
 			let vText = this.visualValue.toFixed(2);
-			canvas.textSize(calculateTextSize(vText, Neuron.r*2, Neuron.r*2));
+			canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
 			canvas.text(
 				vText,
 				this.x, this.y
