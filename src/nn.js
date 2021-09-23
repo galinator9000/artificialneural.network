@@ -763,7 +763,7 @@ class Neuron{
 			if(
 				(
 					(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) >= this.x)
-					&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) > 0)
+					&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) >= 0)
 				) || (!vArgs.animatePropagation)
 			){
 				this.updateVisualValue(vArgs);
@@ -839,7 +839,7 @@ class Weight{
 		if(
 			(
 				(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) <= this.from.x)
-				&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) < 0)
+				&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) <= 0)
 			) || (!vArgs.animatePropagation)
 		){
 			this.updateVisualValue(vArgs);

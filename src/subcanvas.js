@@ -71,8 +71,8 @@ let subCanvas = {
 
 	// Zoom consts
 	zoomFactor: 0.25,
-	zoomMin: 0.5,
-	zoomMax: 3,
+	zoomMin: 0.15,
+	zoomMax: 10,
 
 	// Drag consts
 	dragFactor: 2,
@@ -248,7 +248,9 @@ applyTransformationsToSubCanvas = (canvas) => {
 // Sets current scaling values on transformation
 zoomSubCanvas = (x, y, direction) => {
 	// New value
-	let newScale = (subCanvas.transform.scale.x + (subCanvas.zoomFactor * direction));
+	let newScale = (subCanvas.transform.scale.x + (
+		(subCanvas.zoomFactor * direction) * subCanvas.transform.scale.targetXY
+	));
 
 	// Limit new scaling value, set as target for both XY
 	subCanvas.transform.scale.targetXY = Math.min(Math.max(newScale, subCanvas.zoomMin), subCanvas.zoomMax);
