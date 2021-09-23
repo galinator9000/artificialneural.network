@@ -33,7 +33,8 @@ setup = () => {
 
 	// Load dataset
 	loadDataset(Object.values(csvURLs)[0]).then(() => {
-		// compileDataset();
+		compileDataset();
+		switchSubCanvas(NN_SUBCANVAS_INDEX);
 	});
 };
 
@@ -82,7 +83,7 @@ draw = () => {
 		drawDataset(
 			datasetCanvas.obj,
 			// Additional vArgs
-			{scaleX: 0.975, scaleY: 0.85, translateX: 0.00, translateY: 0.05}
+			{scaleX: 0.95, scaleY: 0.85, translateX: 0.0125, translateY: 0.05}
 		);
 
 		datasetCanvas.obj.pop();

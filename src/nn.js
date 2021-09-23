@@ -104,8 +104,6 @@ resetNeuralNetworkGUI = () => {
 	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_add_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
 	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
 
-	return;
-
 	if(nn && !nn.isCompiled){
 		// Place "add hidden layer" button between every layer
 		[...Array((nn.layerNeurons.length-1)).keys()].forEach((layerIndex) => {
@@ -140,6 +138,8 @@ resetNeuralNetworkGUI = () => {
 				]
 			});
 		});
+
+		return;
 
 		// Place layer configuration select below the neurons
 		nn.layerNeurons.slice(1).forEach((layer, layerIndex) => {
@@ -655,21 +655,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			};
 
 			//// Input
-			// Draw input values over input neurons
+			// Set input neurons' output values to input values (gets animated smoothly)
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
-				let posX = inputNeuron.x;
-				let posY = inputNeuron.y;
-
-				// Value as text
-				let vText = inputVec[neuronIndex].toFixed(2);
-				canvas.push();
-				canvas.fill(255);
-				canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
-				canvas.text(
-					vText,
-					posX, posY
-				);
-				canvas.pop();
+				inputNeuron.value = inputVec[neuronIndex];
 			});
 
 			//// Target
@@ -764,7 +752,7 @@ class Neuron{
 				(
 					(vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim) >= this.x)
 					&& ((vArgs.propagation.xTarget - vArgs.propagation.xAnim) >= 0)
-				) || (!vArgs.animatePropagation)
+				) || (!vArgs.animatePropagation) || (this.isInput)
 			){
 				this.updateVisualValue(vArgs);
 			}
@@ -787,7 +775,7 @@ class Neuron{
 		canvas.pop();
 
 		// Draw the hidden/output neurons' output (activation value) as text
-		if(vArgs.nnIsCompiled && (!this.isInput)){
+		if(vArgs.nnIsCompiled){
 			canvas.push();
 			canvas.fill(255);
 			canvas.stroke(255);

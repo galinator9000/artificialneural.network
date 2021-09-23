@@ -125,7 +125,8 @@ loadDataset = async (url) => {
 	csvDataset.fullColumnNames.forEach(
 		(colName, colIndex) => {
 			data.columns[colName] = {
-				isTarget: (colIndex == (csvDataset.fullColumnNames.length-1))
+				isTarget: [...Array(csvDataset.fullColumnNames.length).keys()].slice(csvDataset.fullColumnNames.length-1).includes(colIndex)
+				// isTarget: false
 			}
 		}
 	);
@@ -134,8 +135,8 @@ loadDataset = async (url) => {
 	data.structure.n_samples = csvDatasetArray.length;
 
 	// Taking last column as target, others are X's (I SAID INITIALLY!)
-	data.structure.n_features = (Object.keys(csvDatasetArray[0]).length-1);
-	data.structure.n_targets = 1;
+	data.structure.n_features = arrSum(Object.values(data.columns).map(col => col.isTarget ? 0 : 1));
+	data.structure.n_targets = arrSum(Object.values(data.columns).map(col => col.isTarget ? 1 : 0));
 
 	console.log("Dataset loaded", data.structure);
 	return true;
