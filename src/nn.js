@@ -592,19 +592,37 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Process mouse click on the network
 	mouseClicked = (mouseX, mouseY) => {
 		// Check if clicked on any of the neurons
-		this.layerNeurons.forEach(
-			layer => layer.forEach(
-				neuron => {
-					// Check if distance is less than the radius
-					let distanceToClick = dist(
-						neuron.x, neuron.y,
-						mouseX, mouseY
-					);
-					// If it's already in focus, defocus it
-					neuron.isFocused = ((!neuron.isFocused) && (distanceToClick < Neuron.r));
-				}
+		let clickedOnAnyNeuron = arrBoolAny(
+			this.layerNeurons.map(
+				layer => arrBoolAny(
+					layer.map(
+						neuron => (
+							dist(
+								neuron.x, neuron.y,
+								mouseX, mouseY
+							) < Neuron.r
+						)
+					)
+				)
 			)
 		);
+
+		// Process neuron clicks if user clicked on any of them
+		if(clickedOnAnyNeuron){
+			this.layerNeurons.forEach(
+				layer => layer.forEach(
+					neuron => {
+						// Check neuron center position to mouse position distance
+						let distanceToClick = dist(
+							neuron.x, neuron.y,
+							mouseX, mouseY
+						);
+						// If it's already in focus, defocus it
+						neuron.isFocused = ((!neuron.isFocused) && (distanceToClick < Neuron.r));
+					}
+				)
+			);
+		}
 	};
 
 	// Draws the whole network on the given canvas, gets called if subcanvas is active
