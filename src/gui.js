@@ -20,7 +20,7 @@ initializeGUI = () => {
 			obj: createButton("Dataset source"),
 			initCalls: [
 				// Behave as ghost button
-				{fnName: "addClass", args: ["textButton"]},
+				{fnName: "addClass", args: ["text-button"]},
 			],
 			canvasRelativePosition: [0.05625, 0.0625],
 			canvasRelativeSize: [0.0875, 0.06]

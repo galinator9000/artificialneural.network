@@ -23,7 +23,7 @@ button, select, input {
 	font-size: 100%;
 	border-style: solid;
 	font-family: 'Inconsolata', monospace;
-	font-weight: bold;
+	font-weight: normal;
 }
 /* Hover on button */
 button:hover {
@@ -33,14 +33,16 @@ button:hover {
 }
 /* Disabled button */
 button:disabled, button[disabled]{
-	border: none;
 	color: grey;
 	pointer-events: none;
 }
 /* "Text" button */
-.textButton {
+.text-button {
 	pointer-events: none;
 	border: none;
+	font-size: 120%;
+	background: #01000200;
+	z-index: 0;
 }
 
 /* Top right link div */
