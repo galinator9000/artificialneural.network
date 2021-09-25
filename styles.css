@@ -2,6 +2,8 @@ html, body {
 	width: 100%;
 	height: 100%;
 	background-color: #010002;
+	/* Hide scrollbars */
+	overflow: hidden;
 }
 
 body {
@@ -15,7 +17,7 @@ body {
 }
 
 /* Button and select styles */
-button, select {
+button, select, input {
 	background-color: #010002;
 	color: white;
 	font-size: 100%;
