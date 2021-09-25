@@ -107,12 +107,14 @@ resetNeuralNetworkGUI = () => {
 	if(nn && !nn.isCompiled){
 		// Place "add hidden layer" button between every layer
 		[...Array((nn.layerNeurons.length-1)).keys()].forEach((layerIndex) => {
-			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (layerIndex+0.5)) - (Neuron.r*2);
+			let buttonX = nn.vArgs.startLayerX + (nn.vArgs.perLayerX * (layerIndex+0.5));
+			// let buttonsY = nn.vArgs.layersTopRowY;
 			let buttonsY = nn.vArgs.layersBottomRowY;
 
 			addGUIComponent({
 				id: ("nn_add_hidden_layer_"+(layerIndex.toString())),
 				subCanvasIndex: NN_SUBCANVAS_INDEX,
+				isDynamic: true,
 				obj: createButton("+"),
 				initCalls: [
 					{fnName: "mousePressed", args: [
@@ -133,8 +135,8 @@ resetNeuralNetworkGUI = () => {
 					(buttonsY / nn.vArgs.canvasHeight)
 				],
 				canvasRelativeSize: [
-					(Neuron.r / nn.vArgs.canvasWidth),
-					(Neuron.r / nn.vArgs.canvasHeight)
+					(Neuron.r*1.5 / nn.vArgs.canvasWidth),
+					(Neuron.r*1.5 / nn.vArgs.canvasHeight)
 				]
 			});
 		});
@@ -149,6 +151,7 @@ resetNeuralNetworkGUI = () => {
 			addGUIComponent({
 				id: ("nn_hidden_layer_"+(layerIndex.toString())),
 				subCanvasIndex: NN_SUBCANVAS_INDEX,
+				isDynamic: true,
 				obj: createButton("O"),
 				initCalls: [
 					{fnName: "mousePressed", args: [
@@ -506,11 +509,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate step per layer in +X direction
 		this.vArgs.perLayerX = ((canvas.width * this.vArgs.scaleX) / (this.layers.length-1));
 		// Calculate X coordinate of starting point of the network
-		this.vArgs.startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2));
+		this.vArgs.startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2)) + (canvas.width * this.vArgs.translateX);
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (this.vArgs.perNeuronY / 1.25 / 2);
 
-		this.vArgs.layersTopRowY = ((canvas.height/2) - ((this.vArgs.perNeuronY * this.vArgs.maxUnitCount) / 2)) - (this.vArgs.perNeuronY/2) + (canvas.height * this.vArgs.translateY);
+		this.vArgs.layersTopRowY = ((canvas.height/2) - ((this.vArgs.perNeuronY * (this.vArgs.maxUnitCount+1)) / 2)) + (canvas.height * this.vArgs.translateY);
 		this.vArgs.layersBottomRowY = this.vArgs.layersTopRowY + (this.vArgs.perNeuronY * (this.vArgs.maxUnitCount+1));
 		this.vArgs.canvasWidth = canvas.width;
 		this.vArgs.canvasHeight = canvas.height;
@@ -518,7 +521,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
-			(this.vArgs.startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2)) + (canvas.width * this.vArgs.translateX)
+			(this.vArgs.startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2))
 		));
 
 		// Update propagation wave position (set directly or go towards to target smoothly)
@@ -566,13 +569,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.layerNeurons.forEach((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
 			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
-			let startNeuronY = ((canvas.height/2) - ((this.vArgs.perNeuronY * layer.length) / 2)) + (this.vArgs.perNeuronY/2);
+			let startNeuronY = ((canvas.height/2) - ((this.vArgs.perNeuronY * layer.length) / 2)) + (this.vArgs.perNeuronY/2) + (canvas.height * this.vArgs.translateY);
 
 			// Each neuron
 			layer.forEach((neuron, neuronIndex) => {
 				// Calculate new position of neuron & update it
-				let newXpos = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex) + (canvas.width * this.vArgs.translateX));
-				let newYpos = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex) + (canvas.height * this.vArgs.translateY));
+				let newXpos = (this.vArgs.startLayerX + (this.vArgs.perLayerX * layerIndex));
+				let newYpos = (startNeuronY + (this.vArgs.perNeuronY * neuronIndex));
 				neuron.update(newXpos, newYpos, this.vArgs);
 			});
 		});

@@ -22,7 +22,7 @@ initializeGUI = () => {
 				// Behave as ghost button
 				{fnName: "addClass", args: ["textButton"]},
 			],
-			canvasRelativePosition: [0.0125, 0.0325],
+			canvasRelativePosition: [0.05625, 0.0625],
 			canvasRelativeSize: [0.0875, 0.06]
 		},
 
@@ -74,7 +74,7 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.10, 0.0325],
+			canvasRelativePosition: [0.225, 0.0625],
 			canvasRelativeSize: [0.25, 0.06]
 		},
 
@@ -102,7 +102,7 @@ initializeGUI = () => {
 					})
 				]},
 			],
-			canvasRelativePosition: [0.36, 0.0325],
+			canvasRelativePosition: [0.41, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 		
@@ -128,7 +128,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && !nn.isCompiled)),
-			canvasRelativePosition: [0.40, 0.92],
+			canvasRelativePosition: [0.46, 0.95],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -151,7 +151,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.275, 0.92],
+			canvasRelativePosition: [0.30, 0.95],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -171,7 +171,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.385, 0.92],
+			canvasRelativePosition: [0.41, 0.95],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -193,7 +193,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.495, 0.92],
+			canvasRelativePosition: [0.52, 0.95],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -215,7 +215,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.605, 0.92],
+			canvasRelativePosition: [0.63, 0.95],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 	];
@@ -286,16 +286,55 @@ updateGUI = () => {
 			gc.obj[uc.fnName](...uc.args);
 		});
 
-		// Update position
-		gc.obj.position(
-			(subCanvas.subcanvasStartX + (getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[0])),
-			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativePosition[1]),
-		);
-		// Update size
-		gc.obj.size(
-			(getSubCanvasWidthWithIndex(gc.subCanvasIndex) * gc.canvasRelativeSize[0]),
-			(getSubCanvasHeightWithIndex(gc.subCanvasIndex) * gc.canvasRelativeSize[1]),
-		);
+		//// Update position & size of GUI component
+
+		// Get canvas relative position & sizes
+		let relativePositionX = gc.canvasRelativePosition[0];
+		let relativePositionY = gc.canvasRelativePosition[1];
+		let relativeSizeX = gc.canvasRelativeSize[0];
+		let relativeSizeY = gc.canvasRelativeSize[1];
+
+		// Calculate absolute position & size relative to absolute canvas
+		let subCanvasWidth = getSubCanvasWidthWithIndex(gc.subCanvasIndex);
+		let subCanvasHeight = getSubCanvasHeightWithIndex(gc.subCanvasIndex);
+
+		let posX; let posY; let sizeX; let sizeY;
+
+		// Calculate the transformed position & size of the component relative to main canvas (dynamic component)
+		if((gc && gc.isDynamic) && (gc.subCanvasIndex !== -1)){
+			let scPosVec = subCanvas.c[gc.subCanvasIndex].subCanvasPos_to_absoluteCanvasPos(
+				(subCanvasWidth * relativePositionX),
+				(subCanvasHeight * relativePositionY)
+			);
+			posX = scPosVec.x;
+			posY = scPosVec.y;
+			sizeX = (subCanvasWidth * relativeSizeX) * subCanvas.transform.scale.x;
+			sizeY = (subCanvasHeight * relativeSizeY) * subCanvas.transform.scale.y;
+		}
+		// Calculate absolute position & size relative to main canvas (static component)
+		else{
+			sizeX = (subCanvasWidth * relativeSizeX);
+			sizeY = (subCanvasHeight * relativeSizeY);
+			posX = (subCanvas.subcanvasStartX + (subCanvasWidth * relativePositionX));
+			posY = ((subCanvasHeight * relativePositionY));
+		}
+
+		// Center -> top-left corner position
+		posX -= (sizeX/2);
+		posY -= (sizeY/2);
+		
+		// Set position & size of the GUI component
+		gc.obj.position(posX, posY);
+		gc.obj.size(sizeX, sizeY);
+
+		// Check the component if it's in the boundaries of the main canvas
+		let inBoundaries = false;
+		if(
+			(posX > subCanvas.subcanvasStartX)
+			&& (posY > 0)
+			&& ((posX + sizeX) < windowWidth)
+			&& ((posY + sizeY) < windowHeight)
+		) inBoundaries = true;
 
 		// Hide the object
 		gc.obj.style("display", "none");
@@ -305,7 +344,9 @@ updateGUI = () => {
 			(
 				(gc.subCanvasIndex == -1)
 				|| (gc.subCanvasIndex == subCanvas.nextIdx)
-			) && ((gc.showCond === undefined) || (gc && gc.showCond && gc.showCond()))
+			)
+			&& ((gc.showCond === undefined) || (gc && gc.showCond && gc.showCond()))
+			&& (inBoundaries)
 		){
 			gc.obj.show();
 		}

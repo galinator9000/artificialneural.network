@@ -72,7 +72,7 @@ let subCanvas = {
 
 	// Zoom consts
 	zoomFactor: 0.25,
-	zoomMin: 0.15,
+	zoomMin: 0.33,
 	zoomMax: 10,
 
 	// Drag consts
@@ -168,8 +168,8 @@ createSubCanvas = () => {
 		// Returns if subcanvas should be drawn or not
 		sc.shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex));
 		
-		// Position converter function (absolute mouse position to subcanvas relative position)
-		sc.mousePosXY_to_SubCanvasPosXYVec = (x, y) => {
+		// Position converter functions
+		sc.absolutePos_to_SubCanvasPos = (x, y) => {
 			let vec = createVector(x, y);
 
 			// Mind the tab offset
@@ -178,27 +178,29 @@ createSubCanvas = () => {
 			// Apply transformations, in reverse
 
 			// Scale
-			vec.add(
-				-(sc.obj.width/2),
-				-(sc.obj.height/2)
-			);
-			vec.mult(
-				createVector(
-					1/subCanvas.transform.scale.x,
-					1/subCanvas.transform.scale.y
-				)
-			);
-			vec.add(
-				(sc.obj.width/2),
-				(sc.obj.height/2)
-			);
+			vec.add(-(sc.obj.width/2), -(sc.obj.height/2));
+			vec.mult(createVector(1/subCanvas.transform.scale.x, 1/subCanvas.transform.scale.y));
+			vec.add((sc.obj.width/2), (sc.obj.height/2));
 
 			// Translate
-			vec.add(
-				-subCanvas.transform.translate.x,
-				-subCanvas.transform.translate.y
-			);
+			vec.add(-subCanvas.transform.translate.x, -subCanvas.transform.translate.y);
 
+			return vec;
+		};
+		sc.subCanvasPos_to_absoluteCanvasPos = (x, y) => {
+			let vec = createVector(x, y);
+
+			// Translate
+			vec.add(subCanvas.transform.translate.x, subCanvas.transform.translate.y);
+
+			// Scale
+			vec.add(-(sc.obj.width/2), -(sc.obj.height/2));
+			vec.mult(createVector(subCanvas.transform.scale.x, subCanvas.transform.scale.y));
+			vec.add((sc.obj.width/2), (sc.obj.height/2));
+
+			// Mind the tab offset
+			vec.x += subCanvas.subcanvasStartX;
+			
 			return vec;
 		};
 	});

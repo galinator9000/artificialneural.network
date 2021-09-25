@@ -191,7 +191,7 @@ mouseWheel = (event) => {
 	// Check if event occured at subcanvas region and event exists.
 	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseWheel){
 		// Main canvas position to subcanvas position
-		let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(event.x, event.y);
+		let scPosVec = subCanvas.c[subCanvas.currentIdx].absolutePos_to_SubCanvasPos(event.x, event.y);
 
 		// Call the event handler
 		eventProcessed = sc.eventHandlers.mouseWheel(
@@ -225,7 +225,7 @@ mouseClicked = (event) => {
 	// Check if event occured at subcanvas region and event exists.
 	if((event.x > subCanvas.subcanvasStartX) && sc.eventHandlers && sc.eventHandlers.mouseClicked){
 		// Main canvas position to subcanvas position
-		let scPosVec = subCanvas.c[subCanvas.currentIdx].mousePosXY_to_SubCanvasPosXYVec(event.x, event.y);
+		let scPosVec = subCanvas.c[subCanvas.currentIdx].absolutePos_to_SubCanvasPos(event.x, event.y);
 
 		// Call the event handler
 		eventProcessed = sc.eventHandlers.mouseClicked(
