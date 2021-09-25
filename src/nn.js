@@ -102,14 +102,14 @@ buildNeuralNetwork = () => {
 resetNeuralNetworkGUI = () => {
 	// Remove dynamic NN GUI components
 	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_add_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
+	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_remove_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
 	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_hidden_layer_")).map(gcId => {removeGUIComponentWithID(gcId)});
 
 	if(nn && !nn.isCompiled){
 		// Place "add hidden layer" button between every layer
-		[...Array((nn.layerNeurons.length-1)).keys()].forEach((layerIndex) => {
-			let buttonX = nn.vArgs.startLayerX + (nn.vArgs.perLayerX * (layerIndex+0.5));
-			// let buttonsY = nn.vArgs.layersTopRowY;
-			let buttonsY = nn.vArgs.layersBottomRowY;
+		[...Array((nn.layerNeurons.length-1)).keys()].forEach(layerIndex => {
+			let buttonX = nn.vArgs.startLayerX + (nn.vArgs.perLayerX * (layerIndex + 0.5));
+			let buttonY = nn.vArgs.layersTopRowY;
 
 			addGUIComponent({
 				id: ("nn_add_hidden_layer_"+(layerIndex.toString())),
@@ -120,42 +120,7 @@ resetNeuralNetworkGUI = () => {
 					{fnName: "mousePressed", args: [
 						(() => {
 							// Add hidden layer
-							nnStructure.hiddenLayersConfig.splice(
-								layerIndex,
-								0,
-								createDenseLayerConfig()
-							);
-							// Rebuild the network
-							buildNeuralNetwork();
-						})
-					]},
-				],
-				canvasRelativePosition: [
-					(buttonX / nn.vArgs.canvasWidth),
-					(buttonsY / nn.vArgs.canvasHeight)
-				],
-				canvasRelativeSize: [
-					(Neuron.r*1.5 / nn.vArgs.canvasWidth),
-					(Neuron.r*1.5 / nn.vArgs.canvasHeight)
-				]
-			});
-		});
-
-		return;
-
-		// Place layer configuration select below the neurons
-		nn.layerNeurons.slice(1).forEach((layer, layerIndex) => {
-			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (layerIndex)) - Neuron.r*2;
-			let buttonY = ((nn.vArgs.canvasHeight/2) - ((nn.vArgs.perNeuronY * layer.length+1) / 2));
-
-			addGUIComponent({
-				id: ("nn_hidden_layer_"+(layerIndex.toString())),
-				subCanvasIndex: NN_SUBCANVAS_INDEX,
-				isDynamic: true,
-				obj: createButton("O"),
-				initCalls: [
-					{fnName: "mousePressed", args: [
-						(() => {
+							nnStructure.hiddenLayersConfig.splice(layerIndex, 0, createDenseLayerConfig());
 							// Rebuild the network
 							buildNeuralNetwork();
 						})
@@ -166,8 +131,40 @@ resetNeuralNetworkGUI = () => {
 					(buttonY / nn.vArgs.canvasHeight)
 				],
 				canvasRelativeSize: [
-					(Neuron.r / nn.vArgs.canvasWidth),
-					(Neuron.r / nn.vArgs.canvasHeight)
+					(Neuron.r*1.5 / nn.vArgs.canvasWidth),
+					(Neuron.r*1.5 / nn.vArgs.canvasHeight)
+				]
+			});
+		});
+
+		// Place layer removal button below the hidden layers
+		nn.layerNeurons.slice(1, -1).forEach((hiddenLayer, hiddenLayerIndex) => {
+			let buttonX = (nn.vArgs.startLayerX) + (nn.vArgs.perLayerX * (hiddenLayerIndex+1));
+			let buttonY = ((nn.vArgs.canvasHeight/2) + ((nn.vArgs.perNeuronY * (hiddenLayer.length)) / 2));
+			// let buttonY = nn.vArgs.layersBottomRowY;
+
+			addGUIComponent({
+				id: ("nn_remove_hidden_layer_"+(hiddenLayerIndex.toString())),
+				subCanvasIndex: NN_SUBCANVAS_INDEX,
+				isDynamic: true,
+				obj: createButton("-"),
+				initCalls: [
+					{fnName: "mousePressed", args: [
+						(() => {
+							// Remove hidden layer
+							nnStructure.hiddenLayersConfig.splice(hiddenLayerIndex, 1);
+							// Rebuild the network
+							buildNeuralNetwork();
+						})
+					]},
+				],
+				canvasRelativePosition: [
+					(buttonX / nn.vArgs.canvasWidth),
+					(buttonY / nn.vArgs.canvasHeight)
+				],
+				canvasRelativeSize: [
+					(Neuron.r*1.5 / nn.vArgs.canvasWidth),
+					(Neuron.r*1.5 / nn.vArgs.canvasHeight)
 				]
 			});
 		});
