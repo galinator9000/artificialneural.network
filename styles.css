@@ -44,6 +44,14 @@ button:disabled, button[disabled]{
 	background: #01000200;
 	z-index: 0;
 }
+/* "Text" button with border */
+.text-button-border {
+	pointer-events: none;
+	border: default;
+	font-size: 120%;
+	background: #01000200;
+	z-index: 0;
+}
 
 /* Top right link div */
 .top-links {

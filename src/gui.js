@@ -128,7 +128,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && !nn.isCompiled)),
-			canvasRelativePosition: [0.46, 0.95],
+			canvasRelativePosition: [0.46, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -151,7 +151,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.30, 0.95],
+			canvasRelativePosition: [0.30, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -171,7 +171,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.41, 0.95],
+			canvasRelativePosition: [0.41, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -193,7 +193,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.52, 0.95],
+			canvasRelativePosition: [0.52, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -215,7 +215,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.63, 0.95],
+			canvasRelativePosition: [0.63, 0.0625],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 	];

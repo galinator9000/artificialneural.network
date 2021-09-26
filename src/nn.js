@@ -1,7 +1,7 @@
 // Neural network related variables, functions & classes.
 
-// Various constant visual arguments
-const nnConstVArgs = {
+// Various (configurable) visual arguments
+let nnConstVArgs = {
 	scaleX: 0.80, scaleY: 0.66,
 	translateX: -0.035, translateY: -0.025,
 	showBiasNeurons: false,
@@ -58,15 +58,53 @@ let nnStructure = {
 	}),
 
 	// Compile arguments (optimizer, loss)
-	compileArgs: {optimizer: tf.train.sgd(0.001), loss: "meanSquaredError"},
+	compileArgs: {
+		optimizer: "sgd",
+		loss: "sigmoidCrossEntropy",
+		learningRate: 0.001
+	},
 
 	//// Options
 	activationFunctionOptions: {
 		"None": "null",
-		"Tanh": "tanh",
+
+		"Linear": "linear",
+		"ReLU": "relu",
 		"Sigmoid": "sigmoid",
-		"ReLU": "relu"
+		"Tanh": "tanh",
+		"Softmax": "softmax",
+		"Softplus": "softplus",
+
+		// "ELU": "elu",
+		// "Hard Sigmoid": "hardSigmoid",
+		// "ReLU6": "relu6",
+		// "SeLU": "selu",
+		// "Softsign": "softsign",
+		// "Swish": "swish",
+		// "Mish": "mish",
 	},
+	lossFunctionOptions: {
+		"MSE": "meanSquaredError",
+		"SigmoidCrossEntropy": "sigmoidCrossEntropy",
+		"SoftmaxCrossEntropy": "softmaxCrossEntropy",
+
+		// "Absolute Difference": "absoluteDifference",
+		// "Compute Weighted": "computeWeightedLoss",
+		// "Cosine Dist": "cosineDistance",
+		// "Hinge Loss": "hingeLoss",
+		// "Huber Loss": "huberLoss",
+		// "Log Loss": "logLoss",
+	},
+	optimizerOptions: {
+		"SGD": "sgd",
+		"Adam": "adam",
+		
+		// "RMSprop": "rmsprop",
+		// "Momentum": "momentum",
+		// "Adagrad": "adagrad",
+		// "Adadelta": "adadelta",
+		// "Adamax": "adamax",
+	}
 };
 
 // Resets neural network
@@ -108,17 +146,23 @@ buildNeuralNetwork = () => {
 
 // Resets dynamic NN GUI components
 resetNeuralNetworkGUI = () => {
-	// Remove all dynamic NN GUI components
-	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_add_hidden_layer")).map(gcId => {removeGUIComponentWithID(gcId)});
-	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_remove_hidden_layer")).map(gcId => {removeGUIComponentWithID(gcId)});
-	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_dense_layer")).map(gcId => {removeGUIComponentWithID(gcId)});
-	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_layer_titles")).map(gcId => {removeGUIComponentWithID(gcId)});
+	// Remove all GUI components that configures NN
+	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_cfg")).map(gcId => {removeGUIComponentWithID(gcId)});
 
 	// Add new GUI components if NN is built (buildNeuralNetwork fn) but not compiled yet
-	if((nn === undefined) || (nn && (nn.isCompiled === true))) return;
+	if((nn === undefined)) return;
 
 	// ... all goes into new GUI components' configs
-	let nnGUIComponentDefaults = {subCanvasIndex: NN_SUBCANVAS_INDEX};
+	let nnGUIComponentDefaults = {
+		subCanvasIndex: NN_SUBCANVAS_INDEX,
+		attributes: [
+			// "Disabled" attribute if NN is built
+			{
+				name: "disabled", value: "",
+				condition: () => ((nn && (nn.isCompiled === true)))
+			}
+		],
+	};
 
 	// Dense layer config getter&setter util fn
 	denseConfigGetter = (denseLayerIdx, cfgName) => {
@@ -138,55 +182,144 @@ resetNeuralNetworkGUI = () => {
 		}
 	};
 
-	// Calculate starting positions
+	//// Network structure GUI components
+	// Loss function selector
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_loss",
+		obj: createSelect(),
+		initCalls: [
+			// Add all losses as option
+			...(Object.entries(nnStructure.lossFunctionOptions).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
+			// Set the current one as selected
+			{fnName: "selected", args: [nnStructure.compileArgs.loss]},
+
+			// changed event
+			{fnName: "changed", args: [
+				(event) => {
+					// Get new value and set config
+					let value = getGUIComponentWithID("nn_cfg_loss").obj.value();
+					nnStructure.compileArgs.loss = value;
+					// Rebuild the network?
+					// buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.74, 0.96],
+		canvasRelativeSize: [0.12, 0.04]
+	});
+	// Loss text
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title_loss",
+		obj: createButton(`Loss`),
+		initCalls: [{fnName: "addClass", args: ["text-button"]}],
+		canvasRelativePosition: [0.74, 0.92],
+		canvasRelativeSize: [0.12, 0.04]
+	});
+
+	// Optimizer selector
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_optimizer",
+		obj: createSelect(),
+		initCalls: [
+			// Add all optimizers as option
+			...(Object.entries(nnStructure.optimizerOptions).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
+			// Set the current one as selected
+			{fnName: "selected", args: [nnStructure.compileArgs.optimizer]},
+
+			// changed event
+			{fnName: "changed", args: [
+				(event) => {
+					// Get new value and set config
+					let value = getGUIComponentWithID("nn_cfg_optimizer").obj.value();
+					nnStructure.compileArgs.optimizer = value;
+					// Rebuild the network?
+					// buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.58, 0.96],
+		canvasRelativeSize: [0.06, 0.04]
+	});
+
+	// Learning rate input
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_learning_rate",
+		obj: createInput(nnStructure.compileArgs.learningRate.toString()),
+		initCalls: [
+			// changed event
+			{fnName: "changed", args: [
+				(event) => {
+					// Get new value and set layer config
+					let gc = getGUIComponentWithID("nn_cfg_learning_rate").obj;
+					let value = gc.value();
+
+					// Try to convert the string to number and check the validity of the input
+					if(typeof(value) !== "number") value = Number(value);
+					if(typeof(value) !== "number") return;
+					nnStructure.compileArgs.learningRate = value;
+					// Rebuild the network?
+					// buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.64, 0.96],
+		canvasRelativeSize: [0.04, 0.04]
+	});
+
+	// Optimizer text
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title_optimizer",
+		obj: createButton(`Optimizer`),
+		initCalls: [{fnName: "addClass", args: ["text-button"]}],
+		canvasRelativePosition: [0.61, 0.92],
+		canvasRelativeSize: [0.12, 0.04]
+	});
+
+	//// "Neural Network Structure" part
 	let centerY = 0.96;
 	let centerYstep = 0.06;
 
-	// "Neural Network Structure" text
-	addGUIComponent({
-		...nnGUIComponentDefaults,
-		id: "nn_layer_titles",
-		obj: createButton("Network Structure"),
-		initCalls: [
-			{fnName: "style", args: ["pointer-events", "none"]},
-			{fnName: "style", args: ["font-weight", "bold"]}
-		],
-		canvasRelativePosition: [0.90, centerY],
-		canvasRelativeSize: [0.16, 0.04]
-	});
-
-	addGUIComponent({
-		...nnGUIComponentDefaults,
-		id: "nn_add_hidden_layer",
-		obj: createButton("+ Add hidden layer"),
-		initCalls: [
-			{fnName: "mousePressed", args: [
-				(() => {
-					// Add (randomly configured) hidden layer to the list
-					nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
-					// Rebuild the network
-					buildNeuralNetwork();
-				})
-			]},
-		],
-		canvasRelativePosition: [0.75, centerY],
-		canvasRelativeSize: [0.12, 0.04]
-	});
-	centerY -= centerYstep;
+	// "Add hidden layer" button
+	if(!(nn && (nn.isCompiled === true))){
+		addGUIComponent({
+			...nnGUIComponentDefaults,
+			id: "nn_cfg_add_hidden_layer",
+			obj: createButton("+ Add hidden layer"),
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(() => {
+						// Add (randomly configured) hidden layer to the list
+						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
+						// Rebuild the network
+						buildNeuralNetwork();
+					})
+				]},
+			],
+			canvasRelativePosition: [0.90, centerY],
+			canvasRelativeSize: [0.12, 0.04]
+		});
+		centerY -= centerYstep;
+	}
 
 	// Output layer text
 	addGUIComponent({
 		...nnGUIComponentDefaults,
-		id: "nn_layer_titles",
+		id: "nn_cfg_title_output",
 		obj: createButton(`Output (${nnStructure.outputLayerConfig.args.units})`),
 		initCalls: [{fnName: "addClass", args: ["text-button"]}],
 		canvasRelativePosition: [0.865, centerY],
 		canvasRelativeSize: [0.09, 0.04]
 	});
+
 	// Activation function selector
 	addGUIComponent({
 		...nnGUIComponentDefaults,
-		id: "nn_dense_layer_activation_output",
+		id: "nn_cfg_dense_layer_activation_output",
 		obj: createSelect(),
 		initCalls: [
 			// Add all activations as option
@@ -198,7 +331,7 @@ resetNeuralNetworkGUI = () => {
 			{fnName: "changed", args: [
 				(event) => {
 					// Get new value and set layer config
-					let value = getGUIComponentWithID("nn_dense_layer_activation_output").obj.value();
+					let value = getGUIComponentWithID("nn_cfg_dense_layer_activation_output").obj.value();
 
 					// Convert "null" string to null
 					if(value === "null") value = null;
@@ -214,18 +347,18 @@ resetNeuralNetworkGUI = () => {
 	});
 	centerY -= centerYstep;
 
-	// Process every dense layer for GUI component placement (skip input layer)
+	// Process every hidden layer for GUI component placement
 	[...Array(nn.layerNeurons.length).keys()].slice(1, -1).reverse().forEach(denseLayerIndex => {
 		let centerX = 0.83;
-		let activationSelectId = ("nn_dense_layer_activation_"+(denseLayerIndex.toString()));
-		let neuronCountInputId = ("nn_dense_layer_unitCount_"+(denseLayerIndex.toString()));
-		let biasCheckboxId = ("nn_dense_layer_bias_"+(denseLayerIndex.toString()));
+		let activationSelectId = ("nn_cfg_dense_layer_activation_"+(denseLayerIndex.toString()));
+		let neuronCountInputId = ("nn_cfg_dense_layer_unitCount_"+(denseLayerIndex.toString()));
+		let biasCheckboxId = ("nn_cfg_dense_layer_bias_"+(denseLayerIndex.toString()));
 
 		//// Place layer config components below the hidden&output layers
 		// Place removal button below the hidden layer
 		addGUIComponent({
 			...nnGUIComponentDefaults,
-			id: ("nn_remove_hidden_layer_"+(denseLayerIndex.toString())),
+			id: ("nn_cfg_remove_hidden_layer_"+(denseLayerIndex.toString())),
 			obj: createButton("-"),
 			initCalls: [
 				{fnName: "mousePressed", args: [
@@ -301,7 +434,6 @@ resetNeuralNetworkGUI = () => {
 		});
 
 		centerY -= centerYstep;
-		return;
 
 		// // "Use bias" checkbox
 		// addGUIComponent({
@@ -330,18 +462,43 @@ resetNeuralNetworkGUI = () => {
 	// Input layer text
 	addGUIComponent({
 		...nnGUIComponentDefaults,
-		id: "nn_layer_titles",
+		id: "nn_cfg_title_input",
 		obj: createButton(`Input (${nnStructure.inputLayerConfig.args.inputShape[0]})`),
 		initCalls: [{fnName: "addClass", args: ["text-button"]}],
 		canvasRelativePosition: [0.90, centerY],
 		canvasRelativeSize: [0.16, 0.04]
 	});
+	centerY -= centerYstep;
+	
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title",
+		obj: createButton("Network Structure"),
+		initCalls: [
+			{fnName: "class", args: ["text-button-border"]},
+		],
+		canvasRelativePosition: [0.90, centerY],
+		canvasRelativeSize: [0.16, 0.04]
+	});
+
+	//// Left-bottom components
+	// "Animate" checkbox
+	// nnConstVArgs.animatePropagation
+
+	// "Show bias" checkbox
+	// nnConstVArgs.showBiasNeurons
+	
 };
 
 // Compiles neural network
 compileNeuralNetwork = () => {
 	// Compile the model with args
-	nn.compile(nnStructure.compileArgs);
+	nn.compile({
+		// Call optimizer fn with learning rate
+		optimizer: tf.train[nnStructure.compileArgs.optimizer](nnStructure.compileArgs.learningRate),
+		// Direcly pass the loss fn class
+		loss: tf.losses[nnStructure.compileArgs.loss]
+	});
 	console.log("NN compiled", nnStructure);
 	// Reset NN GUI (dynamic components)
 	resetNeuralNetworkGUI();
