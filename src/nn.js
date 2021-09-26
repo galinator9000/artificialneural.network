@@ -54,7 +54,7 @@ let nnStructure = {
 		// (set output unit to 1 initially)
 		units: 1,
 		useBias: true,
-		activation: null
+		activation: "sigmoid"
 	}),
 
 	// Compile arguments (optimizer, loss)
@@ -104,6 +104,13 @@ let nnStructure = {
 		// "Adagrad": "adagrad",
 		// "Adadelta": "adadelta",
 		// "Adamax": "adamax",
+	},
+
+	// Whether apply limits to some configurations of the network or not
+	applyLimits: true,
+	limits: {
+		maxHiddenUnitCount: 32,
+		maxHiddenLayerCount: 5
 	}
 };
 
@@ -293,6 +300,11 @@ resetNeuralNetworkGUI = () => {
 			initCalls: [
 				{fnName: "mousePressed", args: [
 					(() => {
+						// Check hidden layer count limit
+						if(nnStructure.applyLimits && (nnStructure.hiddenLayersConfig.length >= nnStructure.limits.maxHiddenLayerCount)){
+							return;
+						}
+
 						// Add (randomly configured) hidden layer to the list
 						nnStructure.hiddenLayersConfig.push(createDenseLayerConfig());
 						// Rebuild the network
@@ -391,6 +403,12 @@ resetNeuralNetworkGUI = () => {
 						if(typeof(value) !== "number") value = Number(value);
 						if(typeof(value) !== "number") return;
 						if(!Number.isInteger(value)) return;
+
+						// Check new neuron unit count limit
+						if(nnStructure.applyLimits && (value > nnStructure.limits.maxHiddenUnitCount)){
+							return;
+						}
+
 						denseConfigSetter(denseLayerIndex, "units", value);
 						
 						// Rebuild the network
@@ -481,7 +499,19 @@ resetNeuralNetworkGUI = () => {
 	});
 
 	//// Left-bottom components
-	// "Show bias neurons" checkbox
+	if(nn.isCompiled){
+		// Parameter count
+		addGUIComponent({
+			...nnGUIComponentDefaults,
+			id: "nn_cfg_parameter_count",
+			obj: createButton(`Total parameter count: ${nn.getTotalParameterCount().toString()}`),
+			initCalls: [{fnName: "addClass", args: ["text-button"]}],
+			canvasRelativePosition: [0.10, 0.0625],
+			canvasRelativeSize: [0.16, 0.04]
+		});
+	}
+
+	// "Show bias" button
 	addGUIComponent({
 		...nnGUIComponentDefaults,
 		id: "nn_cfg_show_bias_neurons",
@@ -500,7 +530,7 @@ resetNeuralNetworkGUI = () => {
 		canvasRelativeSize: [0.12, 0.04]
 	});
 
-	// "Animate propagation" checkbox
+	// "Animate" button
 	addGUIComponent({
 		...nnGUIComponentDefaults,
 		id: "nn_cfg_animate_propagation",
@@ -516,6 +546,41 @@ resetNeuralNetworkGUI = () => {
 			]},
 		],
 		canvasRelativePosition: [0.21, 0.96],
+		canvasRelativeSize: [0.12, 0.04]
+	});
+
+	// "Apply limits" button
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_apply_limits",
+		obj: createButton(`Apply limits: ${nnStructure.applyLimits ? "Enabled" : "Disabled"}`),
+		initCalls: [
+			// mousePressed event
+			{fnName: "mousePressed", args: [
+				() => {
+					nnStructure.applyLimits = !nnStructure.applyLimits;
+
+					// Apply limits immediately
+					if(nnStructure.applyLimits){
+						// Hidden layer count max limit
+						if(nnStructure.hiddenLayersConfig.length > nnStructure.limits.maxHiddenLayerCount){
+							nnStructure.hiddenLayersConfig = nnStructure.hiddenLayersConfig.slice(0, nnStructure.limits.maxHiddenLayerCount);
+						}
+						// Hidden layer neuron unit max limit
+						[...Array(nnStructure.hiddenLayersConfig.length).keys()].forEach((hiddenLayerIdx) => {
+							nnStructure.hiddenLayersConfig[hiddenLayerIdx].args.units = Math.min(
+								nnStructure.limits.maxHiddenUnitCount,
+								nnStructure.hiddenLayersConfig[hiddenLayerIdx].args.units
+							);
+						});
+					}
+
+					// Rebuild the network
+					buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.34, 0.96],
 		canvasRelativeSize: [0.12, 0.04]
 	});
 };
@@ -797,7 +862,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Should be called when Weight values change
 	onChangeWeights = (withRealValues) => {
 		// Get all weights in a 1D tensor
-		let allWeights = (withRealValues) ? (this.getAllWeights().arraySync()) : [1, 1];
+		let allWeights = (withRealValues) ? (this.getAllWeights(this.vArgs.showBiasNeurons).arraySync()) : [1, 1];
 
 		// Update weight stats
 		this.vArgs.weightsStats = {
@@ -823,14 +888,17 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	};
 
 	// Gets all weights in a 1D tensor
-	getAllWeights = () => {
+	getAllWeights = (withBias) => {
 		// Concat all 1D tensors, return it
 		return tf.concat(
 			// Convert each layer's weights to 1D tensor, put them in a list
 			// Slice 1 for excluding the input layer (has no kernel&bias)
 			[...Array(this.layers.length).keys()].slice(1).map((layerIndex) => {
 				// Get the 2D weight tensor of the layer
-				let layerWeightMatrix = this.getLayerWeightMatrix(layerIndex, this.vArgs.showBiasNeurons);
+				let layerWeightMatrix = this.getLayerWeightMatrix(
+					layerIndex,
+					withBias
+				);
 				// Flatten the tensor (2D to 1D) and return it
 				return layerWeightMatrix.reshape([layerWeightMatrix.size]);
 			}),
@@ -840,7 +908,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Gets total parameter count of the network
 	getTotalParameterCount = () => {
-		return this.getAllWeights().size;
+		return this.getAllWeights(true).size;
 	};
 
 	// Updates the network, gets called at each main loop of the sketch
