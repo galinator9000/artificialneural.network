@@ -18,7 +18,7 @@ body {
 
 /* Button and select styles */
 button, select, input {
-	background-color: #010002;
+	background: #010002;
 	color: white;
 	font-size: 100%;
 	border-style: solid;
@@ -27,7 +27,7 @@ button, select, input {
 }
 /* Hover on button */
 button:hover {
-	background-color: white;
+	background: white;
 	color: #010002;
 	font-size: 110%;
 }
@@ -35,6 +35,10 @@ button:hover {
 button:disabled, button[disabled]{
 	color: grey;
 	pointer-events: none;
+}
+/* Borderless button */
+.button-borderless {
+	border: none;
 }
 /* "Text" button */
 .text-button {

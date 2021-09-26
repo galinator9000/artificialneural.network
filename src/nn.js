@@ -116,8 +116,6 @@ let nnStructure = {
 
 // Resets neural network
 resetNeuralNetwork = () => {
-	// Reset hidden layers
-	nnStructure.hiddenLayersConfig = [];
 	// Remove current nn object
 	nn = undefined;
 	// Reset NN GUI (dynamic components)
@@ -403,10 +401,11 @@ resetNeuralNetworkGUI = () => {
 						if(typeof(value) !== "number") value = Number(value);
 						if(typeof(value) !== "number") return;
 						if(!Number.isInteger(value)) return;
+						if(value <= 0) return;
 
 						// Check new neuron unit count limit
 						if(nnStructure.applyLimits && (value > nnStructure.limits.maxHiddenUnitCount)){
-							return;
+							value = nnStructure.limits.maxHiddenUnitCount;
 						}
 
 						denseConfigSetter(denseLayerIndex, "units", value);
@@ -517,6 +516,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_show_bias_neurons",
 		obj: createButton(`Show bias: ${nnVArgs.showBiasNeurons ? "Enabled" : "Disabled"}`),
 		initCalls: [
+			{fnName: "addClass", args: ["button-borderless"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {
@@ -536,6 +536,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_animate_propagation",
 		obj: createButton(`Animate: ${nnVArgs.animatePropagation ? "Enabled" : "Disabled"}`),
 		initCalls: [
+			{fnName: "addClass", args: ["button-borderless"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {
@@ -555,6 +556,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_apply_limits",
 		obj: createButton(`Apply limits: ${nnStructure.applyLimits ? "Enabled" : "Disabled"}`),
 		initCalls: [
+			{fnName: "addClass", args: ["button-borderless"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {

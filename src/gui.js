@@ -147,8 +147,6 @@ initializeGUI = () => {
 						// Reset & rebuild the network
 						resetNeuralNetwork();
 						buildNeuralNetwork();
-						// Reset zoom&drag
-						resetSubCanvasTransforms();
 					})
 				]},
 			],
