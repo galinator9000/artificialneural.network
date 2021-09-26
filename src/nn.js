@@ -862,8 +862,11 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Calculate X coordinate of starting point of the network
 		this.vArgs.startLayerX = (canvas.width * ((1-this.vArgs.scaleX) / 2)) + (canvas.width * this.vArgs.translateX);
 
-		// Adjust per layer position value for expanding the network out of to the canvas
-		// this.vArgs.perLayerX = Math.max(this.vArgs.perLayerX, canvas.width*0.20);
+		//// Adjust "per layer X" and "per neuron Y" step values for expanding the network out of to the canvas
+		// Layer step value on the X axis cannot be smaller than %25 of the canvas width
+		this.vArgs.perLayerX = Math.max(this.vArgs.perLayerX, (canvas.width * 0.25));
+		// Neuron step value on the Y axis cannot be smaller than %3 of the canvas height
+		this.vArgs.perNeuronY = Math.max(this.vArgs.perNeuronY, (canvas.height * 0.03));
 
 		// Calculate each neuron size with using step per neuron value
 		Neuron.r = (this.vArgs.perNeuronY / 1.25 / 2);
@@ -876,7 +879,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		//// Update propagation related values
 		// Update the function for calculating the real X position of the wave with canvas width/gap value
 		this.vArgs.propagation.xToCanvasPosX = ((curX) => (
-			(this.vArgs.startLayerX - Neuron.r) + (curX * ((canvas.width * this.vArgs.scaleX) + Neuron.r*2))
+			(this.vArgs.startLayerX - Neuron.r) + (curX * ((this.vArgs.perLayerX * (this.layers.length-1)) + Neuron.r*2))
 		));
 
 		// Update propagation wave position (set directly or go towards to target smoothly)
@@ -923,7 +926,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		// Each layer
 		this.layerNeurons.forEach((layer, layerIndex) => {
 			// Calculate starting point (Y-coordinate of first neuron) of the layer
-			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering)
+			// Top of the layer in Y = ((Center of the neural network in Y) - (layer size in Y / 2)) + (applying Y shift a bit for centering) + translation of the network
 			let startNeuronY = ((canvas.height/2) - ((this.vArgs.perNeuronY * layer.length) / 2)) + (this.vArgs.perNeuronY/2) + (canvas.height * this.vArgs.translateY);
 
 			// Each neuron

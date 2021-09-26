@@ -221,11 +221,7 @@ switchSubCanvas = (switchIdx) => {
 
 	// Apply transition to given subcanvas
 	if(subCanvas.nextIdx != subCanvas.currentIdx){
-		// Reset transform
-		subCanvas.transform = {
-			scale: {x: 1, y: 1, targetXY: 1},
-			translate: {x: 0, y: 0, targetX: 0, targetY: 0}
-		};
+		resetSubCanvasTransforms();
 
 		// Start transition
 		subCanvas.transition.x = 0;
@@ -271,17 +267,25 @@ dragSubCanvas = (mx, my) => {
 		(my * subCanvas.dragFactor) / subCanvas.transform.scale.targetXY
 	));
 
-	// Calculate translation boundaries
-	let width = subCanvas.c[subCanvas.currentIdx].obj.width;
-	let height = subCanvas.c[subCanvas.currentIdx].obj.height;
-	let minX = -(width * subCanvas.dragLimitRatio);
-	let maxX = (width * subCanvas.dragLimitRatio);
-	let minY = -(height * subCanvas.dragLimitRatio);
-	let maxY = (height * subCanvas.dragLimitRatio);
+	// Set new translation values as target
+	subCanvas.transform.translate.targetX = newTranslateX;
+	subCanvas.transform.translate.targetY = newTranslateY;
 
-	// Limit new translation values, then set as target
-	subCanvas.transform.translate.targetX = Math.min(Math.max(newTranslateX, minX), maxX);
-	subCanvas.transform.translate.targetY = Math.min(Math.max(newTranslateY, minY), maxY);
+	// Limit new translation values with calculating boundaries
+	// let minX = -(subCanvas.c[subCanvas.currentIdx].obj.width * subCanvas.dragLimitRatio);
+	// let maxX = (subCanvas.c[subCanvas.currentIdx].obj.width * subCanvas.dragLimitRatio);
+	// let minY = -(subCanvas.c[subCanvas.currentIdx].obj.height * subCanvas.dragLimitRatio);
+	// let maxY = (subCanvas.c[subCanvas.currentIdx].obj.height * subCanvas.dragLimitRatio);
+	// subCanvas.transform.translate.targetX = Math.min(Math.max(subCanvas.transform.translate.targetX, minX), maxX);
+	// subCanvas.transform.translate.targetY = Math.min(Math.max(subCanvas.transform.translate.targetY, minY), maxY);
 
 	return true;
+};
+
+resetSubCanvasTransforms = () => {
+	// Reset transforms
+	subCanvas.transform = {
+		scale: {x: 1, y: 1, targetXY: 1},
+		translate: {x: 0, y: 0, targetX: 0, targetY: 0}
+	};
 };
