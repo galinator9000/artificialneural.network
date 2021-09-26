@@ -1,7 +1,7 @@
 // Neural network related variables, functions & classes.
 
 // Various (configurable) visual arguments
-let nnConstVArgs = {
+let nnVArgs = {
 	scaleX: 0.80, scaleY: 0.66,
 	translateX: -0.035, translateY: -0.025,
 	showBiasNeurons: false,
@@ -124,7 +124,7 @@ buildNeuralNetwork = () => {
 		// Arguments which will be passed to tf.Sequential
 		sequentialArgs={},
 		// Pass visual arguments
-		vArgs=nnConstVArgs
+		vArgs=nnVArgs
 	);
 
 	// Put all layer configs in a list, add each of them to the model
@@ -441,7 +441,6 @@ resetNeuralNetworkGUI = () => {
 		// 	id: biasCheckboxId,
 		// 	obj: createCheckbox("Use bias", denseConfigGetter(denseLayerIndex, "useBias")),
 		// 	initCalls: [
-		// 		{fnName: "style", args: ["class", "main"]},
 		// 		// changed event
 		// 		{fnName: "changed", args: [
 		// 			(event) => {
@@ -482,12 +481,43 @@ resetNeuralNetworkGUI = () => {
 	});
 
 	//// Left-bottom components
-	// "Animate" checkbox
-	// nnConstVArgs.animatePropagation
+	// "Show bias neurons" checkbox
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_show_bias_neurons",
+		obj: createButton(`Show bias: ${nnVArgs.showBiasNeurons ? "Enabled" : "Disabled"}`),
+		initCalls: [
+			// mousePressed event
+			{fnName: "mousePressed", args: [
+				() => {
+					nnVArgs.showBiasNeurons = !nnVArgs.showBiasNeurons;
+					// Rebuild the network
+					buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.08, 0.96],
+		canvasRelativeSize: [0.12, 0.04]
+	});
 
-	// "Show bias" checkbox
-	// nnConstVArgs.showBiasNeurons
-	
+	// "Animate propagation" checkbox
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_animate_propagation",
+		obj: createButton(`Animate: ${nnVArgs.animatePropagation ? "Enabled" : "Disabled"}`),
+		initCalls: [
+			// mousePressed event
+			{fnName: "mousePressed", args: [
+				() => {
+					nnVArgs.animatePropagation = !nnVArgs.animatePropagation;
+					// Rebuild the network
+					buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.21, 0.96],
+		canvasRelativeSize: [0.12, 0.04]
+	});
 };
 
 // Compiles neural network
