@@ -98,10 +98,8 @@ initializeGUI = () => {
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Compile dataset!
-						compileDataset();
-						// Switch to NN subcanvas
-						switchSubCanvas(NN_SUBCANVAS_INDEX);
+						// Compile dataset, and switch to NN subcanvas
+						if(compileDataset()) switchSubCanvas(NN_SUBCANVAS_INDEX);
 					})
 				]},
 			],
@@ -136,20 +134,20 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Reset network button
+		// Edit network button
 		{
-			id: "nn_reset_button",
+			id: "nn_edit_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Reset network"),
+			obj: createButton("Edit network"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("nn_reset_button").subCanvasIndex].isActive())}
+				{name: "disabled", value: "", condition: () => (!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
-						// Reset & rebuild the network
+						// Reset & rebuild the network (with same configuration)
 						resetNeuralNetwork();
 						buildNeuralNetwork();
 					})
@@ -168,7 +166,7 @@ initializeGUI = () => {
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("nn_get_sample_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
 				)}
 			],
 			initCalls: [
@@ -189,7 +187,7 @@ initializeGUI = () => {
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("nn_predict_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
 				)}
 			],
 			initCalls: [
@@ -212,7 +210,7 @@ initializeGUI = () => {
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[getGUIComponentWithID("nn_fit_button").subCanvasIndex].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
 				)}
 			],
 			initCalls: [

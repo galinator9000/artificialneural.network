@@ -24,8 +24,7 @@ var subCanvas = {
 					// Run scrolling
 					if(scrollDataset(x, y, delta)) return true;
 					// or zooming functionality
-					// else return zoomSubCanvas(x, y, delta);
-					return true;
+					else return zoomSubCanvas(x, y, delta);
 				},
 				mouseDragged: (mx, my) => {
 					return dragSubCanvas(mx, my);

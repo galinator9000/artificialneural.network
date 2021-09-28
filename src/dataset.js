@@ -9,6 +9,7 @@ var datasetVArgs = {
 	translateX: 0.0125,
 	translateY: 0.05,
 	stepPerScroll: 3,
+	n_showSample: 16,
 };
 
 // Calculates necessary values for drawing the dataset
@@ -16,17 +17,15 @@ calculateDatasetVArgs = (canvas) => {
 	let tableW = (canvas.width * datasetVArgs.scaleX);
 	let tableH = (canvas.height * datasetVArgs.scaleY);
 
-	// Limit shown sample count
-	let show_n_samples = Math.max(Math.min(data.structure.n_samples, 15), 10);
-
 	let eachCellW = (tableW / Object.keys(data.columns).length);
-	let eachCellH = (tableH / show_n_samples);
+	// +1 for minding the header cells
+	let eachCellH = (tableH / (datasetVArgs.n_showSample + 1));
 	let startTableX = (canvas.width * (1-datasetVArgs.scaleX) / 2) + (canvas.width * datasetVArgs.translateX);
 	let startTableY = (canvas.height * (1-datasetVArgs.scaleY) / 2) + (canvas.height * datasetVArgs.translateY);
 	let startCellX = startTableX + (eachCellW/2);
 	let startCellY = startTableY + (eachCellH/2);
 
-	return [tableW, tableH, show_n_samples, eachCellW, eachCellH, startTableX, startTableY, startCellX, startCellY];
+	return [tableW, tableH, eachCellW, eachCellH, startTableX, startTableY, startCellX, startCellY];
 };
 
 const csvURLs = {
@@ -47,7 +46,7 @@ resetDatasetGUI = () => {
 	let sc = subCanvas.c[DATASET_SUBCANVAS_INDEX].obj;
 	
 	let [
-		tableW, tableH, show_n_samples,
+		tableW, tableH,
 		eachCellW, eachCellH,
 		startTableX, startTableY,
 		startCellX, startCellY
@@ -74,12 +73,13 @@ resetDatasetGUI = () => {
 		addGUIComponent({
 			...datasetGUIComponentDefaults,
 			id: componentId,
-			obj: createButton(colName),
+			obj: createButton(`${colName}${data.columns[colName].isTarget ? " (target)" : ""}`),
 			initCalls: [
 				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "mousePressed", args: [
 					(() => {
-						console.log(colName);
+						data.columns[colName].isTarget = !(data.columns[colName].isTarget);
+						resetDatasetGUI();
 					})
 				]},
 			],
@@ -95,7 +95,7 @@ scrollDataset = (x, y, delta) => {
 	if(data.dataset === null) return;
 
 	let [
-		tableW, tableH, show_n_samples,
+		tableW, tableH,
 		eachCellW, eachCellH,
 		startTableX, startTableY,
 		startCellX, startCellY
@@ -112,7 +112,17 @@ scrollDataset = (x, y, delta) => {
 		let direction = delta / Math.abs(delta);
 
 		// Step scroll value & limit
-		data.currentScrollIdx = Math.min(Math.max(data.currentScrollIdx + (direction * datasetVArgs.stepPerScroll), 0), data.structure.n_samples);
+		data.currentScrollIdx = Math.min(
+			Math.max(
+				data.currentScrollIdx + (direction * datasetVArgs.stepPerScroll),
+				0
+			),
+			(
+				data.structure.n_samples - Math.min(
+					datasetVArgs.n_showSample, data.structure.n_samples
+				)
+			)
+		);
 
 		return true;
 	}
@@ -160,11 +170,17 @@ getStageSampleFromDataset = (idx=null) => {
 
 // Compiles dataset, sets networks input/output unit counts
 compileDataset = () => {
-	// Set neural network input/output layers' neuron count
-	nnStructure.inputLayerConfig.args.inputShape = [data.structure.n_features];
-	nnStructure.outputLayerConfig.args.units = data.structure.n_targets;
-	// (Re)build neural network
-	buildNeuralNetwork();
+	// Setting the feature&target counts, reading from columns object
+	let new_n_features = arrSum(Object.values(data.columns).map(col => col.isTarget ? 0 : 1));
+	let new_n_targets = arrSum(Object.values(data.columns).map(col => col.isTarget ? 1 : 0));
+
+	if((new_n_features) <= 0 || (new_n_targets <= 0)){
+		alert("No feature or target column provided");
+		return false;
+	}
+
+	data.structure.n_features = new_n_features;
+	data.structure.n_targets = new_n_targets;
 
 	// Get input and target tensors of data
 	data.X = tf.tensor(
@@ -194,10 +210,17 @@ compileDataset = () => {
 		]
 	);
 
+	// Set neural network input/output layers' neuron count
+	nnStructure.inputLayerConfig.args.inputShape = [data.structure.n_features];
+	nnStructure.outputLayerConfig.args.units = data.structure.n_targets;
+	// (Re)build neural network
+	buildNeuralNetwork();
+
 	// Set dataset as compiled
 	data.isCompiled = true;
 	console.log("Dataset compiled");
 	resetDatasetGUI();
+	return true;
 };
 
 // Loads&initializes dataset with given URL
@@ -236,8 +259,8 @@ loadDataset = async (url) => {
 	csvDataset.fullColumnNames.forEach(
 		(colName, colIndex) => {
 			data.columns[colName] = {
-				isTarget: [...Array(csvDataset.fullColumnNames.length).keys()].slice(csvDataset.fullColumnNames.length-1).includes(colIndex)
-				// isTarget: false
+				// Last column is target, initially.
+				isTarget: ((csvDataset.fullColumnNames.length-1) === colIndex)
 			}
 		}
 	);
@@ -246,8 +269,8 @@ loadDataset = async (url) => {
 	data.structure.n_samples = csvDatasetArray.length;
 
 	// Taking last column as target, others are X's (I SAID INITIALLY!)
-	data.structure.n_features = arrSum(Object.values(data.columns).map(col => col.isTarget ? 0 : 1));
-	data.structure.n_targets = arrSum(Object.values(data.columns).map(col => col.isTarget ? 1 : 0));
+	data.structure.n_features = (Object.values(data.columns).length)-1;
+	data.structure.n_targets = (1);
 
 	console.log("Dataset loaded", data.structure);
 	resetDatasetGUI();
@@ -260,45 +283,47 @@ drawDataset = (canvas) => {
 	if(data.dataset === null) return;
 
 	let [
-		tableW, tableH, show_n_samples,
+		tableW, tableH,
 		eachCellW, eachCellH,
 		startTableX, startTableY,
 		startCellX, startCellY
 	] = calculateDatasetVArgs(canvas);
 
-	// Table border
-	canvas.push();
-	canvas.strokeWeight(2);
-	canvas.rect(
-		startTableX+(tableW/2),
-		startTableY+(tableH/2),
-		tableW,
-		tableH
-	);
-	canvas.pop();
-
 	// Draw rows
 	data.dataset.slice(
 		// Slice the dataset for getting the samples which will be drawn
 		(data.currentScrollIdx),
-		(data.currentScrollIdx + show_n_samples)
+		(data.currentScrollIdx + datasetVArgs.n_showSample)
 	).forEach((rowObj, rowIdx) => {
+		let centerY = (startCellY + ((rowIdx+1) * eachCellH));
+
+		// Row number
+		canvas.push();
+		canvas.fill(255);
+		canvas.textSize(
+			calculateTextSize(
+				"   ",
+				(canvas.width * (1-datasetVArgs.scaleX) / 2)
+			)
+		);
+		canvas.text(
+			(data.currentScrollIdx+rowIdx+1).toString(),
+			(canvas.width * (1-datasetVArgs.scaleX) / 2),
+			centerY
+		);
+		canvas.pop();
+
+		// Draw every column's value
 		Object.entries(rowObj).forEach(([colName, colValue], colIdx) => {
 			let centerX = (startCellX + (colIdx * eachCellW));
-			let centerY = (startCellY + ((rowIdx + 1) * eachCellH));
-	
-			// Cell rect
-			canvas.push();
-			canvas.rect(centerX, centerY, eachCellW, eachCellH);
-			canvas.pop();
-	
+			
 			// Value text
 			canvas.push();
 			canvas.fill(255);
 			canvas.textSize(
 				calculateTextSize(
-					colValue.toFixed(3),
-					(eachCellH*1.25)
+					"     ",
+					(eachCellH*2.5)
 				)
 			);
 			canvas.text(colValue.toFixed(3), centerX, centerY);

@@ -36,8 +36,7 @@ setup = () => {
 	
 	// Then, load dataset
 	loadDataset(Object.values(csvURLs)[0]).then(() => {
-		// compileDataset();
-		// switchSubCanvas(NN_SUBCANVAS_INDEX);
+		if(compileDataset()) switchSubCanvas(NN_SUBCANVAS_INDEX);
 	});
 };
 
