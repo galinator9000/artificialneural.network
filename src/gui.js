@@ -1,7 +1,7 @@
 // GUI related variables and functions.
 
-let guiComponents = [];
-let cursors = [];
+var guiComponents = [];
+var cursors = [];
 
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
@@ -21,6 +21,7 @@ initializeGUI = () => {
 			initCalls: [
 				// Behave as ghost button
 				{fnName: "addClass", args: ["text-button"]},
+				{fnName: "style", args: ["z-index", "1"]},
 			],
 			canvasRelativePosition: [0.05625, 0.0625],
 			canvasRelativeSize: [0.0875, 0.06]
@@ -32,6 +33,7 @@ initializeGUI = () => {
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createSelect(),
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				// Pick file option
 				// {fnName: "option", args: ["Pick file..."]},
 
@@ -93,6 +95,7 @@ initializeGUI = () => {
 				}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Compile dataset!
@@ -118,6 +121,7 @@ initializeGUI = () => {
 				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Compile neural network
@@ -142,6 +146,7 @@ initializeGUI = () => {
 				{name: "disabled", value: "", condition: () => (!subCanvas.c[getGUIComponentWithID("nn_reset_button").subCanvasIndex].isActive())}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Reset & rebuild the network
@@ -167,8 +172,9 @@ initializeGUI = () => {
 				)}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				// Get random sample from dataset for stage
-				{fnName: "mousePressed", args: [getStageSampleFromDataset]},
+				{fnName: "mousePressed", args: [() => {getStageSampleFromDataset()}]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.41, 0.0625],
@@ -187,6 +193,7 @@ initializeGUI = () => {
 				)}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					// Predict current stage sample
 					(() => nn.predict(data.stageSample.input))
@@ -209,6 +216,7 @@ initializeGUI = () => {
 				)}
 			],
 			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					// Fit the model on dataset
 					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))

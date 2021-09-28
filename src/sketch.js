@@ -1,6 +1,6 @@
 // Constants
-let MAIN_FONT;
-let BG_COLOR;
+var MAIN_FONT;
+var BG_COLOR;
 preload = () => {
 	MAIN_FONT = loadFont("assets/Inconsolata-Medium.ttf");
 };
@@ -31,7 +31,10 @@ setup = () => {
 	initializeGUI();
 	updateGUI();
 
-	// Load dataset
+	// Assign data structure initially
+	resetDataset();
+	
+	// Then, load dataset
 	loadDataset(Object.values(csvURLs)[0]).then(() => {
 		// compileDataset();
 		// switchSubCanvas(NN_SUBCANVAS_INDEX);
@@ -81,9 +84,7 @@ draw = () => {
 
 		// Draw dataset on given subcanvas
 		drawDataset(
-			datasetCanvas.obj,
-			// Additional vArgs
-			{scaleX: 0.95, scaleY: 0.85, translateX: 0.0125, translateY: 0.05}
+			datasetCanvas.obj
 		);
 
 		datasetCanvas.obj.pop();
@@ -144,12 +145,10 @@ draw = () => {
 	let eachTabH = (windowHeight / subCanvas.c.length);
 	let curScIdx = (subCanvas.nextIdx);
 
-	// Calculate tab titles' text size & apply it
-	textSize(
-		calculateTextsSize(
-			subCanvas.c.map(sc => sc.title),
-			(eachTabH*0.90)
-		)
+	// Calculate tab titles' text size
+	let tabTextSize = calculateTextsSize(
+		subCanvas.c.map(sc => sc.title),
+		(eachTabH*0.90)
 	);
 
 	// Draw each tab title
@@ -166,6 +165,7 @@ draw = () => {
 		stroke(subCanvas.c[scIdx].isActive() ? 192 : 64);
 		translate(eachTabW/2, ((eachTabH*scIdx) + eachTabH/2));
 		rotate(-90);
+		textSize(tabTextSize);
 		text(sc.title, 0, 0);
 		pop();
 	})

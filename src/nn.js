@@ -1,7 +1,7 @@
 // Neural network related variables, functions & classes.
 
 // Various (configurable) visual arguments
-let nnVArgs = {
+var nnVArgs = {
 	scaleX: 0.80, scaleY: 0.66,
 	translateX: -0.035, translateY: -0.025,
 	showBiasNeurons: false,
@@ -35,10 +35,10 @@ createDenseLayerConfig = (denseArgs={}) => ({
 layerConfigToLayer = (layer) => layer.class(layer.args);
 
 // Our main neural network model
-let nn;
+var nn;
 
 // Specifies our neural network structure (layers, losses etc.)
-let nnStructure = {
+var nnStructure = {
 	// Input layer config
 	inputLayerConfig: {
 		class: tf.layers.inputLayer,
@@ -154,7 +154,7 @@ resetNeuralNetworkGUI = () => {
 	// Remove all GUI components that configures NN
 	getGUIComponentIDs().filter(gcId => gcId.startsWith("nn_cfg")).map(gcId => {removeGUIComponentWithID(gcId)});
 
-	// Add new GUI components if NN is built (buildNeuralNetwork fn) but not compiled yet
+	// Add new GUI components if NN is built (buildNeuralNetwork fn)
 	if((nn === undefined)) return;
 
 	// ... all goes into new GUI components' configs
@@ -516,7 +516,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_show_bias_neurons",
 		obj: createButton(`Show bias: ${nnVArgs.showBiasNeurons ? "Enabled" : "Disabled"}`),
 		initCalls: [
-			{fnName: "addClass", args: ["button-borderless"]},
+			{fnName: "addClass", args: ["button-bottom-border"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {
@@ -536,7 +536,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_animate_propagation",
 		obj: createButton(`Animate: ${nnVArgs.animatePropagation ? "Enabled" : "Disabled"}`),
 		initCalls: [
-			{fnName: "addClass", args: ["button-borderless"]},
+			{fnName: "addClass", args: ["button-bottom-border"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {
@@ -556,7 +556,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_apply_limits",
 		obj: createButton(`Apply limits: ${nnStructure.applyLimits ? "Enabled" : "Disabled"}`),
 		initCalls: [
-			{fnName: "addClass", args: ["button-borderless"]},
+			{fnName: "addClass", args: ["button-bottom-border"]},
 			// mousePressed event
 			{fnName: "mousePressed", args: [
 				() => {
@@ -657,6 +657,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Mark as compiled
 		this.isCompiled = true;
+		this.summary();
 	};
 	
 	// Override predict method
@@ -1381,8 +1382,8 @@ class Weight{
 		// Calculate highlight area
 		let hFromX = vArgs.propagation.xToCanvasPosX(vArgs.propagation.xAnim);
 		let hToX = vArgs.propagation.xToCanvasPosX(Math.min(1.0, (vArgs.propagation.xAnim + vArgs.propagation.width)));
-		hFromX = max(hFromX, fromX);
-		hToX = min(hToX, toX);
+		hFromX = Math.max(hFromX, fromX);
+		hToX = Math.min(hToX, toX);
 
 		// Check bounds of the highlight area if it intersects with weight line. If not, simply return. (also checks the gap)
 		if(

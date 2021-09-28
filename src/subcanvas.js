@@ -6,7 +6,7 @@ const NN_SUBCANVAS_INDEX = 2;
 
 const INITIAL_SUBCANVAS_INDEX = DATASET_SUBCANVAS_INDEX;
 
-let subCanvas = {
+var subCanvas = {
 	// SubCanvas objects 
 	c: [
 		{
@@ -20,12 +20,12 @@ let subCanvas = {
 			isActive: () => true,
 			// Event handlers should return true/false if they were able to process the event or not
 			eventHandlers: {
-				mouseClicked: (x, y) => {
-					return false;
-				},
 				mouseWheel: (x, y, delta) => {
-					if(delta < 0) return zoomSubCanvas(x, y, 1);
-					if(delta > 0) return zoomSubCanvas(x, y, -1);
+					// Run scrolling
+					if(scrollDataset(x, y, delta)) return true;
+					// or zooming functionality
+					// else return zoomSubCanvas(x, y, delta);
+					return true;
 				},
 				mouseDragged: (mx, my) => {
 					return dragSubCanvas(mx, my);
@@ -46,8 +46,7 @@ let subCanvas = {
 					return true;
 				},
 				mouseWheel: (x, y, delta) => {
-					if(delta < 0) return zoomSubCanvas(x, y, 1);
-					if(delta > 0) return zoomSubCanvas(x, y, -1);
+					return zoomSubCanvas(x, y, delta);
 				},
 				mouseDragged: (mx, my) => {
 					return dragSubCanvas(mx, my);
@@ -244,7 +243,10 @@ applyTransformationsToSubCanvas = (canvas) => {
 };
 
 // Sets current scaling values on transformation
-zoomSubCanvas = (x, y, direction) => {
+zoomSubCanvas = (x, y, delta) => {
+	// Get mouse wheel delta's direction as 1 or -1, reverse it for zooming direction
+	let direction = -(delta / Math.abs(delta));
+
 	// New value
 	let newScale = (subCanvas.transform.scale.x + (
 		(subCanvas.zoomFactor * direction) * subCanvas.transform.scale.targetXY

@@ -1,11 +1,122 @@
 // Dataset related variables and functions.
 
-let data = {};
+var data = {};
+
+// Various (configurable) visual arguments
+var datasetVArgs = {
+	scaleX: 0.95,
+	scaleY: 0.85,
+	translateX: 0.0125,
+	translateY: 0.05,
+	stepPerScroll: 3,
+};
+
+// Calculates necessary values for drawing the dataset
+calculateDatasetVArgs = (canvas) => {
+	let tableW = (canvas.width * datasetVArgs.scaleX);
+	let tableH = (canvas.height * datasetVArgs.scaleY);
+
+	// Limit shown sample count
+	let show_n_samples = Math.max(Math.min(data.structure.n_samples, 15), 10);
+
+	let eachCellW = (tableW / Object.keys(data.columns).length);
+	let eachCellH = (tableH / show_n_samples);
+	let startTableX = (canvas.width * (1-datasetVArgs.scaleX) / 2) + (canvas.width * datasetVArgs.translateX);
+	let startTableY = (canvas.height * (1-datasetVArgs.scaleY) / 2) + (canvas.height * datasetVArgs.translateY);
+	let startCellX = startTableX + (eachCellW/2);
+	let startCellY = startTableY + (eachCellH/2);
+
+	return [tableW, tableH, show_n_samples, eachCellW, eachCellH, startTableX, startTableY, startCellX, startCellY];
+};
 
 const csvURLs = {
 	"Classification": "datasets/binary_classification_data.csv",
 	"Regression": "datasets/regression_data.csv",
 	"Boston Housing Regression": "https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
+};
+
+// Resets dynamic dataset GUI components
+resetDatasetGUI = () => {
+	// Remove all GUI components that configures the dataset
+	getGUIComponentIDs().filter(gcId => gcId.startsWith("dataset_cfg")).map(gcId => {removeGUIComponentWithID(gcId)});
+
+	// Add new GUI components if dataset is loaded (loadDataset fn)
+	if(data.dataset === null) return;
+
+	//// Calculate necessary values for placing dynamic components
+	let sc = subCanvas.c[DATASET_SUBCANVAS_INDEX].obj;
+	
+	let [
+		tableW, tableH, show_n_samples,
+		eachCellW, eachCellH,
+		startTableX, startTableY,
+		startCellX, startCellY
+	] = calculateDatasetVArgs(sc);
+
+	// ... all goes into new GUI components' configs
+	let datasetGUIComponentDefaults = {
+		subCanvasIndex: DATASET_SUBCANVAS_INDEX,
+		isDynamic: true,
+		attributes: [
+			// "Disabled" attribute if dataset is built
+			{
+				name: "disabled", value: "",
+				condition: () => ((data.isLoading) || (data.isCompiled))
+			}
+		],
+	};
+
+	// Add headers as dynamic buttons
+	Object.entries(data.columns).forEach(([colName, colObj], colIndex) => {
+		let centerX = (startCellX + (colIndex * eachCellW));
+		let centerY = startCellY;
+		let componentId = "dataset_cfg_column_header_"+colIndex.toString();
+		addGUIComponent({
+			...datasetGUIComponentDefaults,
+			id: componentId,
+			obj: createButton(colName),
+			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
+				{fnName: "mousePressed", args: [
+					(() => {
+						console.log(colName);
+					})
+				]},
+			],
+			canvasRelativePosition: [(centerX/sc.width), (centerY/sc.height)],
+			canvasRelativeSize: [(eachCellW*0.90/sc.width), (eachCellH*0.90/sc.height)]
+		});
+	});
+};
+
+// Scrolls through dataset
+scrollDataset = (x, y, delta) => {
+	// Scroll if dataset is loaded (loadDataset fn)
+	if(data.dataset === null) return;
+
+	let [
+		tableW, tableH, show_n_samples,
+		eachCellW, eachCellH,
+		startTableX, startTableY,
+		startCellX, startCellY
+	] = calculateDatasetVArgs(subCanvas.c[DATASET_SUBCANVAS_INDEX].obj);
+
+	// Check if mouse wheel event in dataset boundaries
+	if(
+		(x >= startTableX)
+		&& (y >= startTableY)
+		&& (x <= (startTableX + tableW))
+		&& (y <= (startTableY + tableH))
+	){
+		// Get mouse wheel delta's direction as 1 or -1
+		let direction = delta / Math.abs(delta);
+
+		// Step scroll value & limit
+		data.currentScrollIdx = Math.min(Math.max(data.currentScrollIdx + (direction * datasetVArgs.stepPerScroll), 0), data.structure.n_samples);
+
+		return true;
+	}
+	return false;
 };
 
 // (re)Sets everything about data
@@ -25,14 +136,13 @@ resetDataset = () => {
 			input: null,
 			target: null
 		},
-	
+
+		currentScrollIdx: 0,
 		isCompiled: false,
 		isLoading: false
 	};
+	resetDatasetGUI();
 };
-
-// Assign structure initially
-resetDataset();
 
 // Gets one sample and puts it to stage (side of the network)
 getStageSampleFromDataset = (idx=null) => {
@@ -87,6 +197,7 @@ compileDataset = () => {
 	// Set dataset as compiled
 	data.isCompiled = true;
 	console.log("Dataset compiled");
+	resetDatasetGUI();
 };
 
 // Loads&initializes dataset with given URL
@@ -139,24 +250,21 @@ loadDataset = async (url) => {
 	data.structure.n_targets = arrSum(Object.values(data.columns).map(col => col.isTarget ? 1 : 0));
 
 	console.log("Dataset loaded", data.structure);
+	resetDatasetGUI();
 	return true;
 };
 
 // Draws the dataset on the given canvas
-drawDataset = (canvas, vArgs) => {
-	// Calculate necessary values for drawing
-	let tableW = (canvas.width * vArgs.scaleX);
-	let tableH = (canvas.height * vArgs.scaleY);
+drawDataset = (canvas) => {
+	// Draw the dataset if dataset is loaded (loadDataset fn)
+	if(data.dataset === null) return;
 
-	// Limit shown sample count
-	let show_n_samples = max(min(data.structure.n_samples, 15), 10);
-	let eachCellH = (tableH / show_n_samples);
-	let eachCellW = (tableW / Object.keys(data.columns).length);
-
-	let startTableX = (canvas.width * (1-vArgs.scaleX) / 2) + (canvas.width * vArgs.translateX);
-	let startTableY = (canvas.height * (1-vArgs.scaleY) / 2) + (canvas.height * vArgs.translateY);
-	let startCellX = startTableX + (eachCellW/2);
-	let startCellY = startTableY + (eachCellH/2);
+	let [
+		tableW, tableH, show_n_samples,
+		eachCellW, eachCellH,
+		startTableX, startTableY,
+		startCellX, startCellY
+	] = calculateDatasetVArgs(canvas);
 
 	// Table border
 	canvas.push();
@@ -169,27 +277,32 @@ drawDataset = (canvas, vArgs) => {
 	);
 	canvas.pop();
 
-	// Draw headers
-	let rowIndex = 0;
-	Object.entries(data.columns).forEach(([colName, colObj], colIndex) => {
-		let centerX = (startCellX + (colIndex * eachCellW));
-		let centerY = (startCellY + (rowIndex * eachCellH));
-
-		// Header cell rect
-		canvas.push();
-		canvas.rect(centerX, centerY, eachCellW, eachCellH);
-		canvas.pop();
-
-		// Header text
-		canvas.push();
-		canvas.fill(255);
-		canvas.textSize(
-			calculateTextSize(
-				colName.slice(0, 6),
-				(eachCellW, eachCellH)
-			)
-		);
-		canvas.text(colName.slice(0, 6), centerX, centerY);
-		canvas.pop();
+	// Draw rows
+	data.dataset.slice(
+		// Slice the dataset for getting the samples which will be drawn
+		(data.currentScrollIdx),
+		(data.currentScrollIdx + show_n_samples)
+	).forEach((rowObj, rowIdx) => {
+		Object.entries(rowObj).forEach(([colName, colValue], colIdx) => {
+			let centerX = (startCellX + (colIdx * eachCellW));
+			let centerY = (startCellY + ((rowIdx + 1) * eachCellH));
+	
+			// Cell rect
+			canvas.push();
+			canvas.rect(centerX, centerY, eachCellW, eachCellH);
+			canvas.pop();
+	
+			// Value text
+			canvas.push();
+			canvas.fill(255);
+			canvas.textSize(
+				calculateTextSize(
+					colValue.toFixed(3),
+					(eachCellH*1.25)
+				)
+			);
+			canvas.text(colValue.toFixed(3), centerX, centerY);
+			canvas.pop();
+		});
 	});
 };

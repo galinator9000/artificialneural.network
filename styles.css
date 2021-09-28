@@ -37,8 +37,11 @@ button:disabled, button[disabled]{
 	pointer-events: none;
 }
 /* Borderless button */
-.button-borderless {
-	border: none;
+.button-bottom-border {
+	border-style: default;
+	border-top: none;
+	border-right: none;
+	border-left: none;
 }
 /* "Text" button */
 .text-button {
