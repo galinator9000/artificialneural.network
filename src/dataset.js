@@ -12,6 +12,9 @@ var datasetVArgs = {
 	n_showSample: 16,
 };
 
+// All CSV URLs
+const csvURLs = {};
+
 // Calculates necessary values for drawing the dataset
 calculateDatasetVArgs = (canvas) => {
 	let tableW = (canvas.width * datasetVArgs.scaleX);
@@ -26,12 +29,6 @@ calculateDatasetVArgs = (canvas) => {
 	let startCellY = startTableY + (eachCellH/2);
 
 	return [tableW, tableH, eachCellW, eachCellH, startTableX, startTableY, startCellX, startCellY];
-};
-
-const csvURLs = {
-	"Classification": "datasets/binary_classification_data.csv",
-	"Regression": "datasets/regression_data.csv",
-	"Boston Housing Regression": "https://storage.googleapis.com/tfjs-examples/multivariate-linear-regression/data/boston-housing-train.csv"
 };
 
 // Resets dynamic dataset GUI components
@@ -226,7 +223,7 @@ compileDataset = () => {
 // Loads&initializes dataset with given URL
 loadDataset = async (url) => {
 	if(url === null || url === undefined) url = "";
-	if(url.length == 0 || !url.endsWith(".csv")) return false;
+	if(url.length == 0) return false;
 
 	// Set as loading
 	data.isLoading = true;
@@ -235,11 +232,13 @@ loadDataset = async (url) => {
 	let csvDataset = null;
 	try{
 		csvDataset = tf.data.csv(url);
-	}catch{
+	}catch(err){
+		alert(`An error occured while loading the dataset :(`);
 		data.isLoading = false;
 		return false;
 	}
 	if(!csvDataset){
+		alert(`An error occured while loading the dataset :(`);
 		data.isLoading = false;
 		return false;
 	}

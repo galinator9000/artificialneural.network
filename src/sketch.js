@@ -33,11 +33,6 @@ setup = () => {
 
 	// Assign data structure initially
 	resetDataset();
-	
-	// Then, load dataset
-	loadDataset(Object.values(csvURLs)[0]).then(() => {
-		if(compileDataset()) switchSubCanvas(NN_SUBCANVAS_INDEX);
-	});
 };
 
 // Main loop

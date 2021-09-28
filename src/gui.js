@@ -34,16 +34,20 @@ initializeGUI = () => {
 			obj: createSelect(),
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
+
+				// Add initial option for text, disable and make it selected
+				{fnName: "option", args: ["Select dataset source"]},
+				{fnName: "disable", args: ["Select dataset source"]},
+				{fnName: "selected", args: ["Select dataset source"]},
+				
 				// Pick file option
 				// {fnName: "option", args: ["Pick file..."]},
 
-				// Enter CSV URL option
-				{fnName: "option", args: ["Enter CSV URL..."]},
+				// "Enter CSV URL" option
+				// {fnName: "option", args: ["Enter CSV URL..."]},
 
-				// All constant options
+				// All constant dataset source options
 				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
-				// First CSV URL is selected
-				{fnName: "selected", args: [Object.values(csvURLs)[0]]},
 
 				// onChange event
 				{fnName: "changed", args: [
@@ -54,7 +58,7 @@ initializeGUI = () => {
 
 						// Load given URL
 						if(selectedValue === "Enter CSV URL..."){
-							selectedValue = window.prompt("Enter CSV URL...");
+							selectedValue = window.prompt(selectedValue);
 
 							// Attempt to load given URL, if successful, add as an option
 							loadDataset(selectedValue).then((success) => {
