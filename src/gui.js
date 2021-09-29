@@ -90,7 +90,7 @@ initializeGUI = () => {
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
 			obj: createButton("Compile dataset!"),
 			attributes: [
-				// "Disabled" attribute for compile button (if data is compiled, disable it)
+				// "Disabled" attribute for compile button (if data is compiled/loading, disable it)
 				{
 					name: "disabled", value: "",
 					condition: () => (

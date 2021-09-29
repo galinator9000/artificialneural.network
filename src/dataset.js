@@ -13,7 +13,22 @@ var datasetVArgs = {
 };
 
 // All CSV URLs
-const csvURLs = {};
+const csvURLs = {
+	// "Iris dataset": ,
+	// "MNIST dataset": ,
+
+	//// Custom datasets
+	
+	// Generated with sklearn's make_classification/make_regression methods
+	"Binary classification": "datasets/binary_classification.csv",
+	"Multiclass classification": "datasets/multiclass_classification.csv",
+	"Simple linear regression": "datasets/simple_linear_regression.csv",
+	"Multiple linear regression": "datasets/multiple_linear_regression.csv",
+
+	"XOR": "datasets/xor.csv",
+	"OR": "datasets/or.csv",
+	"AND": "datasets/and.csv",
+};
 
 // Calculates necessary values for drawing the dataset
 calculateDatasetVArgs = (canvas) => {

@@ -4,10 +4,10 @@
 var nnVArgs = {
 	scaleX: 0.80, scaleY: 0.66,
 	translateX: -0.035, translateY: -0.025,
-	showBiasNeurons: false,
+	showBiasNeurons: true,
 	weightVisualChangeSpeed: 0.25,
 	neuronVisualChangeSpeed: 0.25,
-	animatePropagation: true,
+	animatePropagation: false,
 	propagation: {
 		// Width and step values (ratio value for width of the canvas) of the propagation wave
 		width: 0.005, step: 0.01,
@@ -66,8 +66,6 @@ var nnStructure = {
 
 	//// Options
 	activationFunctionOptions: {
-		"None": "null",
-
 		"Linear": "linear",
 		"ReLU": "relu",
 		"Sigmoid": "sigmoid",
@@ -84,7 +82,7 @@ var nnStructure = {
 		// "Mish": "mish",
 	},
 	lossFunctionOptions: {
-		"MSE": "meanSquaredError",
+		"Mean Squared Error": "meanSquaredError",
 		"SigmoidCrossEntropy": "sigmoidCrossEntropy",
 		"SoftmaxCrossEntropy": "softmaxCrossEntropy",
 

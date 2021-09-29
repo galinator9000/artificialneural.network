@@ -9,7 +9,7 @@ X, y = make_classification(
 )
 if len(y.shape) <= 1: y = np.expand_dims(y, axis=-1)
 
-with open("binary_classification_data.csv", "w", encoding="utf-8") as outF:
+with open("binary_classification.csv", "w", encoding="utf-8") as outF:
 	# Write headers
 	outF.write(",".join([
 		str(i) for i in list(range((X.shape[1] + y.shape[1])))
