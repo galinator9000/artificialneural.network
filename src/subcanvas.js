@@ -18,10 +18,12 @@ var subCanvas = {
 					// Run scrolling
 					if(scrollDataset(x, y, delta)) return true;
 					// or zooming functionality
-					else return zoomSubCanvas(x, y, delta);
+					// else return zoomSubCanvas(x, y, delta);
+					return true;
 				},
 				mouseDragged: (mx, my) => {
-					return dragSubCanvas(mx, my);
+					// return dragSubCanvas(mx, my);
+					return true;
 				},
 			},
 		},
