@@ -54,14 +54,14 @@ var nnStructure = {
 		// (set output unit to 1 initially)
 		units: 1,
 		useBias: true,
-		activation: "sigmoid"
+		activation: "linear"
 	}),
 
 	// Compile arguments (optimizer, loss)
 	compileArgs: {
 		optimizer: "sgd",
-		loss: "sigmoidCrossEntropy",
-		learningRate: 0.001
+		loss: "meanSquaredError",
+		learningRate: 0.0001
 	},
 
 	//// Options
