@@ -55,7 +55,7 @@ draw = () => {
 		nn.update(nnCanvas.obj);
 
 		// Check if neural network should be drawn to it's subcanvas
-		if(nnCanvas.shouldDraw()){
+		if(shouldSubCanvasBeDrawn(NN_SUBCANVAS_INDEX)){
 			nnCanvas.obj.push();
 
 			// Apply transformations to the nn canvas
@@ -70,7 +70,7 @@ draw = () => {
 
 	// Check if dataset should be drawn to it's subcanvas
 	let datasetCanvas = subCanvas.c[DATASET_SUBCANVAS_INDEX];
-	if(datasetCanvas.shouldDraw()){
+	if(shouldSubCanvasBeDrawn(DATASET_SUBCANVAS_INDEX)){
 		datasetCanvas.obj.push();
 
 		// Apply transformations to the dataset canvas

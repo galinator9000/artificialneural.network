@@ -1,19 +1,13 @@
 // SubCanvas system related variables and functions.
 
-const MAIN_SUBCANVAS_INDEX = 0;
-const DATASET_SUBCANVAS_INDEX = 1;
-const NN_SUBCANVAS_INDEX = 2;
+const DATASET_SUBCANVAS_INDEX = 0;
+const NN_SUBCANVAS_INDEX = 1;
 
 const INITIAL_SUBCANVAS_INDEX = DATASET_SUBCANVAS_INDEX;
 
 var subCanvas = {
 	// SubCanvas objects 
 	c: [
-		{
-			title: "Main",
-			obj: null,
-			isActive: () => true,
-		},
 		{
 			title: "Dataset",
 			obj: null,
@@ -97,6 +91,7 @@ getSubCanvasHeightWithIndex = (cIdx) => {
 	if(cIdx == -1) return windowHeight;
 	return subCanvas.c[cIdx].obj.height;
 };
+shouldSubCanvasBeDrawn = (cIdx) => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(cIdx));
 
 // Updates subcanvas related things
 updateSubCanvas = () => {
@@ -163,9 +158,6 @@ createSubCanvas = () => {
 
 		// Assign utility functions of the subcanvas for later use
 
-		// Returns if subcanvas should be drawn or not
-		sc.shouldDraw = () => ([subCanvas.currentIdx, subCanvas.nextIdx].includes(scIndex));
-		
 		// Position converter functions
 		sc.absolutePos_to_SubCanvasPos = (x, y) => {
 			let vec = createVector(x, y);

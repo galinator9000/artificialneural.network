@@ -4,10 +4,10 @@
 var nnVArgs = {
 	scaleX: 0.80, scaleY: 0.66,
 	translateX: -0.035, translateY: -0.025,
-	showBiasNeurons: true,
+	showBiasNeurons: false,
 	weightVisualChangeSpeed: 0.25,
 	neuronVisualChangeSpeed: 0.25,
-	animatePropagation: false,
+	animatePropagation: true,
 	propagation: {
 		// Width and step values (ratio value for width of the canvas) of the propagation wave
 		width: 0.005, step: 0.01,
@@ -22,8 +22,8 @@ var nnVArgs = {
 createDenseLayerConfig = (denseArgs={}) => ({
 	class: tf.layers.dense,
 	args: {
-		// Min 4, max 15 neurons, if not specified
-		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 16)),
+		// Min 4, max 9 neurons, if not specified
+		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 9)),
 		// Use bias if not specified
 		useBias: ((denseArgs.useBias) ? denseArgs.useBias : true),
 		// No activation, if not specified
@@ -208,7 +208,7 @@ resetNeuralNetworkGUI = () => {
 				}
 			]},
 		],
-		canvasRelativePosition: [0.74, 0.96],
+		canvasRelativePosition: [0.71, 0.96],
 		canvasRelativeSize: [0.12, 0.04]
 	});
 	// Loss text
@@ -217,7 +217,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_title_loss",
 		obj: createButton(`Loss`),
 		initCalls: [{fnName: "addClass", args: ["text-button"]}],
-		canvasRelativePosition: [0.74, 0.92],
+		canvasRelativePosition: [0.71, 0.92],
 		canvasRelativeSize: [0.12, 0.04]
 	});
 
@@ -243,7 +243,7 @@ resetNeuralNetworkGUI = () => {
 				}
 			]},
 		],
-		canvasRelativePosition: [0.58, 0.96],
+		canvasRelativePosition: [0.55, 0.96],
 		canvasRelativeSize: [0.06, 0.04]
 	});
 
@@ -269,7 +269,7 @@ resetNeuralNetworkGUI = () => {
 				}
 			]},
 		],
-		canvasRelativePosition: [0.64, 0.96],
+		canvasRelativePosition: [0.61, 0.96],
 		canvasRelativeSize: [0.04, 0.04]
 	});
 
@@ -279,7 +279,7 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_title_optimizer",
 		obj: createButton(`Optimizer`),
 		initCalls: [{fnName: "addClass", args: ["text-button"]}],
-		canvasRelativePosition: [0.61, 0.92],
+		canvasRelativePosition: [0.58, 0.92],
 		canvasRelativeSize: [0.12, 0.04]
 	});
 
@@ -320,8 +320,27 @@ resetNeuralNetworkGUI = () => {
 		id: "nn_cfg_title_output",
 		obj: createButton(`Output (${nnStructure.outputLayerConfig.args.units})`),
 		initCalls: [{fnName: "addClass", args: ["text-button"]}],
-		canvasRelativePosition: [0.865, centerY],
-		canvasRelativeSize: [0.09, 0.04]
+		canvasRelativePosition: [0.825, centerY],
+		canvasRelativeSize: [0.07, 0.04]
+	});
+
+	// "Use bias" button
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_dense_layer_bias_output",
+		obj: createButton(`${denseConfigGetter((nn.layerNeurons.length-1), "useBias") ? "true" : "false"}`),
+		initCalls: [
+			{fnName: "mousePressed", args: [
+				(event) => {
+					// Get new value and set layer config
+					denseConfigSetter((nn.layerNeurons.length-1), "useBias", !denseConfigGetter((nn.layerNeurons.length-1), "useBias"));
+					// Rebuild the network
+					buildNeuralNetwork();
+				}
+			]},
+		],
+		canvasRelativePosition: [0.89, centerY],
+		canvasRelativeSize: [0.04, 0.04]
 	});
 
 	// Activation function selector
@@ -357,10 +376,9 @@ resetNeuralNetworkGUI = () => {
 
 	// Process every hidden layer for GUI component placement
 	[...Array(nn.layerNeurons.length).keys()].slice(1, -1).reverse().forEach(denseLayerIndex => {
-		let centerX = 0.83;
 		let activationSelectId = ("nn_cfg_dense_layer_activation_"+(denseLayerIndex.toString()));
 		let neuronCountInputId = ("nn_cfg_dense_layer_unitCount_"+(denseLayerIndex.toString()));
-		let biasCheckboxId = ("nn_cfg_dense_layer_bias_"+(denseLayerIndex.toString()));
+		let biasButtonId = ("nn_cfg_dense_layer_bias_"+(denseLayerIndex.toString()));
 
 		//// Place layer config components below the hidden&output layers
 		// Place removal button below the hidden layer
@@ -378,12 +396,11 @@ resetNeuralNetworkGUI = () => {
 					})
 				]},
 			],
-			canvasRelativePosition: [centerX, centerY],
+			canvasRelativePosition: [0.80, centerY],
 			canvasRelativeSize: [0.02, 0.03]
 		});
 
 		// Place neuron size input below the hidden layers
-		centerX += 0.05;
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: neuronCountInputId,
@@ -413,12 +430,30 @@ resetNeuralNetworkGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [centerX, centerY],
+			canvasRelativePosition: [0.84, centerY],
+			canvasRelativeSize: [0.04, 0.04]
+		});
+
+		// "Use bias" button
+		addGUIComponent({
+			...nnGUIComponentDefaults,
+			id: biasButtonId,
+			obj: createButton(`${denseConfigGetter(denseLayerIndex, "useBias") ? "true" : "false"}`),
+			initCalls: [
+				{fnName: "mousePressed", args: [
+					(event) => {
+						// Get new value and set layer config
+						denseConfigSetter(denseLayerIndex, "useBias", !denseConfigGetter(denseLayerIndex, "useBias"));
+						// Rebuild the network
+						buildNeuralNetwork();
+					}
+				]},
+			],
+			canvasRelativePosition: [0.89, centerY],
 			canvasRelativeSize: [0.04, 0.04]
 		});
 
 		// Activation function selector
-		centerX += 0.07;
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: activationSelectId,
@@ -444,34 +479,40 @@ resetNeuralNetworkGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [centerX, centerY],
+			canvasRelativePosition: [0.95, centerY],
 			canvasRelativeSize: [0.06, 0.04]
 		});
 
 		centerY -= centerYstep;
-
-		// // "Use bias" checkbox
-		// addGUIComponent({
-		// 	...nnGUIComponentDefaults,
-		// 	id: biasCheckboxId,
-		// 	obj: createCheckbox("Use bias", denseConfigGetter(denseLayerIndex, "useBias")),
-		// 	initCalls: [
-		// 		// changed event
-		// 		{fnName: "changed", args: [
-		// 			(event) => {
-		// 				// Get new value and set layer config
-		// 				let value = getGUIComponentWithID(biasCheckboxId).obj.checked();
-		// 				denseConfigSetter(denseLayerIndex, "useBias", value);
-		// 				// Rebuild the network
-		// 				buildNeuralNetwork();
-		// 			}
-		// 		]},
-		// 	],
-		// 	canvasRelativePosition: [centerX, centerY],
-		// 	canvasRelativeSize: [0.02, 0.04]
-		// });
-		// centerX += 0.03;
 	});
+
+	// Neuron, bias, activation texts
+	centerY += (centerYstep*0.33);
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title_units",
+		obj: createButton(`Units`),
+		initCalls: [{fnName: "addClass", args: ["text-button"]}],
+		canvasRelativePosition: [0.84, centerY],
+		canvasRelativeSize: [0.04, 0.04]
+	});
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title_usebias",
+		obj: createButton(`Bias`),
+		initCalls: [{fnName: "addClass", args: ["text-button"]}],
+		canvasRelativePosition: [0.89, centerY],
+		canvasRelativeSize: [0.04, 0.04]
+	});
+	addGUIComponent({
+		...nnGUIComponentDefaults,
+		id: "nn_cfg_title_activation",
+		obj: createButton(`Activation`),
+		initCalls: [{fnName: "addClass", args: ["text-button"]}],
+		canvasRelativePosition: [0.95, centerY],
+		canvasRelativeSize: [0.06, 0.04]
+	});
+	centerY -= (centerYstep);
 
 	// Input layer text
 	addGUIComponent({
@@ -495,9 +536,8 @@ resetNeuralNetworkGUI = () => {
 		canvasRelativeSize: [0.16, 0.04]
 	});
 
-	//// Left-bottom components
+	// Parameter count
 	if(nn.isCompiled){
-		// Parameter count
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: "nn_cfg_parameter_count",
@@ -508,6 +548,7 @@ resetNeuralNetworkGUI = () => {
 		});
 	}
 
+	//// Left-bottom components
 	// "Show bias" button
 	addGUIComponent({
 		...nnGUIComponentDefaults,
