@@ -90,8 +90,9 @@ resetDatasetGUI = () => {
 				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "mousePressed", args: [
 					(() => {
-						data.columns[colName].isTarget = !(data.columns[colName].isTarget);
-						resetDatasetGUI();
+						// Disabled (temporarily?)
+						// data.columns[colName].isTarget = !(data.columns[colName].isTarget);
+						// resetDatasetGUI();
 					})
 				]},
 			],

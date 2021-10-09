@@ -120,7 +120,7 @@ updateSubCanvas = () => {
 		}
 	}
 
-	// Smoothly go towards the targets in transform values
+	// Update each transform value according to their target value
 	// Translation values
 	subCanvas.transform.translate.x += ((subCanvas.transform.translate.targetX - subCanvas.transform.translate.x) * subCanvas.targetValueSpeed);
 	subCanvas.transform.translate.y += ((subCanvas.transform.translate.targetY - subCanvas.transform.translate.y) * subCanvas.targetValueSpeed);

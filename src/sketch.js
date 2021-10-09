@@ -39,9 +39,6 @@ setup = () => {
 draw = () => {
 	// Clear backgrounds
 	background(BG_COLOR);
-	Object.values(subCanvas.c).forEach(sc => {
-		sc.obj.background(BG_COLOR);
-	});
 
 	// Update GUI components
 	updateGUI();
@@ -56,12 +53,16 @@ draw = () => {
 
 		// Check if neural network should be drawn to it's subcanvas
 		if(shouldSubCanvasBeDrawn(NN_SUBCANVAS_INDEX)){
+			// Clear background
+			nnCanvas.obj.background(BG_COLOR);
+
 			nnCanvas.obj.push();
 
 			// Apply transformations to the nn canvas
 			applyTransformationsToSubCanvas(nnCanvas.obj);
 
 			// Draw network
+			nn.initDraw(nnCanvas.obj);
 			nn.draw(nnCanvas.obj, data.stageSample);
 			
 			nnCanvas.obj.pop();
@@ -71,15 +72,15 @@ draw = () => {
 	// Check if dataset should be drawn to it's subcanvas
 	let datasetCanvas = subCanvas.c[DATASET_SUBCANVAS_INDEX];
 	if(shouldSubCanvasBeDrawn(DATASET_SUBCANVAS_INDEX)){
+		// Clear background
+		datasetCanvas.obj.background(BG_COLOR);
 		datasetCanvas.obj.push();
 
 		// Apply transformations to the dataset canvas
 		applyTransformationsToSubCanvas(datasetCanvas.obj);
 
 		// Draw dataset on given subcanvas
-		drawDataset(
-			datasetCanvas.obj
-		);
+		drawDataset(datasetCanvas.obj);
 
 		datasetCanvas.obj.pop();
 	}
