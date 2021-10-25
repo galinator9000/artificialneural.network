@@ -214,10 +214,10 @@ mouseWheel = (event) => {
 
 // Processes mouse click events
 mouseClicked = (event) => {
-	// Reject event if it didn't occur on the main canvas (should return true!)
-	if(event.path[0].className !== "p5Canvas") return true;
 	// Reject event during transition (should return true!)
 	if(subCanvas.inTransition) return true;
+	// Avoid unwanted side effect
+	if((event.x === 0) || (event.y === 0)) return true;
 
 	// Get current subcanvas
 	let sc = subCanvas.c[subCanvas.currentIdx];
@@ -251,8 +251,6 @@ mouseClicked = (event) => {
 
 // Processes mouse drag events
 mouseDragged = (event) => {
-	// Reject event if it didn't occur on the main canvas (should return true!)
-	if(event.path[0].className !== "p5Canvas") return true;
 	// Reject event during transition (should return true!)
 	if(subCanvas.inTransition) return true;
 
