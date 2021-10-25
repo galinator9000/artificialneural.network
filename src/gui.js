@@ -17,7 +17,7 @@ initializeGUI = () => {
 		{
 			id: "dataset_source_text",
 			subCanvasIndex: DATASET_SUBCANVAS_INDEX,
-			obj: createButton("Dataset source"),
+			obj: createButton("Problem type"),
 			initCalls: [
 				// Behave as ghost button
 				{fnName: "addClass", args: ["text-button"]},
@@ -36,9 +36,9 @@ initializeGUI = () => {
 				{fnName: "style", args: ["z-index", "1"]},
 
 				// Add initial option for text, disable and make it selected
-				{fnName: "option", args: ["Select dataset source"]},
-				{fnName: "disable", args: ["Select dataset source"]},
-				{fnName: "selected", args: ["Select dataset source"]},
+				{fnName: "option", args: ["Select problem type"]},
+				{fnName: "disable", args: ["Select problem type"]},
+				{fnName: "selected", args: ["Select problem type"]},
 				
 				// Pick file option
 				// {fnName: "option", args: ["Pick file..."]},
@@ -138,11 +138,11 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Edit network button
+		// Reset network button
 		{
-			id: "nn_edit_button",
+			id: "nn_reset_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Edit network"),
+			obj: createButton("Reset network"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())}
@@ -158,7 +158,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.30, 0.0625],
+			canvasRelativePosition: [0.30, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -179,7 +179,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [() => {getStageSampleFromDataset()}]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.41, 0.0625],
+			canvasRelativePosition: [0.41, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -198,19 +198,21 @@ initializeGUI = () => {
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					// Predict current stage sample
-					(() => nn.predict(data.stageSample.input))
+					() => {
+						nn.predict(data.stageSample.input);
+					}
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.52, 0.0625],
+			canvasRelativePosition: [0.52, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Fit button
+		// Backpropagation button
 		{
-			id: "nn_fit_button",
+			id: "nn_backpropagation_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Train on dataset!"),
+			obj: createButton("Backpropagation"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -220,12 +222,40 @@ initializeGUI = () => {
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
-					// Fit the model on dataset
-					(() => nn.fit(data.X, data.y, {epochs: 100, batchSize: data.structure.n_samples}))
+					// Backpropagation with current sample
+					() => {
+						// data.stageSample.input,
+						// data.stageSample.output,
+					}
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.63, 0.0625],
+			canvasRelativePosition: [0.63, 0.9375],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// Apply gradients button
+		{
+			id: "nn_apply_gradients_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Apply gradients"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
+				)}
+			],
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "mousePressed", args: [
+					// Apply gradients to weights
+					() => {
+
+					}
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.74, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 	];

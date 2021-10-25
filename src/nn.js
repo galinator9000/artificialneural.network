@@ -14,7 +14,8 @@ var nnVArgs = {
 		// Animation smoothing function
 		animFn: AnimationUtils.easeOutQuad,
 		// Apply animation layer by layer or to whole network?
-		animationApplyType: (1 ? "layer" : "network")
+		animationApplyType: (1 ? "layer" : "network"),
+		inProgress: false
 	}
 };
 
@@ -46,8 +47,8 @@ var nnStructure = {
 		args: {inputShape: [1]}
 	},
 
-	// Hidden layers config
-	hiddenLayersConfig: [],
+	// Hidden layers config, add one layer initially
+	hiddenLayersConfig: [createDenseLayerConfig({activation: "linear"})],
 
 	// Output layer config
 	outputLayerConfig: createDenseLayerConfig({
@@ -619,7 +620,7 @@ resetNeuralNetworkGUI = () => {
 			id: "nn_cfg_parameter_count",
 			obj: createButton(`Total parameter count: ${nn.getTotalParameterCount().toString()}`),
 			initCalls: [{fnName: "addClass", args: ["text-button"]}],
-			canvasRelativePosition: [0.10, 0.0625],
+			canvasRelativePosition: [0.10, 0.9375],
 			canvasRelativeSize: [0.16, 0.04]
 		});
 	}
@@ -849,7 +850,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			// xAnim: smoothed x, xAnim = animFn(x)
 			xAnim: 0.0,
 			// x's target to smoothly go towards
-			xTarget: 0.0
+			xTarget: 0.0,
+			inProgress: false
 		};
 		this.layerNeurons = [];
 		this.layerWeights = [];
@@ -1004,6 +1006,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		}else{
 			this.vArgs.propagation.x = this.vArgs.propagation.xTarget;
 		}
+
+		// Update inProgress value of propagation
+		this.vArgs.propagation.inProgress = (this.vArgs.propagation.x != this.vArgs.propagation.xTarget);
 
 		//// Calculate current propagation wave point with using the animation function
 		// Apply animation layer by layer (looks nicer ;D)
@@ -1207,7 +1212,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 // Neuron object represents every output unit of the fully-connected layer, holds output value and XY position on the subcanvas.
 class Neuron{
 	value = null;
-	visualValue = 0;
+	visualValue = null;
 	isFocused = false;
 	isInput = false;
 
@@ -1223,6 +1228,9 @@ class Neuron{
 
 	// Sets visual value
 	updateVisualValue = (vArgs) => {
+		// Set to zero initially
+		if(this.visualValue === null) this.visualValue = 0.0;
+		
 		// Smoothly go towards the actual value visually
 		this.visualValue += ((this.value - this.visualValue) * vArgs.neuronVisualChangeSpeed);
 		// Set directly if it's close enough to the target
@@ -1266,7 +1274,7 @@ class Neuron{
 		canvas.pop();
 
 		// Draw the hidden/output neurons' output (activation value) as text
-		if(vArgs.nnIsCompiled){
+		if(vArgs.nnIsCompiled && (this.visualValue !== null)){
 			canvas.push();
 			canvas.fill(255);
 			canvas.stroke(255);
