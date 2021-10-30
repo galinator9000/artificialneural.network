@@ -10,13 +10,15 @@ var nnVArgs = {
 	animatePropagation: true,
 	propagation: {
 		// Width and step values (ratio value for width of the canvas) of the propagation wave
-		width: 0.005, step: 0.01,
+		width: 0.005, step: 0.0125,
 		// Animation smoothing function
 		animFn: AnimationUtils.easeOutQuad,
 		// Apply animation layer by layer or to whole network?
 		animationApplyType: (1 ? "layer" : "network"),
 		inProgress: false
-	}
+	},
+	predicted: false,
+	backpropagated: false,
 };
 
 // Creates a dense layer config object with given values
@@ -148,6 +150,20 @@ buildNeuralNetwork = () => {
 	resetNeuralNetworkGUI();
 };
 
+// Compiles neural network
+compileNeuralNetwork = () => {
+	// Compile the model with args
+	nn.compile({
+		// Call optimizer fn with learning rate
+		optimizer: tf.train[nnStructure.compileArgs.optimizer](nnStructure.compileArgs.learningRate),
+		// Direcly pass the loss fn class
+		loss: tf.losses[nnStructure.compileArgs.loss]
+	});
+	console.log("NN compiled", nnStructure);
+	// Reset NN GUI (dynamic components)
+	resetNeuralNetworkGUI();
+};
+
 // Resets dynamic NN GUI components
 resetNeuralNetworkGUI = () => {
 	// Remove all GUI components that configures NN
@@ -228,6 +244,8 @@ resetNeuralNetworkGUI = () => {
 			...nnGUIComponentDefaults,
 			id: "nn_cfg_optimizer",
 			obj: createSelect(),
+			// "Disabled" attribute for optimizer select
+			attributes: [{name: "disabled", value: "", condition: () => true}],
 			initCalls: [
 				// Add all optimizers as option
 				...(Object.entries(nnStructure.optimizerOptions).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
@@ -626,20 +644,6 @@ resetNeuralNetworkGUI = () => {
 	}
 };
 
-// Compiles neural network
-compileNeuralNetwork = () => {
-	// Compile the model with args
-	nn.compile({
-		// Call optimizer fn with learning rate
-		optimizer: tf.train[nnStructure.compileArgs.optimizer](nnStructure.compileArgs.learningRate),
-		// Direcly pass the loss fn class
-		loss: tf.losses[nnStructure.compileArgs.loss]
-	});
-	console.log("NN compiled", nnStructure);
-	// Reset NN GUI (dynamic components)
-	resetNeuralNetworkGUI();
-};
-
 // SequentialNeuralNetwork: Built on top of tf.Sequential class, for fully visualizing it
 class SequentialNeuralNetwork extends tf.Sequential{
 	// vArgs holds our custom values (for visual purposes) for our class
@@ -698,9 +702,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.isCompiled = true;
 		this.summary();
 	};
-	
-	// Override predict method
-	predict = (X) => {
+
+	//// Feed-forward / Backpropagation / Applying gradient functionalities
+	// Feed-forward method
+	feedForward = (X) => {
 		// If provided more than one sample, predict it and simply return, no need to visualize
 		if(X.shape[0] > 1){
 			// Forward-propagation with given tensor
@@ -738,27 +743,100 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagation.xAnim = 0.0;
 		this.vArgs.propagation.xTarget = 1.0;
 
+		// Set necessary values
+		this.vArgs.predicted = true;
+		this.vArgs.backpropagated = false;
+
 		// Log final output
 		console.log("Prediction", layerOutput.toString());
 	};
-	
-	// Override fit method
-	fit = (X, y, args) => {
-		super.fit(X, y, args).then(({history}) => {
-			// Update all Weight objects' values
-			this.updateAllWeights();
 
-			// Weight values changed, call it!
-			this.onChangeWeights(true);
+	// Backpropagate method
+	backpropagate = (X, y) => {
+		// Calculate & assign gradient values to Weight objects
+		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
+			let fromLayerNeurons = this.layerNeurons[layerIndex];
+			let toLayerNeurons = this.layerNeurons[layerIndex+1];
 
-			// Fire the neurons backward ;)
-			this.vArgs.propagation.x = 1.0;
-			this.vArgs.propagation.xAnim = 1.0;
-			this.vArgs.propagation.xTarget = 0.0;
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				toLayerNeurons = toLayerNeurons.slice(1);
+			};
 			
-			// Log loss output
-			console.log("Loss", history.loss[history.loss.length-1]);
+			// Get the 2D gradient tensor of the layer, turn it into a nested-list
+			let layerGradientMatrix = this.getLayerGradientMatrix(X, y, layerIndex+1, this.vArgs.showBiasNeurons).arraySync();
+
+			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
+				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
+					// Update gradient of Weight object
+					let newWeightGradientValue = layerGradientMatrix[fromNeuronIndex][toNeuronIndex];
+					this.layerWeights[layerIndex][fromNeuronIndex][toNeuronIndex].gradientValue = newWeightGradientValue;
+				});
+			});
 		});
+
+		// Fire the neurons backward ;)
+		this.vArgs.propagation.x = 1.0;
+		this.vArgs.propagation.xAnim = 1.0;
+		this.vArgs.propagation.xTarget = 0.0;
+
+		// Set necessary values
+		this.vArgs.backpropagated = true;
+
+		// Log
+		console.log("Backpropagation");
+	};
+
+	// Reset gradients method
+	resetGradients = () => {
+		// Reset gradient values of Weight objects
+		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
+			let fromLayerNeurons = this.layerNeurons[layerIndex];
+			let toLayerNeurons = this.layerNeurons[layerIndex+1];
+
+			// Check if next layer uses bias
+			let nextLayerUsesBias = (this.layers[layerIndex+2] && (this.layers[layerIndex+2].useBias === true));
+			// If next layer is using bias, there's no weight connected to the next layer's first neuron from this layer, ignore it!!
+			if(nextLayerUsesBias && this.vArgs.showBiasNeurons){
+				toLayerNeurons = toLayerNeurons.slice(1);
+			};
+			
+			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
+				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
+					// Reset gradient of Weight object
+					this.layerWeights[layerIndex][fromNeuronIndex][toNeuronIndex].gradientValue = null;
+					this.layerWeights[layerIndex][fromNeuronIndex][toNeuronIndex].gradientVisualValue = null;
+				});
+			});
+		});
+	};
+
+	// Apply gradients method
+	applyGradients = (X, y) => {
+		// Calculate gradients for each weight
+		let {value, grads} = this.optimizer.computeGradients(
+			() => this.loss(
+				this.predict(X),
+				y
+			)
+		);
+
+		// Apply gradients to weights
+		this.optimizer.applyGradients(grads);
+
+		// Update all Weight objects' values
+		this.updateAllWeights();
+		// Weight values changed, call it!
+		this.onChangeWeights(true);
+
+		// Set necessary values
+		this.vArgs.predicted = false;
+		this.vArgs.backpropagated = false;
+
+		// Log
+		console.log("Applied gradients");
 	};
 
 	//// Custom methods
@@ -873,6 +951,33 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		let bias = tf.expandDims(w[1], 0);
 
 		// Concat bias&kernel values for getting the final layer weight matrix
+		return tf.concat([bias, kernel], 0);
+	};
+
+	// Gets gradient matrix of a dense layer, with given data
+	getLayerGradientMatrix = (X, y, layerIdx, withBias) => {
+		// Calculate gradient with given input/target values
+		let {value, grads} = this.optimizer.computeGradients(
+			() => this.loss(
+				this.predict(X),
+				y
+			),
+			this.layers[layerIdx].getWeights()
+		);
+		// Get all gradient values of the layer (list)
+		let w = Object.values(grads);
+
+		// Get kernel
+		let kernel = w[0];
+		// Directly return the kernel if there's no bias or bias not wanted
+		if((w.length === 1) || (!withBias)){
+			return kernel;
+		}
+
+		// Expanding bias vector for concatenation. 1D to 2D
+		let bias = tf.expandDims(w[1], 0);
+
+		// Concat bias&kernel values for getting the final layer gradient matrix
 		return tf.concat([bias, kernel], 0);
 	};
 
@@ -1007,8 +1112,16 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			this.vArgs.propagation.x = this.vArgs.propagation.xTarget;
 		}
 
-		// Update inProgress value of propagation
-		this.vArgs.propagation.inProgress = (this.vArgs.propagation.x != this.vArgs.propagation.xTarget);
+		//// Update inProgress value of propagation
+		let nextInProgress = (this.vArgs.propagation.x != this.vArgs.propagation.xTarget);
+		let prevInProgress = this.vArgs.propagation.inProgress;
+
+		// Propagation done event
+		if(!nextInProgress && prevInProgress){}
+		// Propagation started event
+		if(nextInProgress && !prevInProgress){}
+
+		this.vArgs.propagation.inProgress = nextInProgress;
 
 		//// Calculate current propagation wave point with using the animation function
 		// Apply animation layer by layer (looks nicer ;D)
@@ -1301,6 +1414,9 @@ class Neuron{
 class Weight{
 	value = null;
 	visualValue = null;
+	gradientValue = null;
+	gradientVisualValue = null;
+
 	isFocused = false;
 
 	constructor(from, to, value){
@@ -1318,6 +1434,9 @@ class Weight{
 		if(abs(this.value - this.visualValue) < 0.001){
 			this.visualValue = this.value;
 		}
+
+		// Update visual gradient value
+		this.gradientVisualValue = this.gradientValue;
 	};
 
 	// Gets called every frame
@@ -1376,7 +1495,7 @@ class Weight{
 		else{
 			// Text value gap center point and width
 			let gapCenter = 0.50;
-			// Adjust gapcenter value for drawing text values in a circular path
+			// Adjust gapcenter value for drawing text values in a "circular" path
 			if(this.from.isFocused) gapCenter = 0.70;
 			if(this.to.isFocused) gapCenter = 0.30;
 
@@ -1411,16 +1530,39 @@ class Weight{
 					createVector(toX-fromX, toY-fromY).normalize()
 				)
 			);
-			let vText = this.visualValue.toFixed(2);
-			canvas.textSize(
-				calculateTextSize(
-					"    ",
-					// Get width&height as distance between gap endpoints
-					(gapEndX-gapStartX),
-					(gapEndY-gapStartY)
-				)
+
+			// Calculate text size
+			let textSize = calculateTextSize(
+				"    ",
+				// Get width&height as distance between gap endpoints
+				(gapEndX-gapStartX),
+				(gapEndY-gapStartY)
 			);
+			canvas.textSize(textSize);
+
+			// Weight value
+			let vText = this.visualValue.toFixed(2);
 			canvas.text(vText, 0, 0);
+
+			// Gradient value
+			if(this.gradientVisualValue !== null){
+				// Draw below real value, with smaller text size
+				canvas.translate(0, textSize);
+				canvas.textSize(textSize*0.66);
+
+				// Red/Green
+				if(this.gradientVisualValue > 0){
+					canvas.fill(0, 192, 0);
+					canvas.stroke(0, 192, 0);
+				}
+				else if(this.gradientVisualValue < 0){
+					canvas.fill(192, 0, 0);
+					canvas.stroke(192, 0, 0);
+				}
+				let gvText = this.gradientVisualValue.toFixed(2);
+				canvas.text(gvText, 0, 0);
+			}
+
 			canvas.pop();
 		}
 

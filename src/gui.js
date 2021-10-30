@@ -154,6 +154,13 @@ initializeGUI = () => {
 						// Reset & rebuild the network (with same configuration)
 						resetNeuralNetwork();
 						buildNeuralNetwork();
+
+						// Reset values
+						nn.vArgs.propagation.x = 0.0;
+						nn.vArgs.propagation.xAnim = 0.0;
+						nn.vArgs.propagation.xTarget = 0.0;
+						nn.vArgs.predicted = false;
+						nn.vArgs.backpropagated = false;
 					})
 				]},
 			],
@@ -170,36 +177,49 @@ initializeGUI = () => {
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				// Get random sample from dataset for stage
-				{fnName: "mousePressed", args: [() => {getStageSampleFromDataset()}]},
+				{fnName: "mousePressed", args: [() => {
+					getStageSampleFromDataset();
+
+					// Reset values
+					nn.vArgs.predicted = false;
+					nn.vArgs.backpropagated = false;
+
+					// Reset gradient values
+					nn.resetGradients();
+				}]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.41, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Predict button
+		// Feed forward button
 		{
-			id: "nn_predict_button",
+			id: "nn_feed_forward_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
 			obj: createButton("Predict"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
-					// Predict current stage sample
+					// Feed forward current stage sample
 					() => {
-						nn.predict(data.stageSample.input);
+						nn.feedForward(data.stageSample.input);
 					}
 				]},
 			],
@@ -208,24 +228,26 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Backpropagation button
+		// Backpropagate button
 		{
-			id: "nn_backpropagation_button",
+			id: "nn_backpropagate_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Backpropagation"),
+			obj: createButton("Backpropagate"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (!nn.vArgs.predicted)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
-					// Backpropagation with current sample
+					// Backpropagate current stage sample
 					() => {
-						// data.stageSample.input,
-						// data.stageSample.output,
+						nn.backpropagate(data.stageSample.input, data.stageSample.target);
 					}
 				]},
 			],
@@ -242,15 +264,19 @@ initializeGUI = () => {
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
-					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive()) || (nn && !nn.isCompiled)
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (!nn.vArgs.predicted || !nn.vArgs.backpropagated)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
-					// Apply gradients to weights
+					// Apply gradients to weights, reset gradient values of Weight objects
 					() => {
-
+						nn.applyGradients(data.stageSample.input, data.stageSample.target);
+						nn.resetGradients();
 					}
 				]},
 			],
