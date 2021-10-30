@@ -777,6 +777,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			});
 		});
 
+		// Gradient values changed
+		this.onChangeWeights(true);
+
 		// Fire the neurons backward ;)
 		this.vArgs.propagation.x = 1.0;
 		this.vArgs.propagation.xAnim = 1.0;
@@ -1009,15 +1012,39 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Should be called when Weight values change
 	onChangeWeights = (withRealValues) => {
-		// Get all weights in a 1D tensor
+		//// Get all weights in a 1D tensor
 		let allWeights = (withRealValues) ? (this.getAllWeights(this.vArgs.showBiasNeurons).arraySync()) : [1, 1];
-
 		// Update weight stats
 		this.vArgs.weightsStats = {
 			min: Math.min(...allWeights),
 			max: Math.max(...allWeights),
 			mean: (arrSum(allWeights) / allWeights.length)
 		};
+		this.vArgs.weightsStats.wMax = Math.max(
+			Math.abs(this.vArgs.weightsStats.min),
+			Math.abs(this.vArgs.weightsStats.max)
+		);
+
+		//// Get all gradients in an array
+		let allGradients = [];
+		this.layerWeights.forEach((_, layerIndex) => {
+			this.layerWeights[layerIndex].forEach((_, fromNeuronIndex) => {
+				this.layerWeights[layerIndex][fromNeuronIndex].forEach((_, toNeuronIndex) => {
+					allGradients.push(this.layerWeights[layerIndex][fromNeuronIndex][toNeuronIndex].gradientValue);
+				});
+			});
+		});
+
+		// Update gradient stats
+		this.vArgs.gradientStats = {
+			min: Math.min(...allGradients),
+			max: Math.max(...allGradients),
+			mean: (arrSum(allGradients) / allGradients.length)
+		};
+		this.vArgs.gradientStats.gMax = Math.max(
+			Math.abs(this.vArgs.gradientStats.min),
+			Math.abs(this.vArgs.gradientStats.max)
+		);
 	};
 
 	// Should be called when Neuron values change
@@ -1033,6 +1060,10 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			max: Math.max(...allOutputs),
 			mean: (arrSum(allOutputs) / allOutputs.length)
 		};
+		this.vArgs.neuronStats.nMax = Math.max(
+			Math.abs(this.vArgs.neuronStats.min),
+			Math.abs(this.vArgs.neuronStats.max)
+		);
 	};
 
 	// Gets all weights in a 1D tensor
@@ -1372,32 +1403,35 @@ class Neuron{
 	};
 
 	draw = (canvas, vArgs) => {
+		//// Calculate color value
+		let colorValue;
+
+		// // Real weight value
+		// if(vArgs.nnIsCompiled && (this.visualValue !== null)){
+		// 	let ratio = Math.min(((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) + 0.05), 1.0);
+		// 	colorValue = ratio * 255;
+		// }
+		// // Dummy weight
+		// else{
+		// 	colorValue = 255;
+		// }
+
+		// Constant color for neuron text&outline
+		colorValue = 255;
+
 		// Neuron circle
 		canvas.push();
 		canvas.fill(BG_COLOR);
-		canvas.stroke(255);
-		canvas.strokeWeight(
-			(this.isFocused && vArgs.focusedAnyNeuron)
-			// When focused
-			? 2
-			// When isn't
-			: 1
-		);
+		canvas.stroke(colorValue);
+		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? 2 : 1);
 		canvas.circle(this.x, this.y, Neuron.r*2);
 		canvas.pop();
 
 		// Draw the hidden/output neurons' output (activation value) as text
 		if(vArgs.nnIsCompiled && (this.visualValue !== null)){
 			canvas.push();
-			canvas.fill(255);
-			canvas.stroke(255);
-			canvas.strokeWeight(
-				(this.isFocused && vArgs.focusedAnyNeuron)
-				// When focused
-				? 1
-				// When isn't
-				: 1
-			);
+			canvas.fill(colorValue);
+			canvas.stroke(colorValue);
 
 			let vText = this.visualValue.toFixed(2);
 			canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
@@ -1471,24 +1505,30 @@ class Weight{
 		let toY = this.to.y;
 		let gapStartX, gapStartY, gapEndX, gapEndY;
 
+		//// Calculate color value
+		let colorValue;
+		// Real weight value
+		if(vArgs.nnIsCompiled) colorValue = (Math.abs(this.visualValue) / vArgs.weightsStats.wMax) * 255;
+		// Dummy weight
+		else colorValue = 255;
+
 		// Draw weight between neurons (from -> to) as a line
 		if(!writeCarriedValue){
+			// Gradient line
+			// if(this.gradientVisualValue !== null){
+			// 	let gradientColorValue = (Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax) * 255;
+			// 	canvas.push();
+			// 	if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 128);
+			// 	else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 128);
+			// 	canvas.strokeWeight(3);
+			// 	canvas.line(fromX, fromY, toX, toY);
+			// 	canvas.pop();
+			// }
+
+			// Main weight line
 			canvas.push();
-			canvas.fill(255);
-			canvas.stroke(255);
-			canvas.strokeWeight(
-				this.isFocused
-				// When focused
-				? 2
-				// When isn't
-				: 1
-			);
-			canvas.line(
-				// from (neuron)
-				fromX, fromY,
-				// to (neuron)
-				toX, toY
-			);
+			canvas.stroke(colorValue);
+			canvas.line(fromX, fromY, toX, toY);
 			canvas.pop();
 		}
 		// Draw the carried value as text between the connection if focused
@@ -1509,18 +1549,13 @@ class Weight{
 
 			// Draw the line with a gap on the center
 			canvas.push();
-			canvas.fill(255);
-			canvas.stroke(255);
-			canvas.strokeWeight(1);
+			canvas.stroke(colorValue);
 			canvas.line(fromX, fromY, gapStartX, gapStartY);
 			canvas.line(gapEndX, gapEndY, toX, toY);
 			canvas.pop();
 
-			// Draw the value as text on the center of the gap with rotating accordingly
+			//// Draw the value as text on the center of the gap with rotating accordingly
 			canvas.push();
-			canvas.fill(255);
-			canvas.stroke(255);
-			canvas.strokeWeight(1);
 			canvas.translate(
 				lerp(fromX, toX, gapCenter),
 				lerp(fromY, toY, gapCenter)
@@ -1538,15 +1573,20 @@ class Weight{
 				(gapEndX-gapStartX),
 				(gapEndY-gapStartY)
 			);
-			canvas.textSize(textSize);
 
-			// Weight value
+			/// Weight value
+			canvas.push();
+			canvas.fill(255);
+			canvas.stroke(255);
+			canvas.textSize(textSize);
 			let vText = this.visualValue.toFixed(2);
 			canvas.text(vText, 0, 0);
+			canvas.pop();
 
-			// Gradient value
+			/// Gradient value
 			if(this.gradientVisualValue !== null){
 				// Draw below real value, with smaller text size
+				canvas.push();
 				canvas.translate(0, textSize);
 				canvas.textSize(textSize*0.66);
 
@@ -1561,6 +1601,7 @@ class Weight{
 				}
 				let gvText = this.gradientVisualValue.toFixed(2);
 				canvas.text(gvText, 0, 0);
+				canvas.pop();
 			}
 
 			canvas.pop();
@@ -1602,7 +1643,7 @@ class Weight{
 
 		// Draw the highlighting line!
 		canvas.push();
-		canvas.stroke(255);
+		canvas.stroke(colorValue);
 		canvas.strokeWeight(3);
 		canvas.line(
 			// from (highlighter line start point)
