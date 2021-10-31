@@ -69,7 +69,7 @@ button:disabled, button[disabled]{
 	justify-content: flex-end;
 	align-content: flex-end;
 	position: fixed;
-	width: auto;
+	width: 26%;
 	height: 10%;
 }
 
