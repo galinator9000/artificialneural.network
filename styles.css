@@ -67,9 +67,8 @@ button:disabled, button[disabled]{
 	flex-direction: row;
 	justify-content: flex-end;
 	align-content: flex-end;
-
-	/* Position, top-right */
-	position: absolute;
+	z-index: 1;
+	position: fixed;
 	width: fit-content;
 	height: 10%;
 }
