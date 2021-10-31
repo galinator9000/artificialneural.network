@@ -62,14 +62,14 @@ button:disabled, button[disabled]{
 
 /* Top right link div */
 .top-links {
+	z-index: 1;
 	display: flex;
 	flex: 1;
 	flex-direction: row;
 	justify-content: flex-end;
 	align-content: flex-end;
-	z-index: 1;
 	position: fixed;
-	width: fit-content;
+	width: auto;
 	height: 10%;
 }
 
