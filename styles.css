@@ -64,13 +64,23 @@ button:disabled, button[disabled]{
 .top-links {
 	z-index: 1;
 	display: flex;
+	position: fixed;
 	flex: 1;
 	flex-direction: row;
 	justify-content: flex-end;
 	align-content: flex-end;
-	position: fixed;
-	width: 26%;
-	height: 10%;
+	align-items: center;
+	margin: 1%;
+
+	width: 20%;
+		-webkit-width: 20%;
+		-moz-width: 20%;
+	height: auto;
+		-webkit-height: auto;
+		-moz-height: auto;
+	appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
 }
 
 * {
