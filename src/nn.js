@@ -20,8 +20,8 @@ var nnVArgs = {
 	predicted: false,
 	backpropagated: false,
 	autoTrain: {
-		enabled: false,
-		interval: null
+		isEnabled: false,
+		inProgress: false,
 	}
 };
 
@@ -68,7 +68,7 @@ var nnStructure = {
 	compileArgs: {
 		optimizer: "sgd",
 		loss: "meanSquaredError",
-		learningRate: 0.0005
+		learningRate: 0.001
 	},
 
 	//// Options
@@ -710,6 +710,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	//// Feed-forward / Backpropagation / Applying gradient functionalities
 	// Feed-forward method
 	feedForward = (X) => {
+		if(this.vArgs.propagation.inProgress || (this.vArgs.animatePropagation && this.vArgs.propagation.inProgress)) return false;
+
 		// If provided more than one sample, predict it and simply return, no need to visualize
 		if(X.shape[0] > 1){
 			// Forward-propagation with given tensor
@@ -746,6 +748,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagation.x = 0.0;
 		this.vArgs.propagation.xAnim = 0.0;
 		this.vArgs.propagation.xTarget = 1.0;
+		this.vArgs.propagation.inProgress = true;
 
 		// Set necessary values
 		this.vArgs.predicted = true;
@@ -753,10 +756,13 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Log final output
 		console.log("Prediction", layerOutput.toString());
+		return true;
 	};
 
 	// Backpropagate method
 	backpropagate = (X, y) => {
+		if(this.vArgs.propagation.inProgress || (this.vArgs.animatePropagation && this.vArgs.propagation.inProgress)) return false;
+
 		// Calculate & assign gradient values to Weight objects
 		[...Array(this.layerNeurons.length-1).keys()].forEach((layerIndex) => {
 			let fromLayerNeurons = this.layerNeurons[layerIndex];
@@ -788,12 +794,14 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagation.x = 1.0;
 		this.vArgs.propagation.xAnim = 1.0;
 		this.vArgs.propagation.xTarget = 0.0;
+		this.vArgs.propagation.inProgress = true;
 
 		// Set necessary values
 		this.vArgs.backpropagated = true;
 
 		// Log
 		console.log("Backpropagation");
+		return true;
 	};
 
 	// Reset gradients method
@@ -822,6 +830,8 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 	// Apply gradients method
 	applyGradients = (X, y) => {
+		if(this.vArgs.propagation.inProgress || (this.vArgs.animatePropagation && this.vArgs.propagation.inProgress)) return false;
+		
 		// Calculate gradients for each weight
 		let {value, grads} = this.optimizer.computeGradients(
 			() => this.loss(
@@ -844,6 +854,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		// Log
 		console.log("Applied gradients");
+		return true;
 	};
 
 	//// Custom methods

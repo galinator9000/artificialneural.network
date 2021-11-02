@@ -17,8 +17,8 @@ var buttonEvents = {
 		nn.vArgs.predicted = false;
 		nn.vArgs.backpropagated = false;
 		// Auto train
-		nn.vArgs.autoTrain.enabled = false;
-		clearInterval(nn.vArgs.autoTrain.interval);
+		nn.vArgs.autoTrain.isEnabled = false;
+		nn.vArgs.autoTrain.inProgress = false;
 	},
 
 	// Gets random sample from dataset for stage
@@ -35,20 +35,69 @@ var buttonEvents = {
 
 	// Feed forwards current stage sample
 	feedForward: () => {
-		nn.feedForward(data.stageSample.input);
+		return nn.feedForward(data.stageSample.input);
 	},
 
 	// Backpropagates current stage sample
 	backpropagate: () => {
-		nn.backpropagate(data.stageSample.input, data.stageSample.target);
+		return nn.backpropagate(data.stageSample.input, data.stageSample.target);
 	},
 
 	// Applies gradients to weights, resets gradient values of Weight objects
 	applyGradient: () => {
-		nn.applyGradients(data.stageSample.input, data.stageSample.target);
-		nn.resetGradients();
+		if(nn.applyGradients(data.stageSample.input, data.stageSample.target)){
+			nn.resetGradients();
+			return true;
+		}
+		return false;
 	},
 }
+
+//// Define auto training events
+buttonEvents.disableAutoTraining = () => {
+	if(nn.vArgs.autoTrain.inProgress) return;
+	nn.vArgs.autoTrain.isEnabled = false;
+	nn.vArgs.autoTrain.clicked = false;
+};
+buttonEvents.enableAutoTraining = () => {
+	if(nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled) return;
+	nn.vArgs.autoTrain.isEnabled = true;
+
+	// Set sleep time
+	let sleepMs;
+	if(nn.vArgs.animatePropagation) sleepMs = 500;
+	else sleepMs = 150;
+
+	// Run immediately
+	(async () => {
+		do{
+			nn.vArgs.autoTrain.inProgress = true;
+
+			// Feed forward
+			while(!buttonEvents.feedForward() || !nn.vArgs.autoTrain.isEnabled){
+				await sleep(sleepMs);
+			}
+			if(nn.vArgs.autoTrain.isEnabled) await sleep(sleepMs*4);
+
+			// Backpropagate
+			while(!buttonEvents.backpropagate() || !nn.vArgs.autoTrain.isEnabled){
+				await sleep(sleepMs);
+			}
+			if(nn.vArgs.autoTrain.isEnabled) await sleep(sleepMs*4);
+
+			// Apply gradient
+			while(!buttonEvents.applyGradient() || !nn.vArgs.autoTrain.isEnabled){
+				await sleep(sleepMs);
+			}
+
+			// Done.
+			nn.vArgs.autoTrain.inProgress = false;
+			if(nn.vArgs.autoTrain.isEnabled) await sleep(1000);
+		}while(nn.vArgs.autoTrain.isEnabled);
+	})();
+
+	nn.vArgs.autoTrain.clicked = false;
+};
 
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
@@ -192,7 +241,12 @@ initializeGUI = () => {
 			obj: createButton("Reset network"),
 			attributes: [
 				// "Disabled" attribute for button
-				{name: "disabled", value: "", condition: () => (!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())}
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
+				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
@@ -214,7 +268,7 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (nn && nn.vArgs.autoTrain.enabled)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
 				)}
 			],
 			initCalls: [
@@ -237,7 +291,7 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (nn && nn.vArgs.autoTrain.enabled)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
 				)}
 			],
 			initCalls: [
@@ -263,7 +317,7 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (nn && nn.vArgs.autoTrain.enabled)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
 				)}
 			],
 			initCalls: [
@@ -289,7 +343,7 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (nn && nn.vArgs.autoTrain.enabled)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
 				)}
 			],
 			initCalls: [
@@ -305,46 +359,38 @@ initializeGUI = () => {
 		},
 
 		// Auto train
-		// {
-		// 	id: "nn_auto_train_button",
-		// 	subCanvasIndex: NN_SUBCANVAS_INDEX,
-		// 	obj: createButton("Auto Train"),
-		// 	attributes: [
-		// 		// "Disabled" attribute for button
-		// 		{name: "disabled", value: "", condition: () => (
-		// 			(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
-		// 			|| (nn && !nn.isCompiled)
-		// 			|| (nn && nn.vArgs.propagation.inProgress)
-		// 		)}
-		// 	],
-		// 	initCalls: [
-		// 		{fnName: "style", args: ["z-index", "1"]},
-		// 		{fnName: "mousePressed", args: [
-		// 			() => {
-		// 				// Deactivate training loop
-		// 				if(nn && nn.vArgs.autoTrain.enabled){
-		// 					// if(nn.vArgs.autoTrain.interval !== null) clearInterval(nn.vArgs.autoTrain.interval);
-		// 				}
-		// 				// Activate training loop
-		// 				else{
-		// 					// nn.vArgs.autoTrain.interval = setInterval(
-		// 					// 	async () => {
-		// 					// 		await sleep(100);
-		// 					// 		console.log("bruh");
-		// 					// 		await sleep(200);
-		// 					// 		console.log("bruh2");
-		// 					// 	},
-		// 					// 	500
-		// 					// );
-		// 				}
-		// 				nn.vArgs.autoTrain.enabled = !nn.vArgs.autoTrain.enabled;
-		// 			}
-		// 		]},
-		// 	],
-		// 	showCond: () => ((nn && nn.isCompiled)),
-		// 	canvasRelativePosition: [0.63, 0.9375],
-		// 	canvasRelativeSize: [0.10, 0.06]
-		// },
+		{
+			id: "nn_auto_train_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Auto Train"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.clicked))
+				)}
+			],
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "mousePressed", args: [
+					() => {
+						nn.vArgs.autoTrain.clicked = true;
+
+						// Activate/Deactivate training loop
+						if(nn && nn.vArgs.autoTrain.isEnabled){
+							buttonEvents.disableAutoTraining();
+						}else{
+							buttonEvents.enableAutoTraining();
+						}
+					}
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled) && !nn.vArgs.autoTrain.clicked),
+			canvasRelativePosition: [0.63, 0.9375],
+			canvasRelativeSize: [0.10, 0.06]
+		},
 	];
 
 	// Call init calls of GUI components
