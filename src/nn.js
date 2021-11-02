@@ -22,15 +22,19 @@ var nnVArgs = {
 	autoTrain: {
 		isEnabled: false,
 		inProgress: false,
-	}
+	},
+	status: {
+		text: "",
+		defaultText: "",
+	},
 };
 
 // Creates a dense layer config object with given values
 createDenseLayerConfig = (denseArgs={}) => ({
 	class: tf.layers.dense,
 	args: {
-		// Min 4, max 9 neurons, if not specified
-		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 9)),
+		// Min 4, max 12 neurons, if not specified
+		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 12)),
 		// Use bias if not specified
 		useBias: ((denseArgs.useBias) ? denseArgs.useBias : true),
 		// No activation, if not specified
@@ -54,7 +58,10 @@ var nnStructure = {
 	},
 
 	// Hidden layers config, add one layer initially
-	hiddenLayersConfig: [createDenseLayerConfig({activation: "linear"})],
+	hiddenLayersConfig: [
+		createDenseLayerConfig({activation: "linear"}),
+		createDenseLayerConfig({activation: "linear"})
+	],
 
 	// Output layer config
 	outputLayerConfig: createDenseLayerConfig({
@@ -68,7 +75,7 @@ var nnStructure = {
 	compileArgs: {
 		optimizer: "sgd",
 		loss: "meanSquaredError",
-		learningRate: 0.001
+		learningRate: 0.0001
 	},
 
 	//// Options
@@ -211,7 +218,7 @@ resetNeuralNetworkGUI = () => {
 		// Loss function selector
 		addGUIComponent({
 			...nnGUIComponentDefaults,
-			id: "nn_cfg_loss",
+			id: "nn_cfg_cost",
 			obj: createSelect(),
 			initCalls: [
 				// Add all losses as option
@@ -223,7 +230,7 @@ resetNeuralNetworkGUI = () => {
 				{fnName: "changed", args: [
 					(event) => {
 						// Get new value and set config
-						let value = getGUIComponentWithID("nn_cfg_loss").obj.value();
+						let value = getGUIComponentWithID("nn_cfg_cost").obj.value();
 						nnStructure.compileArgs.loss = value;
 						// Rebuild the network?
 						// buildNeuralNetwork();
@@ -233,11 +240,11 @@ resetNeuralNetworkGUI = () => {
 			canvasRelativePosition: [0.71, 0.96],
 			canvasRelativeSize: [0.12, 0.04]
 		});
-		// Loss text
+		// Cost function text
 		addGUIComponent({
 			...nnGUIComponentDefaults,
-			id: "nn_cfg_title_loss",
-			obj: createButton(`Loss`),
+			id: "nn_cfg_title_cost",
+			obj: createButton(`Cost function`),
 			initCalls: [{fnName: "addClass", args: ["text-button"]}],
 			canvasRelativePosition: [0.71, 0.92],
 			canvasRelativeSize: [0.12, 0.04]
@@ -562,7 +569,7 @@ resetNeuralNetworkGUI = () => {
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: "nn_cfg_show_bias_neurons",
-			obj: createButton(`Show bias: ${nnVArgs.showBiasNeurons ? "Enabled" : "Disabled"}`),
+			obj: createButton(nnVArgs.showBiasNeurons ? "Don't show bias" : "Show bias"),
 			initCalls: [
 				{fnName: "addClass", args: ["button-bottom-border"]},
 				// mousePressed event
@@ -582,7 +589,7 @@ resetNeuralNetworkGUI = () => {
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: "nn_cfg_animate_propagation",
-			obj: createButton(`Animate: ${nnVArgs.animatePropagation ? "Enabled" : "Disabled"}`),
+			obj: createButton(nnVArgs.animatePropagation ? "Disable animation" : "Enable animation"),
 			initCalls: [
 				{fnName: "addClass", args: ["button-bottom-border"]},
 				// mousePressed event
@@ -602,7 +609,7 @@ resetNeuralNetworkGUI = () => {
 		addGUIComponent({
 			...nnGUIComponentDefaults,
 			id: "nn_cfg_apply_limits",
-			obj: createButton(`Apply limits: ${nnStructure.applyLimits ? "Enabled" : "Disabled"}`),
+			obj: createButton(nnStructure.applyLimits ? "Disable limits" : "Enable limits"),
 			initCalls: [
 				{fnName: "addClass", args: ["button-bottom-border"]},
 				// mousePressed event
@@ -749,6 +756,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagation.xAnim = 0.0;
 		this.vArgs.propagation.xTarget = 1.0;
 		this.vArgs.propagation.inProgress = true;
+		this.vArgs.status.text = "Prediction >>";
 
 		// Set necessary values
 		this.vArgs.predicted = true;
@@ -780,8 +788,9 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			fromLayerNeurons.forEach((fromNeuron, fromNeuronIndex) => {
 				toLayerNeurons.forEach((toNeuron, toNeuronIndex) => {
+					// Invert real value for descent value
+					let newWeightGradientValue = -layerGradientMatrix[fromNeuronIndex][toNeuronIndex];
 					// Update gradient of Weight object
-					let newWeightGradientValue = layerGradientMatrix[fromNeuronIndex][toNeuronIndex];
 					this.layerWeights[layerIndex][fromNeuronIndex][toNeuronIndex].gradientValue = newWeightGradientValue;
 				});
 			});
@@ -795,6 +804,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		this.vArgs.propagation.xAnim = 1.0;
 		this.vArgs.propagation.xTarget = 0.0;
 		this.vArgs.propagation.inProgress = true;
+		this.vArgs.status.text = "<< Backpropagation";
 
 		// Set necessary values
 		this.vArgs.backpropagated = true;
@@ -1163,7 +1173,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		let prevInProgress = this.vArgs.propagation.inProgress;
 
 		// Propagation done event
-		if(!nextInProgress && prevInProgress){}
+		if(!nextInProgress && prevInProgress){
+			// Reset status text after some time
+			setTimeout(
+				() => {
+					this.vArgs.status.text = this.vArgs.status.defaultText;
+				},
+				250
+			)
+		}
 		// Propagation started event
 		if(nextInProgress && !prevInProgress){}
 
@@ -1298,6 +1316,20 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 		//// Draw sample input/targets to the side of the network
 		if(this.isCompiled && (sample && sample.input && sample.target)){
+			// Draw the status text
+			canvas.push();
+			canvas.fill(255);
+			canvas.translate(
+				((this.vArgs.propagation.xToCanvasPosX(0) + this.vArgs.propagation.xToCanvasPosX(1)) / 2),
+				(this.vArgs.layersTopRowY - (this.vArgs.perNeuronY * (this.layers.length-1)))
+			);
+			canvas.textSize(Neuron.r);
+			canvas.text(
+				this.vArgs.status.text,
+				0, 0
+			);
+			canvas.pop();
+
 			// Get the sample (currently tensor) in a nested-list
 			let inputVec = sample.input.arraySync()[0];
 			let targetVec = sample.target.arraySync()[0];
@@ -1428,16 +1460,14 @@ class Neuron{
 		let colorValue;
 
 		// // Real output value
-		// if(vArgs.nnIsCompiled && (this.visualValue !== null)){
-		// 	let ratio = Math.min(((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) + 0.15), 1.0);
-		// 	colorValue = ratio * 255;
-		// }
-		// // Dummy output
-		// else{
-		// 	colorValue = 255;
-		// }
-		// Constant color for neuron text&outline
-		colorValue = 255;
+		if(vArgs.nnIsCompiled && (this.visualValue !== null)){
+			let ratio = Math.min((((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) * 0.67) + 0.33), 1.0);
+			colorValue = ratio * 255;
+		}
+		// Dummy output
+		else{
+			colorValue = 255;
+		}
 
 		// Neuron circle
 		canvas.push();
@@ -1534,16 +1564,19 @@ class Weight{
 
 		// Draw weight between neurons (from -> to) as a line
 		if(!writeCarriedValue){
-			// Gradient line
-			// if(this.gradientVisualValue !== null){
-			// 	let gradientColorValue = (Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax) * 255;
-			// 	canvas.push();
-			// 	if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 128);
-			// 	else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 128);
-			// 	canvas.strokeWeight(3);
-			// 	canvas.line(fromX, fromY, toX, toY);
-			// 	canvas.pop();
-			// }
+			// Draw gradient line (if gradient value exists)
+			if(this.gradientVisualValue !== null && Math.abs(this.gradientVisualValue).toFixed(2) !== "0.00"){
+				canvas.push();
+
+				// Red/Green interpolation
+				let gradientColorValue = (Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax) * 255;
+				if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 192);
+				else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 192);
+
+				canvas.strokeWeight(3);
+				canvas.line(fromX, fromY, toX, toY);
+				canvas.pop();
+			}
 
 			// Main weight line
 			canvas.push();

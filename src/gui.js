@@ -144,6 +144,8 @@ initializeGUI = () => {
 
 				// All constant dataset source options
 				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
+				// First problem type selected
+				{fnName: "selected", args: [Object.values(csvURLs)[0]]},
 
 				// onChange event
 				{fnName: "changed", args: [
@@ -360,9 +362,9 @@ initializeGUI = () => {
 
 		// Auto train
 		{
-			id: "nn_auto_train_button",
+			id: "nn_train_wsample_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Auto Train"),
+			obj: createButton("Train with sample!"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -381,15 +383,17 @@ initializeGUI = () => {
 						// Activate/Deactivate training loop
 						if(nn && nn.vArgs.autoTrain.isEnabled){
 							buttonEvents.disableAutoTraining();
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Train with current sample!";
 						}else{
 							buttonEvents.enableAutoTraining();
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Stop training";
 						}
 					}
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled) && !nn.vArgs.autoTrain.clicked),
-			canvasRelativePosition: [0.63, 0.9375],
-			canvasRelativeSize: [0.10, 0.06]
+			canvasRelativePosition: [0.65, 0.9375],
+			canvasRelativeSize: [0.14, 0.06]
 		},
 	];
 
