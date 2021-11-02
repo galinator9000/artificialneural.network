@@ -255,7 +255,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [buttonEvents.resetNetwork]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.30, 0.9375],
+			canvasRelativePosition: [0.22, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -278,7 +278,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [buttonEvents.getSample]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.41, 0.9375],
+			canvasRelativePosition: [0.33, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -304,7 +304,7 @@ initializeGUI = () => {
 				// Training stage
 				(!nn.vArgs.predicted && !nn.vArgs.backpropagated)
 			))),
-			canvasRelativePosition: [0.52, 0.9375],
+			canvasRelativePosition: [0.44, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -330,7 +330,7 @@ initializeGUI = () => {
 				// Training stage
 				(nn.vArgs.predicted && !nn.vArgs.backpropagated)
 			))),
-			canvasRelativePosition: [0.52, 0.9375],
+			canvasRelativePosition: [0.44, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -356,7 +356,7 @@ initializeGUI = () => {
 				// Training stage
 				(nn.vArgs.predicted && nn.vArgs.backpropagated)
 			))),
-			canvasRelativePosition: [0.52, 0.9375],
+			canvasRelativePosition: [0.44, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -383,7 +383,7 @@ initializeGUI = () => {
 						// Activate/Deactivate training loop
 						if(nn && nn.vArgs.autoTrain.isEnabled){
 							buttonEvents.disableAutoTraining();
-							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Train with current sample!";
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Train with sample!";
 						}else{
 							buttonEvents.enableAutoTraining();
 							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Stop training";
@@ -392,8 +392,22 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled) && !nn.vArgs.autoTrain.clicked),
-			canvasRelativePosition: [0.65, 0.9375],
+			canvasRelativePosition: [0.57, 0.9375],
 			canvasRelativeSize: [0.14, 0.06]
+		},
+
+		// Sample group bottom line
+		{
+			id: "nn_sample_bottom_line",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Sample"),
+			attributes: [{name: "disabled", value: "", condition: () => true}],
+			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.46, 0.8825],
+			canvasRelativeSize: [0.35, 0.03]
 		},
 	];
 

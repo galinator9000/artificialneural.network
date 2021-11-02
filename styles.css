@@ -36,7 +36,6 @@ button:disabled, button[disabled]{
 	color: grey;
 	pointer-events: none;
 }
-/* Borderless button */
 .button-bottom-border {
 	border-style: default;
 	border-top: none;

@@ -649,7 +649,7 @@ resetNeuralNetworkGUI = () => {
 			id: "nn_cfg_parameter_count",
 			obj: createButton(`Total parameter count: ${nn.getTotalParameterCount().toString()}`),
 			initCalls: [{fnName: "addClass", args: ["text-button"]}],
-			canvasRelativePosition: [0.10, 0.9375],
+			canvasRelativePosition: [0.10, 0.0625],
 			canvasRelativeSize: [0.16, 0.04]
 		});
 	}
@@ -1321,7 +1321,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			canvas.fill(255);
 			canvas.translate(
 				((this.vArgs.propagation.xToCanvasPosX(0) + this.vArgs.propagation.xToCanvasPosX(1)) / 2),
-				(this.vArgs.layersTopRowY - (this.vArgs.perNeuronY * (this.layers.length-1)))
+				(this.vArgs.layersTopRowY - (this.vArgs.perNeuronY))
 			);
 			canvas.textSize(Neuron.r);
 			canvas.text(
