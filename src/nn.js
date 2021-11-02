@@ -867,6 +867,33 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		return true;
 	};
 
+	// Override fit method
+	fit = async (X, y, args) => {
+		if(this.vArgs.propagation.inProgress || (this.vArgs.animatePropagation && this.vArgs.propagation.inProgress)) return false;
+
+		let {history} = await super.fit(X, y, args);
+		
+		// Update all Weight objects' values
+		this.updateAllWeights();
+		// Weight values changed, call it!
+		this.onChangeWeights(true);
+
+		// Set necessary values
+		this.vArgs.predicted = false;
+		this.vArgs.backpropagated = false;
+
+		// Fire the neurons backward ;)
+		this.vArgs.propagation.x = 1.0;
+		this.vArgs.propagation.xAnim = 1.0;
+		this.vArgs.propagation.xTarget = 0.0;
+		this.vArgs.propagation.inProgress = true;
+		this.vArgs.status.text = `${args.epochs} Epoch, Cost: ${history.loss[history.loss.length-1].toFixed(4)}`;
+
+		// Log loss output
+		console.log("Loss", history.loss[history.loss.length-1]);
+		return true;
+	};
+
 	//// Custom methods
 	// Create Neuron objects for each of neuron in the network
 	createNeurons = () => {
@@ -1576,13 +1603,13 @@ class Weight{
 				canvas.strokeWeight(3);
 				canvas.line(fromX, fromY, toX, toY);
 				canvas.pop();
+			}else{
+				// Main weight line
+				canvas.push();
+				canvas.stroke(colorValue);
+				canvas.line(fromX, fromY, toX, toY);
+				canvas.pop();
 			}
-
-			// Main weight line
-			canvas.push();
-			canvas.stroke(colorValue);
-			canvas.line(fromX, fromY, toX, toY);
-			canvas.pop();
 		}
 		// Draw the carried value as text between the connection if focused
 		else{

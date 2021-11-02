@@ -33,23 +33,31 @@ var buttonEvents = {
 		nn.resetGradients();
 	},
 
-	// Feed forwards current stage sample
-	feedForward: () => {
-		return nn.feedForward(data.stageSample.input);
+	// Feed forwards with given matrix
+	feedForward: (X) => {
+		return nn.feedForward(X);
 	},
 
-	// Backpropagates current stage sample
-	backpropagate: () => {
-		return nn.backpropagate(data.stageSample.input, data.stageSample.target);
+	// Backpropagates with given input&target matrix
+	backpropagate: (X, y) => {
+		return nn.backpropagate(X, y);
 	},
 
 	// Applies gradients to weights, resets gradient values of Weight objects
-	applyGradient: () => {
-		if(nn.applyGradients(data.stageSample.input, data.stageSample.target)){
+	applyGradient: (X, y) => {
+		if(nn.applyGradients(X, y)){
 			nn.resetGradients();
 			return true;
 		}
 		return false;
+	},
+
+	// Fits nn with given dataset matrices
+	fit: (X, y) => {
+		return nn.fit(
+			X, y,
+			{epochs: 10, batchSize: 32}
+		);
 	},
 }
 
@@ -68,25 +76,34 @@ buttonEvents.enableAutoTraining = () => {
 	if(nn.vArgs.animatePropagation) sleepMs = 500;
 	else sleepMs = 150;
 
-	// Run immediately
+	// Define as async and run immediately
 	(async () => {
 		do{
 			nn.vArgs.autoTrain.inProgress = true;
 
 			// Feed forward
-			while(!buttonEvents.feedForward() || !nn.vArgs.autoTrain.isEnabled){
+			while(
+				!buttonEvents.feedForward(data.stageSample.input)
+				|| !nn.vArgs.autoTrain.isEnabled
+			){
 				await sleep(sleepMs);
 			}
 			if(nn.vArgs.autoTrain.isEnabled) await sleep(sleepMs*4);
 
 			// Backpropagate
-			while(!buttonEvents.backpropagate() || !nn.vArgs.autoTrain.isEnabled){
+			while(
+				!buttonEvents.backpropagate(data.stageSample.input, data.stageSample.target)
+				|| !nn.vArgs.autoTrain.isEnabled
+			){
 				await sleep(sleepMs);
 			}
 			if(nn.vArgs.autoTrain.isEnabled) await sleep(sleepMs*4);
 
 			// Apply gradient
-			while(!buttonEvents.applyGradient() || !nn.vArgs.autoTrain.isEnabled){
+			while(
+				!buttonEvents.applyGradient(data.stageSample.input, data.stageSample.target)
+				|| !nn.vArgs.autoTrain.isEnabled
+			){
 				await sleep(sleepMs);
 			}
 
@@ -298,7 +315,9 @@ initializeGUI = () => {
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [buttonEvents.feedForward]},
+				{fnName: "mousePressed", args: [() => {
+					buttonEvents.feedForward(data.stageSample.input);
+				}]},
 			],
 			showCond: () => ((nn && nn.isCompiled && (
 				// Training stage
@@ -324,7 +343,9 @@ initializeGUI = () => {
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [buttonEvents.backpropagate]},
+				{fnName: "mousePressed", args: [() => {
+					buttonEvents.backpropagate(data.stageSample.input, data.stageSample.target);
+				}]},
 			],
 			showCond: () => ((nn && nn.isCompiled && (
 				// Training stage
@@ -350,7 +371,9 @@ initializeGUI = () => {
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [buttonEvents.applyGradient]},
+				{fnName: "mousePressed", args: [() => {
+					buttonEvents.applyGradient(data.stageSample.input, data.stageSample.target);
+				}]},
 			],
 			showCond: () => ((nn && nn.isCompiled && (
 				// Training stage
@@ -360,7 +383,7 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
-		// Auto train
+		// Train with sample button
 		{
 			id: "nn_train_wsample_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
@@ -396,11 +419,11 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.14, 0.06]
 		},
 
-		// Sample group bottom line
+		// Sample group title
 		{
-			id: "nn_sample_bottom_line",
+			id: "nn_sample_group_title",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Sample"),
+			obj: createButton("with Sample"),
 			attributes: [{name: "disabled", value: "", condition: () => true}],
 			initCalls: [
 				{fnName: "addClass", args: ["button-bottom-border"]},
@@ -408,6 +431,34 @@ initializeGUI = () => {
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.46, 0.8825],
 			canvasRelativeSize: [0.35, 0.03]
+		},
+
+		// Fit dataset button
+		{
+			id: "nn_fit_dataset_button",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createButton("Fit dataset!"),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
+				)}
+			],
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "mousePressed", args: [
+					() => {
+						// Fit dataset
+						buttonEvents.fit(data.X, data.y);
+					}
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.70, 0.9375],
+			canvasRelativeSize: [0.10, 0.06]
 		},
 	];
 
