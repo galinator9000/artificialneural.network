@@ -3,6 +3,53 @@
 var guiComponents = [];
 var cursors = [];
 
+var buttonEvents = {
+	// Resets & rebuilds the network
+	resetNetwork: () => {
+		resetNeuralNetwork();
+		buildNeuralNetwork();
+
+		//// Reset values
+		// Propagation
+		nn.vArgs.propagation.x = 0.0;
+		nn.vArgs.propagation.xAnim = 0.0;
+		nn.vArgs.propagation.xTarget = 0.0;
+		nn.vArgs.predicted = false;
+		nn.vArgs.backpropagated = false;
+		// Auto train
+		nn.vArgs.autoTrain.enabled = false;
+		clearInterval(nn.vArgs.autoTrain.interval);
+	},
+
+	// Gets random sample from dataset for stage
+	getSample: () => {
+		getStageSampleFromDataset();
+
+		// Reset values
+		nn.vArgs.predicted = false;
+		nn.vArgs.backpropagated = false;
+
+		// Reset gradient values
+		nn.resetGradients();
+	},
+
+	// Feed forwards current stage sample
+	feedForward: () => {
+		nn.feedForward(data.stageSample.input);
+	},
+
+	// Backpropagates current stage sample
+	backpropagate: () => {
+		nn.backpropagate(data.stageSample.input, data.stageSample.target);
+	},
+
+	// Applies gradients to weights, resets gradient values of Weight objects
+	applyGradient: () => {
+		nn.applyGradients(data.stageSample.input, data.stageSample.target);
+		nn.resetGradients();
+	},
+}
+
 // Initializes GUI components of main canvas & sub canvases
 initializeGUI = () => {
 	// Set GUI cursors and conditions of them
@@ -149,20 +196,7 @@ initializeGUI = () => {
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [
-					(() => {
-						// Reset & rebuild the network (with same configuration)
-						resetNeuralNetwork();
-						buildNeuralNetwork();
-
-						// Reset values
-						nn.vArgs.propagation.x = 0.0;
-						nn.vArgs.propagation.xAnim = 0.0;
-						nn.vArgs.propagation.xTarget = 0.0;
-						nn.vArgs.predicted = false;
-						nn.vArgs.backpropagated = false;
-					})
-				]},
+				{fnName: "mousePressed", args: [buttonEvents.resetNetwork]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.30, 0.9375],
@@ -180,21 +214,12 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && nn.vArgs.autoTrain.enabled)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				// Get random sample from dataset for stage
-				{fnName: "mousePressed", args: [() => {
-					getStageSampleFromDataset();
-
-					// Reset values
-					nn.vArgs.predicted = false;
-					nn.vArgs.backpropagated = false;
-
-					// Reset gradient values
-					nn.resetGradients();
-				}]},
+				{fnName: "mousePressed", args: [buttonEvents.getSample]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.41, 0.9375],
@@ -212,18 +237,17 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && nn.vArgs.autoTrain.enabled)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [
-					// Feed forward current stage sample
-					() => {
-						nn.feedForward(data.stageSample.input);
-					}
-				]},
+				{fnName: "mousePressed", args: [buttonEvents.feedForward]},
 			],
-			showCond: () => ((nn && nn.isCompiled)),
+			showCond: () => ((nn && nn.isCompiled && (
+				// Training stage
+				(!nn.vArgs.predicted && !nn.vArgs.backpropagated)
+			))),
 			canvasRelativePosition: [0.52, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
@@ -239,20 +263,18 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (!nn.vArgs.predicted)
+					|| (nn && nn.vArgs.autoTrain.enabled)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [
-					// Backpropagate current stage sample
-					() => {
-						nn.backpropagate(data.stageSample.input, data.stageSample.target);
-					}
-				]},
+				{fnName: "mousePressed", args: [buttonEvents.backpropagate]},
 			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.63, 0.9375],
+			showCond: () => ((nn && nn.isCompiled && (
+				// Training stage
+				(nn.vArgs.predicted && !nn.vArgs.backpropagated)
+			))),
+			canvasRelativePosition: [0.52, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -267,23 +289,62 @@ initializeGUI = () => {
 					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
-					|| (!nn.vArgs.predicted || !nn.vArgs.backpropagated)
+					|| (nn && nn.vArgs.autoTrain.enabled)
 				)}
 			],
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "mousePressed", args: [
-					// Apply gradients to weights, reset gradient values of Weight objects
-					() => {
-						nn.applyGradients(data.stageSample.input, data.stageSample.target);
-						nn.resetGradients();
-					}
-				]},
+				{fnName: "mousePressed", args: [buttonEvents.applyGradient]},
 			],
-			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.74, 0.9375],
+			showCond: () => ((nn && nn.isCompiled && (
+				// Training stage
+				(nn.vArgs.predicted && nn.vArgs.backpropagated)
+			))),
+			canvasRelativePosition: [0.52, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
+
+		// Auto train
+		// {
+		// 	id: "nn_auto_train_button",
+		// 	subCanvasIndex: NN_SUBCANVAS_INDEX,
+		// 	obj: createButton("Auto Train"),
+		// 	attributes: [
+		// 		// "Disabled" attribute for button
+		// 		{name: "disabled", value: "", condition: () => (
+		// 			(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+		// 			|| (nn && !nn.isCompiled)
+		// 			|| (nn && nn.vArgs.propagation.inProgress)
+		// 		)}
+		// 	],
+		// 	initCalls: [
+		// 		{fnName: "style", args: ["z-index", "1"]},
+		// 		{fnName: "mousePressed", args: [
+		// 			() => {
+		// 				// Deactivate training loop
+		// 				if(nn && nn.vArgs.autoTrain.enabled){
+		// 					// if(nn.vArgs.autoTrain.interval !== null) clearInterval(nn.vArgs.autoTrain.interval);
+		// 				}
+		// 				// Activate training loop
+		// 				else{
+		// 					// nn.vArgs.autoTrain.interval = setInterval(
+		// 					// 	async () => {
+		// 					// 		await sleep(100);
+		// 					// 		console.log("bruh");
+		// 					// 		await sleep(200);
+		// 					// 		console.log("bruh2");
+		// 					// 	},
+		// 					// 	500
+		// 					// );
+		// 				}
+		// 				nn.vArgs.autoTrain.enabled = !nn.vArgs.autoTrain.enabled;
+		// 			}
+		// 		]},
+		// 	],
+		// 	showCond: () => ((nn && nn.isCompiled)),
+		// 	canvasRelativePosition: [0.63, 0.9375],
+		// 	canvasRelativeSize: [0.10, 0.06]
+		// },
 	];
 
 	// Call init calls of GUI components

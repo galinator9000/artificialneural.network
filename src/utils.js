@@ -24,6 +24,9 @@ const calculateTextsSize = (texts, areaW) => {
 	)
 };
 
+// Sleep function
+sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Random int
 const getRandomInt = (min, max) => {
 	min = Math.ceil(min);

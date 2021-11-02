@@ -19,6 +19,10 @@ var nnVArgs = {
 	},
 	predicted: false,
 	backpropagated: false,
+	autoTrain: {
+		enabled: false,
+		interval: null
+	}
 };
 
 // Creates a dense layer config object with given values
@@ -64,7 +68,7 @@ var nnStructure = {
 	compileArgs: {
 		optimizer: "sgd",
 		loss: "meanSquaredError",
-		learningRate: 0.0001
+		learningRate: 0.0005
 	},
 
 	//// Options
@@ -1296,9 +1300,15 @@ class SequentialNeuralNetwork extends tf.Sequential{
 
 			//// Input
 			// Set input neurons' output values to input values (gets animated smoothly)
+			let neuronInputChanged = false;
 			this.layerNeurons[0].forEach((inputNeuron, neuronIndex) => {
-				inputNeuron.value = inputVec[neuronIndex];
+				if(inputNeuron.value !== inputVec[neuronIndex]){
+					inputNeuron.value = inputVec[neuronIndex];
+					neuronInputChanged = true;
+				}
 			});
+			// If any of the neuron input value is changed, call this thing for updating color
+			if(neuronInputChanged) this.onChangeNeurons();
 
 			//// Target
 			// Draw target values to the right side
@@ -1406,16 +1416,15 @@ class Neuron{
 		//// Calculate color value
 		let colorValue;
 
-		// // Real weight value
+		// // Real output value
 		// if(vArgs.nnIsCompiled && (this.visualValue !== null)){
-		// 	let ratio = Math.min(((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) + 0.05), 1.0);
+		// 	let ratio = Math.min(((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) + 0.15), 1.0);
 		// 	colorValue = ratio * 255;
 		// }
-		// // Dummy weight
+		// // Dummy output
 		// else{
 		// 	colorValue = 255;
 		// }
-
 		// Constant color for neuron text&outline
 		colorValue = 255;
 
@@ -1590,8 +1599,15 @@ class Weight{
 				canvas.translate(0, textSize);
 				canvas.textSize(textSize*0.66);
 
+				let gvText = this.gradientVisualValue.toFixed(2);
+				if(Math.abs(this.gradientVisualValue).toFixed(2) === "0.00"){
+					canvas.fill(255);
+					canvas.stroke(255);
+					// WTF is -0.00?
+					gvText = "0.00";
+				}
 				// Red/Green
-				if(this.gradientVisualValue > 0){
+				else if(this.gradientVisualValue > 0){
 					canvas.fill(0, 192, 0);
 					canvas.stroke(0, 192, 0);
 				}
@@ -1599,7 +1615,6 @@ class Weight{
 					canvas.fill(192, 0, 0);
 					canvas.stroke(192, 0, 0);
 				}
-				let gvText = this.gradientVisualValue.toFixed(2);
 				canvas.text(gvText, 0, 0);
 				canvas.pop();
 			}
