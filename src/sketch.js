@@ -53,26 +53,40 @@ draw = () => {
 	// Process dummy nn
 	if(dummynn){
 		// Get the canvas
-		let dummynnCanvas = subCanvas.c[MAIN_SUBCANVAS_INDEX];
+		let homeCanvas = subCanvas.c[HOME_SUBCANVAS_INDEX];
 
 		// Update the dummy network
-		dummynn.update(dummynnCanvas.obj);
+		dummynn.update(homeCanvas.obj);
 
 		// Check if neural network should be drawn to it's subcanvas
-		if(shouldSubCanvasBeDrawn(MAIN_SUBCANVAS_INDEX)){
+		if(shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX)){
 			// Clear background
-			dummynnCanvas.obj.background(BG_COLOR);
+			homeCanvas.obj.background(BG_COLOR);
+			homeCanvas.obj.push();
 
-			dummynnCanvas.obj.push();
+			// Apply transformations to the main nn canvas
+			applyTransformationsToSubCanvas(homeCanvas.obj);
 
-			// Apply transformations to the nn canvas
-			applyTransformationsToSubCanvas(dummynnCanvas.obj);
+			//// Draw dummy network
+			homeCanvas.obj.push();
+			dummynn.initDraw(homeCanvas.obj);
+			dummynn.draw(homeCanvas.obj);
+			homeCanvas.obj.pop();
 
-			// Draw network
-			dummynn.initDraw(dummynnCanvas.obj);
-			dummynn.draw(dummynnCanvas.obj);
+			//// Draw "Home" subcanvas components
+
+			// artificialneural.network title
+			homeCanvas.obj.push();
+			homeCanvas.obj.translate(
+				homeCanvas.obj.width/2,
+				homeCanvas.obj.height*0.20
+			);
+			homeCanvas.obj.fill(255);
+			homeCanvas.obj.textSize(64);
+			homeCanvas.obj.text("artificialneural.network", 0, 0);
+			homeCanvas.obj.pop();
 			
-			dummynnCanvas.obj.pop();
+			homeCanvas.obj.pop();
 		}
 	}
 

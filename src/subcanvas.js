@@ -1,16 +1,16 @@
 // SubCanvas system related variables and functions.
 
-const MAIN_SUBCANVAS_INDEX = 0;
+const HOME_SUBCANVAS_INDEX = 0;
 const DATASET_SUBCANVAS_INDEX = 1;
 const NN_SUBCANVAS_INDEX = 2;
 
-const INITIAL_SUBCANVAS_INDEX = MAIN_SUBCANVAS_INDEX;
+const INITIAL_SUBCANVAS_INDEX = HOME_SUBCANVAS_INDEX;
 
 var subCanvas = {
 	// SubCanvas objects 
 	c: [
 		{
-			title: "Main",
+			title: "Home",
 			obj: null,
 			isActive: () => true,
 			eventHandlers: {
@@ -214,6 +214,8 @@ createSubCanvas = () => {
 
 // Switches (transition) to given subcanvas idx
 switchSubCanvas = (switchIdx) => {
+	// C'mon bruh
+	if(switchIdx < 0 || switchIdx >= subCanvas.c.length) return;
 	// Return if already in transition process
 	if(subCanvas.inTransition) return;
 	// Return if the canvas isn't active

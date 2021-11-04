@@ -27,6 +27,7 @@ var nnVArgs = {
 		text: "",
 		defaultText: "",
 	},
+	isDummy: false,
 };
 
 // Creates a dense layer config object with given values
@@ -1342,7 +1343,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 		});
 
 		//// Draw sample input/targets to the side of the network
-		if(this.isCompiled && (sample && sample.input && sample.target)){
+		if(this.isCompiled && (!this.vArgs.isDummy) && (sample && sample.input && sample.target)){
 			// Draw the status text
 			canvas.push();
 			canvas.fill(255);
@@ -1505,7 +1506,7 @@ class Neuron{
 		canvas.pop();
 
 		// Draw the hidden/output neurons' output (activation value) as text
-		if(vArgs.nnIsCompiled && (this.visualValue !== null)){
+		if(vArgs.nnIsCompiled && (!vArgs.isDummy) && (this.visualValue !== null)){
 			canvas.push();
 			canvas.fill(colorValue);
 			canvas.stroke(colorValue);
@@ -1592,7 +1593,7 @@ class Weight{
 		// Draw weight between neurons (from -> to) as a line
 		if(!writeCarriedValue){
 			// Draw gradient line (if gradient value exists)
-			if(this.gradientVisualValue !== null && Math.abs(this.gradientVisualValue).toFixed(2) !== "0.00"){
+			if((!vArgs.isDummy) && this.gradientVisualValue !== null && Math.abs(this.gradientVisualValue).toFixed(2) !== "0.00"){
 				canvas.push();
 
 				// Red/Green interpolation
@@ -1604,12 +1605,14 @@ class Weight{
 				canvas.line(fromX, fromY, toX, toY);
 				canvas.pop();
 			}
-			
 			// Main weight line
-			canvas.push();
-			canvas.stroke(colorValue);
-			canvas.line(fromX, fromY, toX, toY);
-			canvas.pop();
+			else{
+				canvas.push();
+				canvas.stroke(colorValue);
+				canvas.strokeWeight(1);
+				canvas.line(fromX, fromY, toX, toY);
+				canvas.pop();
+			}
 		}
 		// Draw the carried value as text between the connection if focused
 		else{

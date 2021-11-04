@@ -4,6 +4,7 @@ var guiComponents = [];
 var cursors = [];
 
 var buttonEvents = {
+	//// Neural network button events
 	// Resets & rebuilds the network
 	resetNetwork: () => {
 		resetNeuralNetwork();
@@ -124,6 +125,26 @@ initializeGUI = () => {
 	];
 
 	guiComponents = [
+		//// Main subcanvas GUI components
+
+		// Get started
+		{
+			id: "home_get_started_button",
+			subCanvasIndex: HOME_SUBCANVAS_INDEX,
+			obj: createButton("Get started"),
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "mousePressed", args: [
+					() => {
+						// Switch to dataset subcanvas
+						switchSubCanvas(DATASET_SUBCANVAS_INDEX);
+					}
+				]},
+			],
+			canvasRelativePosition: [0.50, 0.33],
+			canvasRelativeSize: [0.10, 0.06]
+		},
+
 		//// Dataset GUI components
 		
 		// Dataset source text
