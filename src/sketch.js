@@ -34,6 +34,9 @@ setup = () => {
 	// Assign data structure initially
 	resetDataset();
 
+	// Init dummy network on main page
+	initializeDummyNeuralNetwork();
+
 	loadDataset(
 		Object.values(csvURLs)[0]
 	);
@@ -46,6 +49,32 @@ draw = () => {
 
 	// Update GUI components
 	updateGUI();
+
+	// Process dummy nn
+	if(dummynn){
+		// Get the canvas
+		let dummynnCanvas = subCanvas.c[MAIN_SUBCANVAS_INDEX];
+
+		// Update the dummy network
+		dummynn.update(dummynnCanvas.obj);
+
+		// Check if neural network should be drawn to it's subcanvas
+		if(shouldSubCanvasBeDrawn(MAIN_SUBCANVAS_INDEX)){
+			// Clear background
+			dummynnCanvas.obj.background(BG_COLOR);
+
+			dummynnCanvas.obj.push();
+
+			// Apply transformations to the nn canvas
+			applyTransformationsToSubCanvas(dummynnCanvas.obj);
+
+			// Draw network
+			dummynn.initDraw(dummynnCanvas.obj);
+			dummynn.draw(dummynnCanvas.obj);
+			
+			dummynnCanvas.obj.pop();
+		}
+	}
 
 	// Process nn if built
 	if(nn){

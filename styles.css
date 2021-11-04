@@ -41,6 +41,7 @@ button:disabled, button[disabled]{
 	border-top: none;
 	border-right: none;
 	border-left: none;
+	background-color: transparent;
 }
 /* "Text" button */
 .text-button {

@@ -57,7 +57,7 @@ var nnStructure = {
 		args: {inputShape: [1]}
 	},
 
-	// Hidden layers config, add one layer initially
+	// Hidden layers config, add two layer initially
 	hiddenLayersConfig: [
 		createDenseLayerConfig({activation: "linear"}),
 		createDenseLayerConfig({activation: "linear"})
@@ -1603,13 +1603,13 @@ class Weight{
 				canvas.strokeWeight(3);
 				canvas.line(fromX, fromY, toX, toY);
 				canvas.pop();
-			}else{
-				// Main weight line
-				canvas.push();
-				canvas.stroke(colorValue);
-				canvas.line(fromX, fromY, toX, toY);
-				canvas.pop();
 			}
+			
+			// Main weight line
+			canvas.push();
+			canvas.stroke(colorValue);
+			canvas.line(fromX, fromY, toX, toY);
+			canvas.pop();
 		}
 		// Draw the carried value as text between the connection if focused
 		else{

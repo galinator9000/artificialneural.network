@@ -1,13 +1,27 @@
 // SubCanvas system related variables and functions.
 
-const DATASET_SUBCANVAS_INDEX = 0;
-const NN_SUBCANVAS_INDEX = 1;
+const MAIN_SUBCANVAS_INDEX = 0;
+const DATASET_SUBCANVAS_INDEX = 1;
+const NN_SUBCANVAS_INDEX = 2;
 
-const INITIAL_SUBCANVAS_INDEX = DATASET_SUBCANVAS_INDEX;
+const INITIAL_SUBCANVAS_INDEX = MAIN_SUBCANVAS_INDEX;
 
 var subCanvas = {
 	// SubCanvas objects 
 	c: [
+		{
+			title: "Main",
+			obj: null,
+			isActive: () => true,
+			eventHandlers: {
+				mouseWheel: (x, y, delta) => {
+					return true;
+				},
+				mouseDragged: (mx, my) => {
+					return true;
+				},
+			},
+		},
 		{
 			title: "Dataset",
 			obj: null,
