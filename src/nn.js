@@ -1586,8 +1586,12 @@ class Weight{
 
 		//// Calculate color value
 		let colorValue;
+		
 		// Real weight value
-		if(vArgs.nnIsCompiled) colorValue = (Math.abs(this.visualValue) / vArgs.weightsStats.wMax) * 255;
+		if(vArgs.nnIsCompiled){
+			let ratio = Math.min((((Math.abs(this.visualValue) / vArgs.weightsStats.wMax) * 0.95) + 0.05), 1.0);
+			colorValue = ratio * 255;
+		}
 		// Dummy weight
 		else colorValue = 255;
 

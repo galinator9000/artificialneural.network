@@ -13,7 +13,7 @@ initializeDummyNeuralNetwork = () => {
 		animatePropagation: true,
 		propagation: {
 			// Width and step values (ratio value for width of the canvas) of the propagation wave
-			width: 0.02, step: 0.01,
+			width: 0.02, step: 0.02,
 			// Animation smoothing function
 			animFn: AnimationUtils.easeOutQuad,
 			// Apply animation layer by layer or to whole network?
@@ -138,28 +138,28 @@ initializeDummyNeuralNetwork = () => {
 
 			// Start fake training
 			dummynn.vArgs.autoTrain.inProgress = true;
-			await sleep(getRandomInt(1500, 6000));
+			await sleep(getRandomInt(500, 2000));
 
 			// Feed forward
 			while(!shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX) || !dummynn_feedForward(dummynn_input)){
-				await sleep(getRandomInt(1500, 6000));
+				await sleep(getRandomInt(500, 2000));
 			}
-			await sleep(getRandomInt(1500, 6000));
+			await sleep(getRandomInt(500, 2000));
 
 			// Backpropagate
 			while(!shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX) || !dummynn_backpropagate(dummynn_input, dummynn_target)){
-				await sleep(getRandomInt(1500, 6000));
+				await sleep(getRandomInt(500, 2000));
 			}
-			await sleep(getRandomInt(1500, 6000));
+			await sleep(getRandomInt(500, 2000));
 
 			// Apply gradient
 			while(!shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX) || !dummynn_applyGradient(dummynn_input, dummynn_target)){
-				await sleep(getRandomInt(1500, 6000));
+				await sleep(getRandomInt(500, 2000));
 			}
-
+			
 			// Done.
 			dummynn.vArgs.autoTrain.inProgress = false;
-			await sleep(1000);
+			await sleep(getRandomInt(500, 1500));
 		}while(true);
 	})();
 };

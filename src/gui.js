@@ -182,8 +182,6 @@ initializeGUI = () => {
 
 				// All constant dataset source options
 				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
-				// First problem type selected
-				{fnName: "selected", args: [Object.values(csvURLs)[0]]},
 
 				// onChange event
 				{fnName: "changed", args: [
@@ -230,7 +228,7 @@ initializeGUI = () => {
 				{
 					name: "disabled", value: "",
 					condition: () => (
-						(data.isLoading) || (data.isCompiled)
+						(data.isLoading) || (data.isCompiled) || (data.dataset === null)
 					)
 				}
 			],

@@ -36,10 +36,6 @@ setup = () => {
 
 	// Init dummy network on main page
 	initializeDummyNeuralNetwork();
-
-	loadDataset(
-		Object.values(csvURLs)[0]
-	);
 };
 
 // Main loop
