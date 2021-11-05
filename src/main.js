@@ -150,7 +150,7 @@ initializeDummyNeuralNetwork = () => {
 			while(!shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX) || !dummynn_backpropagate(dummynn_input, dummynn_target)){
 				await sleep(getRandomInt(500, 2000));
 			}
-			await sleep(getRandomInt(500, 2000));
+			await sleep(getRandomInt(1500, 2500));
 
 			// Apply gradient
 			while(!shouldSubCanvasBeDrawn(HOME_SUBCANVAS_INDEX) || !dummynn_applyGradient(dummynn_input, dummynn_target)){
