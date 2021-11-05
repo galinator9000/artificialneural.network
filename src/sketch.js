@@ -310,3 +310,33 @@ mouseDragged = (event) => {
 
 	return true;
 };
+
+// Processes key press events
+keyPressed = (event) => {
+	switch(event.code){
+		case "KeyR":
+			let gc = getGUIComponentWithID("nn_get_sample_button");
+			if(subCanvas.currentIdx === NN_SUBCANVAS_INDEX && !gc.attributes[0].condition() && gc.showCond()){
+				buttonEvents.getSample();
+			}
+			break;
+		case "Space":
+			if((subCanvas.currentIdx === NN_SUBCANVAS_INDEX) && (nn && nn.isCompiled)){
+				let gcs = [
+					getGUIComponentWithID("nn_feed_forward_button"),
+					getGUIComponentWithID("nn_backpropagate_button"),
+					getGUIComponentWithID("nn_apply_gradients_button")
+				];
+				let activeGc = gcs.map(
+					(gc) => [(!gc.attributes[0].condition() && gc.showCond()), gc]
+				).filter(([cond, gc]) => cond).map(([cond, gc]) => gc)[0];
+
+				if(activeGc !== undefined){
+					// Fire button event
+					let activeGcFn = activeGc.initCalls.filter((ic) => (ic.fnName === "mousePressed")).map((ic) => ic.args[0])[0];
+					if(activeGcFn !== undefined) activeGcFn();
+				}
+			}
+			break;
+	}
+};

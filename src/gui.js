@@ -301,7 +301,7 @@ initializeGUI = () => {
 		{
 			id: "nn_get_sample_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Get sample"),
+			obj: createButton("Get new sample (r)"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -324,7 +324,7 @@ initializeGUI = () => {
 		{
 			id: "nn_feed_forward_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Predict"),
+			obj: createButton("Feed forward (space)"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -352,7 +352,7 @@ initializeGUI = () => {
 		{
 			id: "nn_backpropagate_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Backpropagate"),
+			obj: createButton("Backpropagate (space)"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -380,7 +380,7 @@ initializeGUI = () => {
 		{
 			id: "nn_apply_gradients_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Apply gradients"),
+			obj: createButton("Apply gradients (space)"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -408,7 +408,7 @@ initializeGUI = () => {
 		{
 			id: "nn_train_wsample_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Train with sample!"),
+			obj: createButton("Start training with sample!"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -427,7 +427,7 @@ initializeGUI = () => {
 						// Activate/Deactivate training loop
 						if(nn && nn.vArgs.autoTrain.isEnabled){
 							buttonEvents.disableAutoTraining();
-							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Train with sample!";
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Start training with sample!";
 						}else{
 							buttonEvents.enableAutoTraining();
 							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Stop training";

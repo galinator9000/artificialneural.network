@@ -871,6 +871,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 	// Override fit method
 	fit = async (X, y, args) => {
 		if(this.vArgs.propagation.inProgress || (this.vArgs.animatePropagation && this.vArgs.propagation.inProgress)) return false;
+		this.resetGradients();
 
 		let {history} = await super.fit(X, y, args);
 		
@@ -1593,7 +1594,7 @@ class Weight{
 		// Draw weight between neurons (from -> to) as a line
 		if(!writeCarriedValue){
 			// Draw gradient line (if gradient value exists)
-			if((!vArgs.isDummy) && this.gradientVisualValue !== null && Math.abs(this.gradientVisualValue).toFixed(2) !== "0.00"){
+			if(this.gradientVisualValue !== null && Math.abs(this.gradientVisualValue).toFixed(2) !== "0.00"){
 				canvas.push();
 
 				// Red/Green interpolation
