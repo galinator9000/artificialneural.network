@@ -63,24 +63,27 @@ button:disabled, button[disabled]{
 /* Top right link div */
 .top-links {
 	z-index: 1;
-	display: flex;
+	display: block;
 	position: fixed;
-	flex: 1;
-	flex-direction: row;
-	justify-content: flex-end;
-	align-content: flex-end;
-	align-items: center;
-	margin: 1%;
-
-	width: 20%;
-		-webkit-width: 20%;
-		-moz-width: 20%;
-	height: auto;
-		-webkit-height: auto;
-		-moz-height: auto;
+	top: 20px;
+	right: 20px;
 	appearance: none;
 		-webkit-appearance: none;
 		-moz-appearance: none;
+}
+.top-links a{
+	display: inline-block;
+	height: 55px;
+	width: min-content;
+	margin-left: 15px;
+}
+.top-links img{
+	height: 55px;
+		-webkit-height: 55px;
+		-moz-height: 55px;
+	width: auto;
+		-webkit-width: auto;
+		-moz-width: auto;
 }
 
 * {
