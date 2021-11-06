@@ -1603,8 +1603,8 @@ class Weight{
 
 				// Red/Green interpolation
 				let gradientColorValue = (Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax) * 255;
-				if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 192);
-				else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 192);
+				if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 128);
+				else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 128);
 
 				canvas.strokeWeight(3);
 				canvas.line(fromX, fromY, toX, toY);

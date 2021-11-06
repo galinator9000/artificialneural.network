@@ -133,8 +133,6 @@ initializeDummyNeuralNetwork = () => {
 		do{
 			// Generate fake sample for dummy nn
 			let [dummynn_input, dummynn_target] = dummynn_generate_sample();
-			console.log(dummynn_input.toString());
-			console.log(dummynn_target.toString());
 
 			// Start fake training
 			dummynn.vArgs.autoTrain.inProgress = true;
