@@ -104,6 +104,8 @@ resetDatasetGUI = () => {
 
 // Scrolls through dataset
 scrollDataset = (x, y, delta) => {
+	if(Math.abs(delta) === 0) return;
+
 	// Scroll if dataset is loaded (loadDataset fn)
 	if(data.dataset === null) return;
 

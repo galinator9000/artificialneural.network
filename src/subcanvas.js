@@ -253,6 +253,8 @@ applyTransformationsToSubCanvas = (canvas) => {
 
 // Sets current scaling values on transformation
 zoomSubCanvas = (x, y, delta) => {
+	if(Math.abs(delta) === 0) return;
+
 	// Get mouse wheel delta's direction as 1 or -1, reverse it for zooming direction
 	let direction = -(delta / Math.abs(delta));
 
@@ -260,6 +262,8 @@ zoomSubCanvas = (x, y, delta) => {
 	let newScale = (subCanvas.transform.scale.x + (
 		(subCanvas.zoomFactor * direction) * subCanvas.transform.scale.targetXY
 	));
+
+	if(isNaN(newScale) || isNaN(direction)) return;
 
 	// Limit new scaling value, set as target for both XY
 	subCanvas.transform.scale.targetXY = Math.min(Math.max(newScale, subCanvas.zoomMin), subCanvas.zoomMax);
@@ -269,6 +273,10 @@ zoomSubCanvas = (x, y, delta) => {
 
 // Sets current translation values on transformation
 dragSubCanvas = (mx, my) => {
+	if(
+		Math.abs(mx) === 0 && Math.abs(my) === 0
+	) return;
+
 	// New XY values
 	let newTranslateX = (subCanvas.transform.translate.x + (
 		// Scaling value affects the dragging factors inversely
