@@ -12,22 +12,57 @@ var datasetVArgs = {
 	n_showSample: 16,
 };
 
-// All CSV URLs
-const csvURLs = {
-	// "Iris dataset": ,
-	// "MNIST dataset": ,
-
-	//// Custom datasets
-	
+// All datasets and their configurations
+const datasetsList = {
 	// Generated with sklearn's make_classification/make_regression methods
-	"Multiple linear regression": "datasets/multiple_linear_regression.csv",
-	"Simple linear regression": "datasets/simple_linear_regression.csv",
-	"Binary classification": "datasets/binary_classification.csv",
-	// "Multiclass classification": "datasets/multiclass_classification.csv",
+	"Simple linear regression": {
+		url: "datasets/simple_linear_regression.csv",
+		nnCfg: {
+			hiddenLayersConfig: [
+				createDenseLayerConfig({activation: "linear", units: 4, useBias: true}),
+				createDenseLayerConfig({activation: "linear", units: 4, useBias: true})
+			],
+			outputLayerConfig: createDenseLayerConfig({activation: "linear", units: 1, useBias: true}),
+			compileArgs: {optimizer: "sgd", loss: "meanSquaredError", learningRate: 0.001},
+		},
+	},
+	
+	"Binary classification": {
+		url: "datasets/binary_classification.csv",
+		nnCfg: {
+			hiddenLayersConfig: [
+				createDenseLayerConfig({activation: "tanh", units: 4, useBias: true}),
+				createDenseLayerConfig({activation: "tanh", units: 4, useBias: true}),
+			],
+			outputLayerConfig: createDenseLayerConfig({activation: "sigmoid", units: 1, useBias: true}),
+			compileArgs: {optimizer: "sgd", loss: "sigmoidCrossEntropy", learningRate: 0.03},
+		},
+	},
 
-	// "XOR": "datasets/xor.csv",
-	// "OR": "datasets/or.csv",
-	// "AND": "datasets/and.csv",
+	"Multiple linear regression": {
+		url: "datasets/multiple_linear_regression.csv",
+		nnCfg: {
+			hiddenLayersConfig: [
+				createDenseLayerConfig({activation: "sigmoid", units: 4, useBias: true}),
+				createDenseLayerConfig({activation: "tanh", units: 4, useBias: true}),
+			],
+			outputLayerConfig: createDenseLayerConfig({activation: "linear", units: 1, useBias: true}),
+			compileArgs: {optimizer: "sgd", loss: "meanSquaredError", learningRate: 0.004},
+		},
+	},
+	
+	// "Multiclass classification": {
+	// 	url: "datasets/multiclass_classification.csv",
+	// },
+	// "XOR": {
+	// 	url: "datasets/xor.csv",
+	// },
+	// "OR": {
+	// 	url: "datasets/or.csv",
+	// },
+	// "AND": {
+	// 	url: "datasets/and.csv",
+	// },
 };
 
 // Calculates necessary values for drawing the dataset
@@ -228,6 +263,15 @@ compileDataset = () => {
 	// Set neural network input/output layers' neuron count
 	nnStructure.inputLayerConfig.args.inputShape = [data.structure.n_features];
 	nnStructure.outputLayerConfig.args.units = data.structure.n_targets;
+
+	// Set neural network configurations with the given object
+	if(data.nnCfg){
+		nnStructure = {
+			...nnStructure,
+			...data.nnCfg
+		}
+	}
+
 	// (Re)build neural network
 	buildNeuralNetwork();
 
@@ -238,8 +282,10 @@ compileDataset = () => {
 	return true;
 };
 
-// Loads&initializes dataset with given URL
-loadDataset = async (url) => {
+// Loads&initializes dataset and configures the network
+loadDataset = async (datasetObj) => {
+	const { url, nnCfg } = datasetObj;
+
 	if(url === null || url === undefined) url = "";
 	if(url.length == 0) return false;
 
@@ -288,6 +334,7 @@ loadDataset = async (url) => {
 	// Taking last column as target, others are X's (I SAID INITIALLY!)
 	data.structure.n_features = (Object.values(data.columns).length)-1;
 	data.structure.n_targets = (1);
+	data.nnCfg = nnCfg;
 
 	console.log("Dataset loaded", data.structure);
 	resetDatasetGUI();

@@ -1,3 +1,16 @@
+// Creates a dense layer config object with given values
+createDenseLayerConfig = (denseArgs={}) => ({
+	class: tf.layers.dense,
+	args: {
+		// Min 4, max 12 neurons, if not specified
+		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 12)),
+		// Use bias if not specified
+		useBias: ((denseArgs.useBias) ? denseArgs.useBias : true),
+		// No activation, if not specified
+		activation: ((denseArgs.activation) ? denseArgs.activation : null),
+	}
+});
+
 // Linear interpolation
 const lerp = (value, target, amount) => {
 	return (value + ((target - value) * amount));

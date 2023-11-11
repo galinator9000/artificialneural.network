@@ -54,10 +54,10 @@ var buttonEvents = {
 	},
 
 	// Fits nn with given dataset matrices
-	fit: (X, y) => {
+	fit: (X, y, batchSize) => {
 		return nn.fit(
 			X, y,
-			{epochs: 10, batchSize: 32}
+			{epochs: 10, batchSize: batchSize}
 		);
 	},
 }
@@ -74,8 +74,8 @@ buttonEvents.enableAutoTraining = () => {
 
 	// Set sleep time
 	let sleepMs;
-	if(nn.vArgs.animatePropagation) sleepMs = 500;
-	else sleepMs = 150;
+	if(nn.vArgs.animatePropagation) sleepMs = 800;
+	else sleepMs = 400;
 
 	// Define as async and run immediately
 	(async () => {
@@ -134,6 +134,7 @@ initializeGUI = () => {
 			obj: createButton("Get started"),
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "style", args: ["font-size", "24px"]},
 				{fnName: "mousePressed", args: [
 					() => {
 						// Switch to dataset subcanvas
@@ -141,18 +142,18 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.46, 0.33],
-			canvasRelativeSize: [0.10, 0.06]
+			canvasRelativePosition: [0.50, 0.29],
+			canvasRelativeSize: [0.16, 0.08]
 		},
 
-		// How to button
+		// What even is this button
 		{
-			id: "home_how_to_button",
+			id: "home_what_even_is_this_button",
 			subCanvasIndex: HOME_SUBCANVAS_INDEX,
-			obj: createButton("?"),
+			obj: createButton("What even is this?"),
 			initCalls: [
 				{fnName: "style", args: ["z-index", "1"]},
-				{fnName: "style", args: ["font-size", "28px"]},
+				{fnName: "style", args: ["font-size", "13px"]},
 				{fnName: "mousePressed", args: [
 					() => {
 						// Switch to the hidden how to subcanvas
@@ -160,8 +161,8 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.54, 0.33],
-			canvasRelativeSize: [0.04, 0.06]
+			canvasRelativePosition: [0.50, 0.42],
+			canvasRelativeSize: [0.10, 0.05]
 		},
 
 		//// Dataset GUI components
@@ -200,36 +201,38 @@ initializeGUI = () => {
 				// {fnName: "option", args: ["Enter CSV URL..."]},
 
 				// All constant dataset source options
-				...(Object.entries(csvURLs).map(([key, value]) => ({fnName: "option", args: [key, value]}))),
+				...(Object.entries(datasetsList).map(([key, value]) => ({fnName: "option", args: [key, key]}))),
 
 				// onChange event
 				{fnName: "changed", args: [
 					(event) => {
 						// Get selected value
 						let selectComponent = getGUIComponentWithID("dataset_source_select").obj;
-						let selectedValue = selectComponent.value();
+						let selectedDatasetKey = selectComponent.value();
+
+						// Load the dataset directly
+						loadDataset(datasetsList[selectedDatasetKey]);
 
 						// Load given URL
-						if(selectedValue === "Enter CSV URL..."){
-							selectedValue = window.prompt(selectedValue);
-
-							// Attempt to load given URL, if successful, add as an option
-							loadDataset(selectedValue).then((success) => {
-								if(success){
-									// Add as option & make it selected
-									selectComponent.option(selectedValue, selectedValue);
-									selectComponent.selected(selectedValue);
-								}
-							});
-						}
+						// if(selectedValue === "Enter CSV URL..."){
+						// 	selectedValue = window.prompt(selectedValue);
+						// 	// Attempt to load given URL, if successful, add as an option
+						// 	loadDataset(selectedValue).then((success) => {
+						// 		if(success){
+						// 			// Add as option & make it selected
+						// 			selectComponent.option(selectedValue, selectedValue);
+						// 			selectComponent.selected(selectedValue);
+						// 		}
+						// 	});
+						// }
 						// Pick file from local
 						// else if(selectedValue === "Pick file..."){
 						// 	document.getElementById("dataset-file-input").click();
 						// }
 						// Load dataset
-						else{
-							loadDataset(selectedValue);
-						}
+						// else{
+						// 	loadDataset(selectedValue);
+						// }
 					}
 				]},
 			],
@@ -341,7 +344,7 @@ initializeGUI = () => {
 		{
 			id: "nn_feed_forward_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Feed forward (space)"),
+			obj: createButton("Predict (space)"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -425,7 +428,7 @@ initializeGUI = () => {
 		{
 			id: "nn_train_wsample_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
-			obj: createButton("Start training with sample!"),
+			obj: createButton("Start the training!"),
 			attributes: [
 				// "Disabled" attribute for button
 				{name: "disabled", value: "", condition: () => (
@@ -490,7 +493,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [
 					() => {
 						// Fit dataset
-						buttonEvents.fit(data.X, data.y);
+						buttonEvents.fit(data.X, data.y, data.structure.n_samples);
 					}
 				]},
 			],

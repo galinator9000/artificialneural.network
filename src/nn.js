@@ -30,19 +30,6 @@ var nnVArgs = {
 	isDummy: false,
 };
 
-// Creates a dense layer config object with given values
-createDenseLayerConfig = (denseArgs={}) => ({
-	class: tf.layers.dense,
-	args: {
-		// Min 4, max 12 neurons, if not specified
-		units: ((denseArgs.units) ? denseArgs.units : getRandomInt(4, 12)),
-		// Use bias if not specified
-		useBias: ((denseArgs.useBias) ? denseArgs.useBias : true),
-		// No activation, if not specified
-		activation: ((denseArgs.activation) ? denseArgs.activation : null),
-	}
-});
-
 // Builds tf layer with given config
 layerConfigToLayer = (layer) => layer.class(layer.args);
 
@@ -1208,7 +1195,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				() => {
 					this.vArgs.status.text = this.vArgs.status.defaultText;
 				},
-				250
+				500
 			)
 		}
 		// Propagation started event

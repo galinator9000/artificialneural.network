@@ -75,7 +75,7 @@ draw = () => {
 			homeCanvas.obj.push();
 			homeCanvas.obj.translate(
 				homeCanvas.obj.width/2,
-				homeCanvas.obj.height*0.20
+				homeCanvas.obj.height*0.15
 			);
 			homeCanvas.obj.fill(255);
 			homeCanvas.obj.textSize(64);
