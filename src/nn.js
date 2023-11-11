@@ -1408,27 +1408,29 @@ class SequentialNeuralNetwork extends tf.Sequential{
 			//// Draw layer titles
 			canvas.push();
 			canvas.fill(255);
-			canvas.textSize(calculateTextSize(" ", Neuron.r*2, Neuron.r*2));
 
-			// "x" title of input layer
+			// "Input" title of input layer
+			canvas.textSize(calculateTextSize("Input", Neuron.r*6, Neuron.r*6));
 			canvas.text(
-				"x",
+				"Input",
 				(this.layerNeurons[0][0].x),
-				(this.layerNeurons[0][0].y - (this.vArgs.perNeuronY*1.25))
+				(this.layerNeurons[0][0].y - (this.vArgs.perNeuronY*1))
 			);
 
-			// "ŷ" title of output layer
+			// "Prediction" title of output layer
+			canvas.textSize(calculateTextSize("Pred.", Neuron.r*5, Neuron.r*5));
 			canvas.text(
-				"ŷ",
+				"Pred.",
 				(this.layerNeurons[this.layerNeurons.length-1][0].x),
-				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1.25))
+				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1))
 			);
 
-			// "y" title at target value
+			// "Target" title at target value
+			canvas.textSize(calculateTextSize("Target", Neuron.r*5, Neuron.r*5));
 			canvas.text(
-				"y",
+				"Target",
 				(this.layerNeurons[this.layerNeurons.length-1][0].x) + (Neuron.r*3),
-				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1.25))
+				(this.layerNeurons[this.layerNeurons.length-1][0].y - (this.vArgs.perNeuronY*1))
 			);
 			canvas.pop();
 		}

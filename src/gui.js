@@ -141,8 +141,27 @@ initializeGUI = () => {
 					}
 				]},
 			],
-			canvasRelativePosition: [0.50, 0.33],
+			canvasRelativePosition: [0.46, 0.33],
 			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		// How to button
+		{
+			id: "home_how_to_button",
+			subCanvasIndex: HOME_SUBCANVAS_INDEX,
+			obj: createButton("?"),
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "style", args: ["font-size", "28px"]},
+				{fnName: "mousePressed", args: [
+					() => {
+						// Switch to the hidden how to subcanvas
+						switchSubCanvas(HOW_TO_SUBCANVAS_INDEX);
+					}
+				]},
+			],
+			canvasRelativePosition: [0.54, 0.33],
+			canvasRelativeSize: [0.04, 0.06]
 		},
 
 		//// Dataset GUI components
@@ -478,6 +497,25 @@ initializeGUI = () => {
 			showCond: () => ((nn && nn.isCompiled)),
 			canvasRelativePosition: [0.70, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
+		},
+
+		//// How to page GUI components
+		{
+			id: "how_to_lets_play_button",
+			subCanvasIndex: HOW_TO_SUBCANVAS_INDEX,
+			obj: createButton("Ok, let's play!"),
+			initCalls: [
+				{fnName: "style", args: ["z-index", "1"]},
+				{fnName: "style", args: ["font-size", "22px"]},
+				{fnName: "mousePressed", args: [
+					() => {
+						// Switch to the hidden how to subcanvas
+						switchSubCanvas(HOME_SUBCANVAS_INDEX);
+					}
+				]},
+			],
+			canvasRelativePosition: [0.50, 0.92],
+			canvasRelativeSize: [0.14, 0.06]
 		},
 	];
 

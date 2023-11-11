@@ -128,6 +128,21 @@ draw = () => {
 		datasetCanvas.obj.pop();
 	}
 
+	// Check if how-to canvas should be drawn to it's subcanvas
+	let howToCanvas = subCanvas.c[HOW_TO_SUBCANVAS_INDEX];
+	if(shouldSubCanvasBeDrawn(HOW_TO_SUBCANVAS_INDEX)){
+		// Clear background
+		howToCanvas.obj.background(BG_COLOR);
+		howToCanvas.obj.push();
+
+		// Apply transformations to the dataset canvas
+		applyTransformationsToSubCanvas(howToCanvas.obj);
+
+		// Draw dataset on given subcanvas
+		drawHowToCanvas(howToCanvas.obj);
+
+		howToCanvas.obj.pop();
+	}
 	// Update subcanvas related things
 	updateSubCanvas();
 
@@ -180,17 +195,17 @@ draw = () => {
 
 	//// Draw subcanvas tabs to the left of the screen
 	let eachTabW = subCanvas.subcanvasStartX;
-	let eachTabH = (windowHeight / subCanvas.c.length);
+	let eachTabH = (windowHeight / subCanvas.c.filter(c => c.isDisplayedOnMenu).length);
 	let curScIdx = (subCanvas.nextIdx);
 
 	// Calculate tab titles' text size
 	let tabTextSize = calculateTextsSize(
-		subCanvas.c.map(sc => sc.title),
+		subCanvas.c.filter(c => c.isDisplayedOnMenu).map(sc => sc.title),
 		(eachTabH*0.90)
 	);
 
 	// Draw each tab title
-	subCanvas.c.forEach((sc, scIdx) => {
+	subCanvas.c.filter(c => c.isDisplayedOnMenu).forEach((sc, scIdx) => {
 		// Active tab underline
 		push();
 		strokeWeight((scIdx == curScIdx) ? 3 : 0);
@@ -277,7 +292,7 @@ mouseClicked = (event) => {
 		// Check if clicked on the tab section
 		if(event.x < subCanvas.subcanvasStartX){
 			// Switch clicked tab
-			let eachTabH = (windowHeight / subCanvas.c.length);
+			let eachTabH = (windowHeight / subCanvas.c.filter(c => c.isDisplayedOnMenu).length);
 			let clickedSubCanvasIndex = Math.floor(event.y / eachTabH);
 			switchSubCanvas(clickedSubCanvasIndex);
 		}

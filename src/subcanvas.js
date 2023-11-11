@@ -3,6 +3,7 @@
 const HOME_SUBCANVAS_INDEX = 0;
 const DATASET_SUBCANVAS_INDEX = 1;
 const NN_SUBCANVAS_INDEX = 2;
+const HOW_TO_SUBCANVAS_INDEX = 3;
 
 const INITIAL_SUBCANVAS_INDEX = HOME_SUBCANVAS_INDEX;
 
@@ -13,6 +14,7 @@ var subCanvas = {
 			title: "Home",
 			obj: null,
 			isActive: () => true,
+			isDisplayedOnMenu: true,
 			eventHandlers: {
 				mouseWheel: (x, y, delta) => {
 					return true;
@@ -26,6 +28,7 @@ var subCanvas = {
 			title: "Dataset",
 			obj: null,
 			isActive: () => true,
+			isDisplayedOnMenu: true,
 			// Event handlers should return true/false if they were able to process the event or not
 			eventHandlers: {
 				mouseWheel: (x, y, delta) => {
@@ -48,12 +51,27 @@ var subCanvas = {
 				// NN GUI components are ready when data is ready
 				(!data.isLoading) && data.isCompiled && (nn !== undefined)
 			),
+			isDisplayedOnMenu: true,
 			// Event handlers should return true/false if they were able to process the event or not
 			eventHandlers: {
 				mouseClicked: (x, y) => {
 					nn.mouseClicked(x, y);
 					return true;
 				},
+				mouseWheel: (x, y, delta) => {
+					return zoomSubCanvas(x, y, delta);
+				},
+				mouseDragged: (mx, my) => {
+					return dragSubCanvas(mx, my);
+				},
+			},
+		},
+		{
+			title: "How To",
+			obj: null,
+			isActive: () => true,
+			isDisplayedOnMenu: false,
+			eventHandlers: {
 				mouseWheel: (x, y, delta) => {
 					return zoomSubCanvas(x, y, delta);
 				},
