@@ -133,6 +133,7 @@ initializeGUI = () => {
 			subCanvasIndex: HOME_SUBCANVAS_INDEX,
 			obj: createButton("Get started"),
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "style", args: ["font-size", "24px"]},
 				{fnName: "mousePressed", args: [
@@ -152,6 +153,7 @@ initializeGUI = () => {
 			subCanvasIndex: HOME_SUBCANVAS_INDEX,
 			obj: createButton("What even is this?"),
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "style", args: ["font-size", "13px"]},
 				{fnName: "mousePressed", args: [
@@ -255,6 +257,7 @@ initializeGUI = () => {
 				}
 			],
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
@@ -279,6 +282,7 @@ initializeGUI = () => {
 				{name: "disabled", value: "", condition: () => ((data.isLoading || !data.isCompiled || (nn && nn.isCompiled)))}
 			],
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "mousePressed", args: [
 					(() => {
@@ -508,6 +512,7 @@ initializeGUI = () => {
 			subCanvasIndex: HOW_TO_SUBCANVAS_INDEX,
 			obj: createButton("Ok, let's play!"),
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "style", args: ["z-index", "1"]},
 				{fnName: "style", args: ["font-size", "22px"]},
 				{fnName: "mousePressed", args: [

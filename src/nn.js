@@ -311,6 +311,7 @@ resetNeuralNetworkGUI = () => {
 			id: "nn_cfg_add_hidden_layer",
 			obj: createButton("+ Add hidden layer"),
 			initCalls: [
+				{fnName: "addClass", args: ["button-bottom-border"]},
 				{fnName: "mousePressed", args: [
 					(() => {
 						// Check hidden layer count limit

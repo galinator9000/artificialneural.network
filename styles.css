@@ -22,6 +22,8 @@ button, select, input {
 	color: white;
 	font-size: 100%;
 	border-style: solid;
+	border-width: 1px;
+	border-color: white;
 	font-family: 'Inconsolata', monospace;
 	font-weight: normal;
 }
