@@ -57,7 +57,7 @@ var buttonEvents = {
 	fit: (X, y, batchSize) => {
 		return nn.fit(
 			X, y,
-			{epochs: 10, batchSize: batchSize}
+			{epochs: 25, batchSize: batchSize}
 		);
 	},
 }
@@ -479,7 +479,75 @@ initializeGUI = () => {
 			canvasRelativeSize: [0.35, 0.03]
 		},
 
-		// Fit dataset button
+		// Fit dataset inputs, labels and button
+		/*
+		{
+			id: "nn_fit_epoch_input",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createInput(nnStructure.trainOptions.epochs),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
+				)}
+			],
+			initCalls: [
+				// changed event
+				{fnName: "changed", args: [
+					(event) => {
+						// Get new value and set layer config
+						let gc = getGUIComponentWithID("nn_fit_epoch_input").obj;
+						let value = gc.value();
+
+						// Try to convert the string to number and check the validity of the input
+						if(typeof(value) !== "number") value = Number(value);
+						if(typeof(value) !== "number") return;
+
+						nnStructure.trainOptions.epochs = value;
+					}
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.68, 0.9375],
+			canvasRelativeSize: [0.06, 0.06]
+		},
+		{
+			id: "nn_fit_batch_size_input",
+			subCanvasIndex: NN_SUBCANVAS_INDEX,
+			obj: createInput(nnStructure.trainOptions.batchSize),
+			attributes: [
+				// "Disabled" attribute for button
+				{name: "disabled", value: "", condition: () => (
+					(!subCanvas.c[NN_SUBCANVAS_INDEX].isActive())
+					|| (nn && !nn.isCompiled)
+					|| (nn && nn.vArgs.propagation.inProgress)
+					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.isEnabled))
+				)}
+			],
+			initCalls: [
+				// changed event
+				{fnName: "changed", args: [
+					(event) => {
+						// Get new value and set layer config
+						let gc = getGUIComponentWithID("nn_fit_batch_size_input").obj;
+						let value = gc.value();
+
+						// Try to convert the string to number and check the validity of the input
+						if(typeof(value) !== "number") value = Number(value);
+						if(typeof(value) !== "number") return;
+
+						nnStructure.trainOptions.batchSize = value;
+					}
+				]},
+			],
+			showCond: () => ((nn && nn.isCompiled)),
+			canvasRelativePosition: [0.74, 0.9375],
+			canvasRelativeSize: [0.06, 0.06]
+		},
+		*/
 		{
 			id: "nn_fit_dataset_button",
 			subCanvasIndex: NN_SUBCANVAS_INDEX,
