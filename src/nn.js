@@ -1196,7 +1196,7 @@ class SequentialNeuralNetwork extends tf.Sequential{
 				() => {
 					this.vArgs.status.text = this.vArgs.status.defaultText;
 				},
-				500
+				1000
 			)
 		}
 		// Propagation started event
@@ -1477,30 +1477,49 @@ class Neuron{
 	draw = (canvas, vArgs) => {
 		//// Calculate color value
 		let colorValue;
+		let weightValue;
 
 		// // Real output value
 		if(vArgs.nnIsCompiled && (this.visualValue !== null)){
-			let ratio = Math.min((((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) * 0.67) + 0.33), 1.0);
-			colorValue = ratio * 255;
+			let colorRatio = AnimationUtils.easeOutQuad(
+				Math.min((((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) * 0.67) + 0.33), 1.0)
+			);
+			colorValue = colorRatio * 255;
+
+			let weightRatio = AnimationUtils.easeOutQuad(
+				Math.min((((Math.abs(this.visualValue) / vArgs.neuronStats.nMax) * 0.85) + 0.15), 1.0)
+			);
+			weightValue = weightRatio * 1.5;
 		}
 		// Dummy output
 		else{
 			colorValue = 255;
+			weightValue = 1;
 		}
 
 		// Neuron circle
 		canvas.push();
 		canvas.fill(BG_COLOR);
-		canvas.stroke(colorValue);
-		canvas.strokeWeight((this.isFocused && vArgs.focusedAnyNeuron) ? 2 : 1);
+		canvas.stroke(
+			(vArgs.focusedAnyNeuron && this.isFocused) ? 255 : colorValue
+		);
+		canvas.strokeWeight(
+			(vArgs.focusedAnyNeuron) ? (
+				this.isFocused ? 3 : 1
+			) : (
+				(this.isFocused && vArgs.focusedAnyNeuron)
+				? weightValue*1.25
+				: weightValue
+			)
+		);
 		canvas.circle(this.x, this.y, Neuron.r*2);
 		canvas.pop();
 
 		// Draw the hidden/output neurons' output (activation value) as text
 		if(vArgs.nnIsCompiled && (!vArgs.isDummy) && (this.visualValue !== null)){
 			canvas.push();
-			canvas.fill(colorValue);
-			canvas.stroke(colorValue);
+			canvas.fill((vArgs.focusedAnyNeuron && this.isFocused) ? 255 : colorValue);
+			canvas.stroke((vArgs.focusedAnyNeuron && this.isFocused) ? 255 : colorValue);
 
 			let vText = this.visualValue.toFixed(2);
 			canvas.textSize(calculateTextSize(vText, Neuron.r*3, Neuron.r*2));
@@ -1575,15 +1594,22 @@ class Weight{
 		let gapStartX, gapStartY, gapEndX, gapEndY;
 
 		//// Calculate color value
-		let colorValue;
+		let colorStrokeValue;
+		let weightStrokeValue;
 		
 		// Real weight value
 		if(vArgs.nnIsCompiled){
-			let ratio = Math.min((((Math.abs(this.visualValue) / vArgs.weightsStats.wMax) * 0.95) + 0.05), 1.0);
-			colorValue = ratio * 255;
+			let ratio = AnimationUtils.easeOutQuad(
+				Math.min((((Math.abs(this.visualValue) / vArgs.weightsStats.wMax) * 0.85) + 0.15), 1.0)
+			);
+			colorStrokeValue = ratio * 255;
+			weightStrokeValue = (ratio * 1.5);
 		}
 		// Dummy weight
-		else colorValue = 255;
+		else{
+			colorStrokeValue = 255;
+			weightStrokeValue = 1;
+		}
 
 		// Draw weight between neurons (from -> to) as a line
 		if(!writeCarriedValue){
@@ -1593,18 +1619,19 @@ class Weight{
 
 				// Red/Green interpolation
 				let gradientColorValue = (Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax) * 255;
-				if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 128);
-				else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 128);
+				let gradientWeightValue = Math.ceil((Math.abs(this.gradientVisualValue) / vArgs.gradientStats.gMax)) * 3;
+				if(this.gradientVisualValue > 0) canvas.stroke(0, gradientColorValue, 0, 192);
+				else if(this.gradientVisualValue < 0) canvas.stroke(gradientColorValue, 0, 0, 192);
 
-				canvas.strokeWeight(3);
+				canvas.strokeWeight(gradientWeightValue);
 				canvas.line(fromX, fromY, toX, toY);
 				canvas.pop();
 			}
 			// Main weight line
 			else{
 				canvas.push();
-				canvas.stroke(colorValue);
-				canvas.strokeWeight(1);
+				canvas.stroke(colorStrokeValue);
+				canvas.strokeWeight(weightStrokeValue);
 				canvas.line(fromX, fromY, toX, toY);
 				canvas.pop();
 			}
@@ -1627,7 +1654,8 @@ class Weight{
 
 			// Draw the line with a gap on the center
 			canvas.push();
-			canvas.stroke(colorValue);
+			canvas.stroke(colorStrokeValue);
+			canvas.strokeWeight(weightStrokeValue);
 			canvas.line(fromX, fromY, gapStartX, gapStartY);
 			canvas.line(gapEndX, gapEndY, toX, toY);
 			canvas.pop();
@@ -1727,8 +1755,8 @@ class Weight{
 
 		// Draw the highlighting line!
 		canvas.push();
-		canvas.stroke(colorValue);
-		canvas.strokeWeight(3);
+		canvas.stroke(colorStrokeValue);
+		canvas.strokeWeight(weightStrokeValue * 3);
 		canvas.line(
 			// from (highlighter line start point)
 			hFromX, hFromY,

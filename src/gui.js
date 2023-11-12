@@ -317,7 +317,7 @@ initializeGUI = () => {
 				{fnName: "mousePressed", args: [buttonEvents.resetNetwork]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.22, 0.9375],
+			canvasRelativePosition: [0.08, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
@@ -440,6 +440,7 @@ initializeGUI = () => {
 					|| (nn && !nn.isCompiled)
 					|| (nn && nn.vArgs.propagation.inProgress)
 					|| (nn && (nn.vArgs.autoTrain.inProgress || nn.vArgs.autoTrain.clicked))
+					|| (nn && (nn.vArgs.predicted || nn.vArgs.backpropagated))
 				)}
 			],
 			initCalls: [
@@ -502,7 +503,7 @@ initializeGUI = () => {
 				]},
 			],
 			showCond: () => ((nn && nn.isCompiled)),
-			canvasRelativePosition: [0.70, 0.9375],
+			canvasRelativePosition: [0.73, 0.9375],
 			canvasRelativeSize: [0.10, 0.06]
 		},
 
