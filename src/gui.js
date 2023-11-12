@@ -74,8 +74,8 @@ buttonEvents.enableAutoTraining = () => {
 
 	// Set sleep time
 	let sleepMs;
-	if(nn.vArgs.animatePropagation) sleepMs = 800;
-	else sleepMs = 400;
+	if(nn.vArgs.animatePropagation) sleepMs = 500;
+	else sleepMs = 250;
 
 	// Define as async and run immediately
 	(async () => {
@@ -451,10 +451,10 @@ initializeGUI = () => {
 						// Activate/Deactivate training loop
 						if(nn && nn.vArgs.autoTrain.isEnabled){
 							buttonEvents.disableAutoTraining();
-							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Start training with sample!";
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Start training loop with sample!";
 						}else{
 							buttonEvents.enableAutoTraining();
-							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Stop training";
+							getGUIComponentWithID("nn_train_wsample_button").obj.elt.innerHTML = "Stop the training loop";
 						}
 					}
 				]},

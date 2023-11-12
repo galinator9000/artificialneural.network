@@ -20,7 +20,7 @@ const datasetsList = {
 		nnCfg: {
 			hiddenLayersConfig: [
 				createDenseLayerConfig({activation: "linear", units: 4, useBias: true}),
-				createDenseLayerConfig({activation: "linear", units: 4, useBias: true})
+				createDenseLayerConfig({activation: "linear", units: 4, useBias: true}),
 			],
 			outputLayerConfig: createDenseLayerConfig({activation: "linear", units: 1, useBias: true}),
 			compileArgs: {optimizer: "sgd", loss: "meanSquaredError", learningRate: 0.001},
@@ -39,15 +39,15 @@ const datasetsList = {
 		},
 	},
 
-	"Multiple linear regression": {
-		url: "datasets/multiple_linear_regression.csv",
+	"Multivariate linear regression": {
+		url: "datasets/multivariate_linear_regression.csv",
 		nnCfg: {
 			hiddenLayersConfig: [
-				createDenseLayerConfig({activation: "sigmoid", units: 4, useBias: true}),
-				createDenseLayerConfig({activation: "tanh", units: 4, useBias: true}),
+				createDenseLayerConfig({activation: "linear", units: 4, useBias: true}),
+				createDenseLayerConfig({activation: "linear", units: 4, useBias: true}),
 			],
 			outputLayerConfig: createDenseLayerConfig({activation: "linear", units: 1, useBias: true}),
-			compileArgs: {optimizer: "sgd", loss: "meanSquaredError", learningRate: 0.004},
+			compileArgs: {optimizer: "sgd", loss: "meanSquaredError", learningRate: 0.0004},
 		},
 	},
 	
