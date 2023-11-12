@@ -1,4 +1,4 @@
-Visit the tool: [﻿artificialneural.network](https://galinator9000.github.io/artificialneural.network/)
+Visit the tool: [galinator9000.github.io/﻿artificialneural.network](https://galinator9000.github.io/artificialneural.network/)
 
 ## What even is this?
 
